@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres_profiles
+    image: postgres:16.4
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: /data/postgres
+    volumes: 
+      - ./postgres-data:/data/postgres
+    ports:
+      - "5432:5432"
