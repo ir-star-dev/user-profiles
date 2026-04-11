@@ -1,9 +1,9 @@
 # Выбор базы данных
 
 Нам для проекта "Профили пользователей" нужна база данных, которая будет хранить пользователей.
-✔️ Самая популярная БД в продакшене: PostgreSQL
-✔️ Второе место: MySQL
-✔️ NoSQL (MongoDB) — под специфические задачи
+- Самая популярная БД в продакшене: PostgreSQL
+- Второе место: MySQL
+- NoSQL (MongoDB) — под специфические задачи
 
 Мы будем использовать PostgreSQL. 
 Для тестирования работы с JWT будем также  использовать ее, но в продакшене для хранения токенов обычно используют Redis.
@@ -15,30 +15,30 @@
 У нее есть преимущества и недостатки. 
 
 Плюсы:
-✔️ полный контроль,
-✔️ высокая производительность,
-✔️ стандарт Go,
-✔️ минимальные зависимости.
+- полный контроль,
+- высокая производительность,
+- стандарт Go,
+- минимальные зависимости.
 
 Минусы:
-✔️ много ручного кода,
-✔️ ручной маппинг,
-✔️ нет работы со структурами "из коробки",
-✔️ нет удобных helpers (get, select),
-✔️ нет автоматического биндинга структур в sql,
-✔️ и пр.
+- много ручного кода,
+- ручной маппинг,
+- нет работы со структурами "из коробки",
+- нет удобных helpers (get, select),
+- нет автоматического биндинга структур в sql,
+- и пр.
 
 Можно использовать ORM, например `gorm`. В использовании ORM есть минусы:
-❗ скрывает SQL (магия),
-❗ генерирует неочевидные запросы,
-❗ может ухудшать производительность.
+- скрывает SQL (магия),
+- генерирует неочевидные запросы,
+- может ухудшать производительность.
 
 Поэтому будем работать с пакетом `sqlx`, который расширяет возможности встроенной Go библиотеки.
 Для установки пакета выполним:
 
-    ```go
-    go get github.com/jmoiron/sqlx
-    ```
+```go
+go get github.com/jmoiron/sqlx
+```
 
 # Поднимем контейнер postgres
 
@@ -49,22 +49,22 @@
 Порт для postgres дефолтный: 5432
 Напишем в файле docker-compose.yml следующее:
 
-    ```yml
-    version: '3'
+```yml
+version: '3'
 
-    services:
-        postgres:
-            container_name: postgres_profiles
-            image: postgres:16.4
-            environment:
-                POSTGRES_USER: ${DB_USER}
-                POSTGRES_PASSWORD: ${DB_PASS}
-                PGDATA: /data/postgres
-            volumes: 
-                - ./postgres-data:/data/postgres
-            ports:
-                - "5432:5432"
-    ```
+services:
+    postgres:
+        container_name: postgres_profiles
+        image: postgres:16.4
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASS}
+            PGDATA: /data/postgres
+        volumes: 
+            - ./postgres-data:/data/postgres
+        ports:
+            - "5432:5432"
+```
 
 Запустим в терминале `docker compose up`, чтобы понять контейнер.
 
@@ -82,9 +82,10 @@
 Далее в созданном подключении, создадим нашу тестовую БД с названием `demo`.
 Для этого правой кнопкой на соединении `localhost` выберем `New Query` и напишем запрос:
 
-    ```sql
-    CREATE DATABASE user_profiles;
-    ```
+```sql
+CREATE DATABASE user_profiles;
+```
+
 Выполним, нажав F5. Также правой кнопкой на соединении `localhost` выберем `Refresh Items`, должна появится наша база данных.
 
 # Подключение к БД
@@ -92,33 +93,34 @@
 Для подключение к БД нам потребуется драйвер для работы с postgres. 
 Установим пакет 
 
-    ```go
-        go get github.com/lib/pq
-    ```
+```go
+    go get github.com/lib/pq
+```
+
 ## Переменные окружения для БД
 
 Нам нужен ряд переменных окружения, которые мы определяем в `.env` файле.
 
 ```.env
-    # DB connection
-    DRIVER_NAME="postgres"
-    DB_HOST="localhost"
-    DB_PORT="5432"
-    DB_NAME="user_profiles"
-    DB_USER="postgres"
-    DB_PASS="pass"
-    SSL_MODE="disable" (только для локальной разработки)
+# DB connection
+DRIVER_NAME="postgres"
+DB_HOST="localhost"
+DB_PORT="5432"
+DB_NAME="user_profiles"
+DB_USER="postgres"
+DB_PASS="pass"
+SSL_MODE="disable" (только для локальной разработки)
 
-    # Migrations
-    MIGRATIONS_PATH="././migrations"
+# Migrations
+MIGRATIONS_PATH="././migrations"
 ```
 ## Загрузка переменных окружения в приложение
 
 Установим пакет, который будет считывать наш файл с переменными окружения и загружать их в наше приложение.
 
-    ```go
-    go get github.com/joho/godotenv
-    ```
+```go
+go get github.com/joho/godotenv
+```
 
 ## Пакет configs
 
@@ -126,53 +128,53 @@
 В структуре будут необходимые данные для подключения к БД: Dsn, Driver, MigrationsPath (об этом позже).
 
 ```go
-    package configs
+package configs
 
-    import (
-        "os"
-        "fmt"
-        "github.com/joho/godotenv"
+import (
+    "os"
+    "fmt"
+    "github.com/joho/godotenv"
+)
+
+type Config struct {
+    Db     DbConfig
+    Secret string
+}
+
+type DbConfig struct {
+    Dsn            string
+    Driver         string
+    MigrationsPath string
+}
+
+func Load() (*Config, error) {
+    err := godotenv.Load(".env")
+    if err != nil {
+        return nil, err
+    }
+
+    return &Config{
+        Secret: os.Getenv("SECRET"),
+        Db: DbConfig{
+            Dsn:    buildDSN(),
+            Driver: os.Getenv("DRIVER_NAME"),
+            MigrationsPath: os.Getenv("MIGRATIONS_PATH"),
+        },
+    }, nil
+}
+
+func buildDSN() string {
+    return fmt.Sprintf(
+        "%s://%s:%s@%s:%s/%s?sslmode=%s",
+        os.Getenv("DRIVER_NAME"),
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASS"),
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_PORT"),
+        os.Getenv("DB_NAME"),
+        os.Getenv("SSL_MODE"),
     )
-
-    type Config struct {
-        Db     DbConfig
-        Secret string
-    }
-
-    type DbConfig struct {
-        Dsn            string
-        Driver         string
-        MigrationsPath string
-    }
-
-    func Load() (*Config, error) {
-        err := godotenv.Load(".env")
-        if err != nil {
-            return nil, err
-        }
-
-        return &Config{
-            Secret: os.Getenv("SECRET"),
-            Db: DbConfig{
-                Dsn:    buildDSN(),
-                Driver: os.Getenv("DRIVER_NAME"),
-                MigrationsPath: os.Getenv("MIGRATIONS_PATH"),
-            },
-        }, nil
-    }
-
-    func buildDSN() string {
-        return fmt.Sprintf(
-            "%s://%s:%s@%s:%s/%s?sslmode=%s",
-            os.Getenv("DRIVER_NAME"),
-            os.Getenv("DB_USER"),
-            os.Getenv("DB_PASS"),
-            os.Getenv("DB_HOST"),
-            os.Getenv("DB_PORT"),
-            os.Getenv("DB_NAME"),
-            os.Getenv("SSL_MODE"),
-        )
-    }
+}
 ```
 
 ## Пакет db
@@ -182,48 +184,48 @@
 Функция `Connect` выполняет соединение с БД и пингует его. Возвращает указатель на структуру DB и ошибку, если подключиться не удалось.
 Принимает строку - имя драйвера и dsn строку, которая выглядит так:
 
-    `"postgres://user:pass@host:port/db_name?sslmode=disable"`
+`"postgres://user:pass@host:port/db_name?sslmode=disable"`
 
 Dsn строку мы уже сформировали в нашем пакете `configs`.
 
-    ```go
-    package db
+```go
+package db
 
-    import (
-        "user-profiles/configs"
-        "log"
+import (
+    "user-profiles/configs"
+    "log"
 
-        "github.com/jmoiron/sqlx"
-        _ "github.com/lib/pq"
-    )
+    "github.com/jmoiron/sqlx"
+    _ "github.com/lib/pq"
+)
 
-    func Connect(conf *configs.Config) (*sqlx.DB, error) {
-        dsn := conf.Db.Dsn
-        db, err := sqlx.Connect(conf.Db.Driver, dsn)
-        if err != nil {
-            return nil, err
-        }
-        log.Println("Connected to PostgreSQL ✔️")
-        return db, nil
+func Connect(conf *configs.Config) (*sqlx.DB, error) {
+    dsn := conf.Db.Dsn
+    db, err := sqlx.Connect(conf.Db.Driver, dsn)
+    if err != nil {
+        return nil, err
     }
-    ```
+    log.Println("Connected to PostgreSQL ✔️")
+    return db, nil
+}
+```
 
 ## Соединение с БД
 
 В пакете `internal/app/app.go` мы вызываем функцию `Load()` из пакета `configs`.
     
 ```go
-    conf, err := configs.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
+conf, err := configs.Load()
+if err != nil {
+    return fmt.Errorf("failed to load config: %w", err)
+}
 
-	// DB
-	dbConn, err := db.Connect(conf)
-	if err != nil {
-		return fmt.Errorf("failed to connect db: %w", err)
-	}
-	defer dbConn.Close()
+// DB
+dbConn, err := db.Connect(conf)
+if err != nil {
+    return fmt.Errorf("failed to connect db: %w", err)
+}
+defer dbConn.Close()
 ```
 
 Когда запустим наше приложение `go run cmd/main.go`, то при успешном соединении с БД в консоли мы должны увидеть
@@ -246,23 +248,23 @@ Dsn строку мы уже сформировали в нашем пакете
 Для выполнения миграций, мы создадим отдельный пакет `cmd/migrate/auto.go`
 И будем запускать в терминале до запуска приложения.
 
-    ```go
-        go run cmd/migrate/auto.go -up
-    ```
+```go
+    go run cmd/migrate/auto.go -up
+```
 
 Только для удобства локальной разработки добавлена команда:
 
-    ```go
-        go run cmd/migrate/auto.go -down
-    ```
+```go
+    go run cmd/migrate/auto.go -down
+```
 
 Она отменит все миграции, то есть удалит все таблицы из БД.
 
 Для работы с миграциями нам нужен пакет
 
-    ```go
-        go get github.com/golang-migrate/migrate/v4
-    ```
+```go
+    go get github.com/golang-migrate/migrate/v4
+```
     
 ## Форматы миграций
 
@@ -297,33 +299,34 @@ SQL файлы для миграции - это последовательнос
 
 Пример файла `0001_create_users_and_tokens_tables.up.sql` миграции для создания таблиц `users` и `tokens`.
 
-    ```sql
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(25) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-    );
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(25) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-    CREATE TABLE IF NOT EXISTS tokens (
-        id SERIAL PRIMARY KEY,
-        refresh_token TEXT NOT NULL,
-        revoked BOOLEAN NOT NULL DEFAULT FALSE,
-        expired_at TIMESTAMPTZ NOT NULL,
-        user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL
-    );
-    ```
+CREATE TABLE IF NOT EXISTS tokens (
+    id SERIAL PRIMARY KEY,
+    refresh_token TEXT NOT NULL,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    expired_at TIMESTAMPTZ NOT NULL,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL
+);
+```
 
 Новая миграция `0002_add_more_columns_to_tokens.up` для таблицы `tokens`.
 
-    ```sql
-    ALTER TABLE tokens 
-    ADD COLUMN family_id UUID,
-    ADD COLUMN device VARCHAR(50),
-    ADD COLUMN ip TEXT, 
-    ADD COLUMN user_agent VARCHAR(50);
-    ```
+```sql
+ALTER TABLE tokens 
+ADD COLUMN family_id UUID,
+ADD COLUMN device VARCHAR(50),
+ADD COLUMN ip TEXT, 
+ADD COLUMN user_agent VARCHAR(50);
+```
+
 В результате применения миграций, создадутся 2 таблицы. Потом в таблицу `tokens` добавятся 4 новых поля.
 
 ## Реализация миграций
@@ -331,9 +334,10 @@ SQL файлы для миграции - это последовательнос
 Мы уже установили пакет для миграций, который мы импортируем. Также мы импортируем пакеты:
 
 ```go
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+_ "github.com/golang-migrate/migrate/v4/database/postgres"
+_ "github.com/golang-migrate/migrate/v4/source/file"
 ```
+
 Они напрямую не используются, но необходимы для выполнения миграций и будут работать "за кулисами".
 
 Функция `MigrationsUp` принимает `dsn` - подключение к БД и `mPath` - путь к директории с SQL файлами миграций, который мы определили в файле `.env`.
