@@ -64,3 +64,13 @@ func (repo *tokenRepository) Revoke(hash []byte, uId int) error {
 	}
 	return nil
 }
+
+func (repo *tokenRepository) RevokeFamily(familyId string) error {
+	query := `
+		UPDATE tokens
+		SET revoked = true
+		WHERE family_id = $1
+	`
+	_, err := repo.db.Exec(query, familyId)
+	return err
+}

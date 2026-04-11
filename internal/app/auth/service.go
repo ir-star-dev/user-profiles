@@ -1,19 +1,20 @@
 package auth
 
 import (
-	"time"
 	"errors"
+	"time"
 	"user-profiles/internal/domain/token"
 	"user-profiles/internal/domain/user"
 	"user-profiles/internal/infrastructure/security"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Service interface {
-	Register(email, password, name, host string) (*RegisterResponse, error)
-	Login(email, password, host string) (*AuthResponse, error)
-	Refresh(refreshToken, host string) (*AuthResponse, error)
+	Register(email, password, name string) (*RegisterResponse, error)
+	Login(email, password string) (*AuthResponse, error)
+	Refresh(refreshToken string) (*AuthResponse, error)
 	Logout(uId int, refreshToken string) error
 }
 
@@ -33,8 +34,11 @@ func NewAuthService(uRepo user.Repository, tRepo token.Repository, jS security.J
 	}
 }
 
-func (s *authService) Register(email, password, name, host string) (*RegisterResponse, error) {
-	existedUser, _ := s.uRepo.FindByEmail(email)
+func (s *authService) Register(email, password, name string) (*RegisterResponse, error) {
+	existedUser, err := s.uRepo.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
 	if existedUser != nil {
 		return nil, errors.New(UserExists)
 	}
@@ -47,11 +51,11 @@ func (s *authService) Register(email, password, name, host string) (*RegisterRes
 		Name:     name,
 		Password: hash,
 	}
-	_, err = s.uRepo.Create(newUser)
+	user, err := s.uRepo.Create(newUser)
 	if err != nil {
 		return nil, err
 	}
-	tokens, err := s.generateTokens(host, existedUser.Id)
+	tokens, err := s.generateTokens(user.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -61,18 +65,24 @@ func (s *authService) Register(email, password, name, host string) (*RegisterRes
 	return res, nil
 }
 
-func (s *authService) Login(email, password, host string) (*AuthResponse, error) {
-	existedUser, _ := s.uRepo.FindByEmail(email)
+func (s *authService) Login(email, password string) (*AuthResponse, error) {
+	existedUser, err := s.uRepo.FindByEmail(email)
+	if err != nil {
+		return nil, err
+	}
 	if existedUser == nil {
 		return nil, errors.New(LoginError)
 	}
-	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
 	if err != nil {
 		return nil, errors.New(WrongPassword)
 	}
-	tokens, err := s.generateTokens(host, existedUser.Id)
-
-	err = s.saveRefreshToken(tokens.RefreshHash, existedUser.Id)
+	tokens, err := s.generateTokens(existedUser.Id)
+	if err != nil {
+		return nil, err
+	}
+	fId := uuid.NewString()
+	err = s.saveRefreshToken(tokens.RefreshHash, existedUser.Id, fId)
 	if err != nil {
 		return nil, err
 	}
@@ -88,21 +98,27 @@ func (s *authService) Logout(uId int, refreshToken string) error {
 	return nil
 }
 
-func (s *authService) Refresh(refreshToken, host string) (*AuthResponse, error) {
+func (s *authService) Refresh(refreshToken string) (*AuthResponse, error) {
 	t, err := s.validateRefresh(refreshToken)
 	if err != nil { 
         return nil, errors.New(InvalidOrExpires)
     }
-	tokens, err := s.generateTokens(host, t.UserId)
+	if t.Revoked {
+		// 💥 compromise detected
+		_ = s.tRepo.RevokeFamily(t.FamilyID)
+		return nil, errors.New(ReuseToken)
+	}
+
+	tokens, err := s.generateTokens(t.UserId)
 	if err != nil {
 		return nil, err
 	}
 	newRefreshHash := s.rtService.Hash(tokens.Refresh)
-	err = s.saveRefreshToken(newRefreshHash, t.UserId)
+	err = s.saveRefreshToken(newRefreshHash, t.UserId, t.FamilyID)
 	if err != nil {
 		return nil, err
 	}	
-	err = s.rotate(t.TokenHash, t.UserId)
+	err = s.revoke(t.TokenHash, t.UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +126,13 @@ func (s *authService) Refresh(refreshToken, host string) (*AuthResponse, error) 
 }
 
 
-func (s *authService) saveRefreshToken(hash []byte, uId int) error {
+func (s *authService) saveRefreshToken(hash []byte, uId int, fId string) error {
 	token := &token.RefreshToken{
 		TokenHash: hash,
 		ExpiresAt: time.Now().Add(7*24*time.Hour),
 		Revoked: false,
 		UserId: uId,
+		FamilyID:  fId,
 	}
 
 	err := s.tRepo.Save(token)
@@ -125,9 +142,9 @@ func (s *authService) saveRefreshToken(hash []byte, uId int) error {
 	return nil
 }
 
-func (s *authService) generateTokens(host string, uId int) (*AuthResponse, error) {
+func (s *authService) generateTokens(uId int) (*AuthResponse, error) {
 	// Access token lived 15 min
-	jwt, err := s.jService.Create(host, uId)
+	jwt, err := s.jService.Create(uId)
 	if err != nil {
 		return nil, err
 	}
@@ -162,12 +179,4 @@ func (s *authService) validateRefresh(token string) (*token.RefreshToken, error)
 		return nil, err
 	}
 	return existedToken, nil
-}
-
-func (s *authService) rotate(oldHash []byte, uId int) error {
-	err := s.revoke(oldHash, uId)
-	if err != nil {
-		return err
-	}
-	return nil
 }

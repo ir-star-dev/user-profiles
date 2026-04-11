@@ -10,6 +10,7 @@ import (
 	"user-profiles/internal/infrastructure/db/postgres/user"
 	"user-profiles/internal/infrastructure/security"
 	"user-profiles/pkg/db"
+	"user-profiles/pkg/logger"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -39,29 +40,29 @@ func Run() error {
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
 	profileService := profile.NewProfileService(userRepo)
 
+	// Logger 
+	log := logger.New()
+
 	// Handlers
 	r := chi.NewRouter()
+	// Middlewares
+	r.Use(middleware.Logger(log))
+	r.Use(middleware.CORS)
 
 	auth.NewAuthHandler(r, auth.AuthHandlerDeps{
 		Config:      conf,
 		Service: authService,
 		JWTService: jwtService,
 	})
-
 	profile.NewProfileHandler(r, profile.ProfileHandlerDeps{
 		Config:         conf,
 		Service: profileService,
 		JWTService: jwtService,
 	})
-
-	// Middlewares
-	stack := middleware.Chain(
-		middleware.CORS,
-	)
-
+	
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: stack(r),
+		Handler: r,
 	}
 	fmt.Println("Server is listening on port 8080")
 	server.ListenAndServe()

@@ -12,4 +12,5 @@ const (
 	ReadingCookie		= "Error reading cookie"
 	Unauthorized		= "Unauthorized"
 	WrongCredentials    = "Wrong credentials"
+	ReuseToken			= "Token reuse detected"
 )

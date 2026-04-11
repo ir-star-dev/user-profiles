@@ -1,4 +1,5 @@
 ALTER TABLE tokens 
+ADD COLUMN family_id UUID,
 ADD COLUMN device VARCHAR(50),
 ADD COLUMN ip TEXT, 
 ADD COLUMN user_agent VARCHAR(50);

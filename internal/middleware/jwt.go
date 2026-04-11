@@ -34,7 +34,13 @@ func JWTMiddleware(jwtService security.JWTService) func(http.Handler) http.Handl
 				return
 			}
 
-			uId := claims["sub"]
+			sub, ok := claims["sub"].(float64)
+			if !ok {
+				resp.Json(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
+
+			uId := int(sub)
 			// send UserIdKey in context
 			ctx := context.WithValue(r.Context(), UserIdKey, uId)
 			next.ServeHTTP(w, r.WithContext(ctx))

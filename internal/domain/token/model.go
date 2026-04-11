@@ -8,4 +8,5 @@ type RefreshToken struct {
 	ExpiresAt time.Time `db:"expires_at"`
 	Revoked   bool      `db:"revoked"`
 	UserId    int       `db:"user_id"`
+	FamilyID  string	`db:"family_id"`
 }

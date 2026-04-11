@@ -37,7 +37,7 @@ func (handler *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
 		resp.Json(w, UserNotFound, http.StatusNotFound)
 		return
 	}
-	u, err := handler.Service.UpdateName(uId, res.Name)
+	u, err := handler.Service.ChangeName(uId, res.Name)
 	if err != nil {
 		resp.Json(w, UpdateFailed, http.StatusInternalServerError)
 		return

@@ -1,12 +1,12 @@
 # Выбор базы данных
 
-Нам для проекта нужна база данных, которая будет хранить пользователей.
+Нам для проекта "Профили пользователей" нужна база данных, которая будет хранить пользователей.
 ✔️ Самая популярная БД в продакшене: PostgreSQL
 ✔️ Второе место: MySQL
 ✔️ NoSQL (MongoDB) — под специфические задачи
 
 Мы будем использовать PostgreSQL. 
-Для тестирования работы с JWT также будем использовать ее, но в продакшене для хранения токенов обычно используют Redis.
+Для тестирования работы с JWT будем также  использовать ее, но в продакшене для хранения токенов обычно используют Redis.
 
 # Пакеты для работы с БД
 
@@ -54,7 +54,7 @@
 
     services:
         postgres:
-            container_name: postgres_go
+            container_name: postgres_profiles
             image: postgres:16.4
             environment:
                 POSTGRES_USER: ${DB_USER}
@@ -83,7 +83,7 @@
 Для этого правой кнопкой на соединении `localhost` выберем `New Query` и напишем запрос:
 
     ```sql
-    CREATE DATABASE demo;
+    CREATE DATABASE user_profiles;
     ```
 Выполним, нажав F5. Также правой кнопкой на соединении `localhost` выберем `Refresh Items`, должна появится наша база данных.
 
@@ -104,7 +104,7 @@
     DRIVER_NAME="postgres"
     DB_HOST="localhost"
     DB_PORT="5432"
-    DB_NAME="demo"
+    DB_NAME="user_profiles"
     DB_USER="postgres"
     DB_PASS="pass"
     SSL_MODE="disable" (только для локальной разработки)
@@ -130,7 +130,7 @@
 
     import (
         "os"
-
+        "fmt"
         "github.com/joho/godotenv"
     )
 
@@ -152,18 +152,32 @@
         }
 
         return &Config{
-            Secret: os.Getenv("Secret"),
+            Secret: os.Getenv("SECRET"),
             Db: DbConfig{
-                Dsn:    os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASS") + "@" + os.Getenv("DB_HOST") + ":" + os.Getenv("DB_PORT") + "/" + os.Getenv("DB_NAME") + "?sslmode=" + os.Getenv("SSL_MODE"),
+                Dsn:    buildDSN(),
                 Driver: os.Getenv("DRIVER_NAME"),
                 MigrationsPath: os.Getenv("MIGRATIONS_PATH"),
             },
         }, nil
     }
+
+    func buildDSN() string {
+        return fmt.Sprintf(
+            "%s://%s:%s@%s:%s/%s?sslmode=%s",
+            os.Getenv("DRIVER_NAME"),
+            os.Getenv("DB_USER"),
+            os.Getenv("DB_PASS"),
+            os.Getenv("DB_HOST"),
+            os.Getenv("DB_PORT"),
+            os.Getenv("DB_NAME"),
+            os.Getenv("SSL_MODE"),
+        )
+    }
 ```
+
 ## Пакет db
 
-Создадим файл `db.go`, в котором напишем подключение к БД.
+Создадим пакет `pkg/db/postgres.go`, в котором напишем подключение к БД.
 В нем мы импортируем наш пакет `configs`, пакет `log` (опционально), пакет `sqlx` и драйвер `pg`.
 Функция `Connect` выполняет соединение с БД и пингует его. Возвращает указатель на структуру DB и ошибку, если подключиться не удалось.
 Принимает строку - имя драйвера и dsn строку, которая выглядит так:
@@ -184,35 +198,35 @@ Dsn строку мы уже сформировали в нашем пакете
     )
 
     func Connect(conf *configs.Config) (*sqlx.DB, error) {
-        dsn := conf.Db.Driver+"://"+conf.Db.Dsn
-
+        dsn := conf.Db.Dsn
         db, err := sqlx.Connect(conf.Db.Driver, dsn)
         if err != nil {
             return nil, err
         }
         log.Println("Connected to PostgreSQL ✔️")
-        
         return db, nil
     }
     ```
 
 ## Соединение с БД
 
-В пакете `main`, в файле `main.go` мы вызываем функцию `Load()` из пакета `configs`.
+В пакете `internal/app/app.go` мы вызываем функцию `Load()` из пакета `configs`.
     
 ```go
     conf, err := configs.Load()
 	if err != nil {
-		fmt.Println(errors.ENVMISSING)
-		return
+		return fmt.Errorf("failed to load config: %w", err)
 	}
-    db, err := db.Connect(conf)
+
+	// DB
+	dbConn, err := db.Connect(conf)
 	if err != nil {
-		panic(err.Error())
+		return fmt.Errorf("failed to connect db: %w", err)
 	}
-	defer db.Close()
+	defer dbConn.Close()
 ```
-Когда запустим наше приложение `go run .`, то при успешном соединении с БД в консоли мы должны увидеть
+
+Когда запустим наше приложение `go run cmd/main.go`, то при успешном соединении с БД в консоли мы должны увидеть
 
 `"Connected to PostgreSQL ✔️"`
 
@@ -229,22 +243,30 @@ Dsn строку мы уже сформировали в нашем пакете
 - выполняют миграции,
 - запускают приложение.
 
-Для выполнения миграций, мы создадим отдельный пакет `cmd/migrate/main.go`
+Для выполнения миграций, мы создадим отдельный пакет `cmd/migrate/auto.go`
 И будем запускать в терминале до запуска приложения.
 
-```go
-go run cmd/migrate/main.go
-```
+    ```go
+        go run cmd/migrate/auto.go -up
+    ```
+
+Только для удобства локальной разработки добавлена команда:
+
+    ```go
+        go run cmd/migrate/auto.go -down
+    ```
+
+Она отменит все миграции, то есть удалит все таблицы из БД.
 
 Для работы с миграциями нам нужен пакет
 
     ```go
-    go get github.com/golang-migrate/migrate/v4
+        go get github.com/golang-migrate/migrate/v4
     ```
     
 ## Форматы миграций
 
-1. SQL файлы в директории migrations (наиболее распространенное и понятное имя).
+1. SQL файлы в директории migrations (наиболее распространенное название директории).
 2. SQL миграции прямо в Go.
 3. Миграции через ORM.
 
@@ -263,15 +285,17 @@ SQL файлы для миграции - это последовательнос
 
 Название обычно описывает то, что делает эта миграция, например `create_users_table`, `alter_column_code_to_users_table`.
 
-Расширения `.up.sql` и `.down.sql` также обязательны и обозначают up - применить изменения, down - откатить.
+Расширения `.up.sql` и `.down.sql` также обязательны и обозначают:
+- up - применить изменения, 
+- down - откатить.
 
-На практике, на продакшене файлы .down.sql могут отсутствовать, то есть откат через `down` не делают.
+На практике, на продакшене файлы `.down.sql` могут отсутствовать, то есть откат через `down` не делают.
 - Так как можно потерять данные, они безвозвратно удаляются.
 - Откат может сломать приложение, если колонки из БД уже используются в коде.
 
 Вместо этого делают новую миграцию, с необходимыми изменениями.
 
-Пример файла `0001_create_users_and_tokens_tables.up.sql` миграции для создания таблиц `users` и `tokens` .
+Пример файла `0001_create_users_and_tokens_tables.up.sql` миграции для создания таблиц `users` и `tokens`.
 
     ```sql
     CREATE TABLE IF NOT EXISTS users (
@@ -291,12 +315,16 @@ SQL файлы для миграции - это последовательнос
     );
     ```
 
-Новая миграция `0002_add_login_column.up.sql` для таблицы `users`.
+Новая миграция `0002_add_more_columns_to_tokens.up` для таблицы `tokens`.
 
     ```sql
-    ALTER TABLE users ADD COLUMN login TEXT;
+    ALTER TABLE tokens 
+    ADD COLUMN family_id UUID,
+    ADD COLUMN device VARCHAR(50),
+    ADD COLUMN ip TEXT, 
+    ADD COLUMN user_agent VARCHAR(50);
     ```
-В результате применения миграций, создадутся 2 таблицы. Потом в таблицу `users` добавиться поле `login`.
+В результате применения миграций, создадутся 2 таблицы. Потом в таблицу `tokens` добавятся 4 новых поля.
 
 ## Реализация миграций
 
@@ -321,6 +349,8 @@ package main
 import (
 	"user-profiles/configs"
 	"log"
+	"flag"
+	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -328,16 +358,36 @@ import (
 )
 
 func main() {
+	up := flag.Bool("up", false, "Apply all migrations")
+	down := flag.Bool("down", false, "Rollback all migrations")
+	flag.Parse()
+
+	if !*up && !*down {
+		log.Println("Usage:")
+		log.Println("  -up     Apply migrations")
+		log.Println("  -down   Rollback all migrations")
+		os.Exit(1)
+	}
+
     conf, err := configs.Load()
 	if err != nil {
         log.Fatal(err)
 	}
-	dsn := conf.Db.Driver + "://" + conf.Db.Dsn
+	dsn := conf.Db.Dsn
     mPath := conf.Db.MigrationsPath
 
-	if err := MigrationsUp(dsn, mPath); err != nil {
-        log.Fatal(err)
-    }
+	
+	if *up {
+		if err := MigrationsUp(dsn, mPath); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if *down {
+		if err := MigrationsDownAll(dsn, mPath); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func MigrationsUp(dsn string, mPath string) error {
@@ -356,6 +406,24 @@ func MigrationsUp(dsn string, mPath string) error {
 	log.Println("Migrations applied successfully ✔️")
 	return nil
 }
+
+func MigrationsDownAll(dsn string, mPath string) error {
+    m, err := migrate.New(
+        "file://"+mPath,
+        dsn,
+    )
+    if err != nil {
+        return err
+    }
+
+    if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+        return err
+    }
+
+    log.Println("All migrations rolled back ✔️")
+	return nil
+}
 ```
 
 После выполнения миграций, можно запускать приложение.
+Пожалуй этих знаний достаточно для работы с БД.

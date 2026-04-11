@@ -12,7 +12,7 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	tokens, err := handler.Service.Login(body.Email, body.Password, r.Host)
+	tokens, err := handler.Service.Login(body.Email, body.Password)
 	if err != nil {
 		resp.Json(w, err.Error(), http.StatusBadRequest)
 		return
@@ -30,7 +30,7 @@ func (handler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	res, err := handler.Service.Register(body.Email, body.Password, body.Name, r.Host)
+	res, err := handler.Service.Register(body.Email, body.Password, body.Name)
 	if err != nil {
 		resp.Json(w, err.Error(), http.StatusBadRequest)
 		return
@@ -64,7 +64,7 @@ func (handler *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		resp.Json(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tokens, err := handler.Service.Refresh(token, r.Host)
+	tokens, err := handler.Service.Refresh(token)
 	if err != nil {
 		resp.Json(w, err.Error(), http.StatusBadRequest)
 		return

@@ -6,5 +6,5 @@ type ProfileResponse struct {
 }
 
 type UpdateNameRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name"`
 }
