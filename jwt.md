@@ -13,7 +13,7 @@ JWT (JSON Web Token) — это строка, которая содержит з
 
 ## Основное применение
 
-✔️ Аутентификация
+- Аутентификация
 1. Ты вводишь логин и пароль в приложение
 2. Система проверяет, совпадают ли они с тем, что хранится в базе
 3. Если да — тебя "пускают внутрь"
@@ -21,14 +21,14 @@ JWT (JSON Web Token) — это строка, которая содержит з
 5. Клиент хранит токен (например, в localStorage или cookie)
 6. Этот токен используется для доступа к API:
 
-    ```go
-        Authorization: Bearer <JWT>
-    ```                
+```go
+    Authorization: Bearer <JWT>
+```                
 Сервер проверяет лишь подпись токена и не лезет в базу.
 
 ## Когда использовать JWT?
 
-✔️ Используем, если:
+- Используем, если:
 - делаем REST API,
 - есть фронтенд отдельно (React/Vue),
 - микросервисная архитектура,
@@ -41,20 +41,20 @@ JWT (JSON Web Token) — это строка, которая содержит з
 
 ### Преимущества
 
-✔️ Stateless
+- Stateless
 - сервер не хранит состояние о сессиях или токенах,
 - сервер не хранит список активных токенов,
 - любой сервер может проверить токен только по подписи и содержимому payload.
 
-✔️ Быстро:
+- Быстро:
 - не нужно каждый раз ходить в БД, вся информация уже внутри токена.
 
-✔️ Безопасность (при правильном использовании):
+- Безопасность (при правильном использовании):
 - токен подписан сервером → нельзя подделать,
 - можно задать срок жизни токена (expiration),
 - HTTPS обязателен для передачи токена, иначе его могут перехватить.
 
-✔️ Удобен для API:
+- Удобен для API:
 - идеально для REST / GraphQL,
 - широко используется в SPA и мобильных приложениях. 
 
@@ -68,19 +68,19 @@ JWT (JSON Web Token) — это строка, которая содержит з
 `alg` - алгоритм подписи (например, HS256)
 
 Существуют:
-Симметричные алгоритмы - HS256/384/512. 
+Симметричные алгоритмы - `HS256/384/512`. 
 То есть для подписи и проверки подписи используется один и тот же секретный ключ. 
 Используют чаще всего в простых API / монолитах.
-👍 Плюсы: быстрый, простой.
-👎 Минусы: секретный ключ должен быть у всех серверов ❗
+- Плюсы: быстрый, простой.
+- Минусы: секретный ключ должен быть у всех серверов ❗
     
-Ассиметричные алгоритмы - RSA, ECDSA. 
+Ассиметричные алгоритмы - `RSA, ECDSA`. 
 Приватный ключ подписывает токен, публичный проверяет подпись.
 Используют: микросервисы, кластер баз данных, CDN, Kubernetes и пр.
-👍 Плюсы: можно раздавать public key всем сервисам, private key хранится в одном месте.
-👎 Минусы: медленнее, сложнее.
+- Плюсы: можно раздавать public key всем сервисам, private key хранится в одном месте.
+- Минусы: медленнее, сложнее.
         
-Мы будем в проекте использовать симметричный алгоритм - HS256.
+Мы будем в проекте использовать симметричный алгоритм - `HS256`.
         
 ### Payload - тело токена или claims
 
@@ -99,7 +99,7 @@ Payload также может содержать права доступа:
 - permissions: ["read", "write"]
 - is_premium: true
 
-✔️ Стандартные клэймы (рекомендованные)
+- Стандартные клэймы (рекомендованные)
 | Claim | Описание                                 |
 | ----- | ---------------------------------------- |
 | `iss` | Issuer — кто выпустил токен              |
@@ -110,49 +110,46 @@ Payload также может содержать права доступа:
 | `iat` | Issued at — время выпуска                |
 | `jti` | JWT ID — уникальный идентификатор токена |
 
-✔️ Кастомные клэймы: user_id, role, email, permissions. Любая информация, которая нужна серверу для проверки прав.
+- Кастомные клэймы: user_id, role, email, permissions. Любая информация, которая нужна серверу для проверки прав.
 
 ⚠️ Важные нюансы:
-❗ Нельзя хранить конфиденциальные данные: пароли, пин-коды, кредитные карты и т.д. payload читается любым base64.
-❗ payload должен быть стабильным, т.е. не стоит класть туда данные, которые часто меняются. Если данные изменились, то токен устарел.
-❗ payload не должен быть слишком большим. Рекомендация: < 1–2 KB. Причина: токен передаётся в заголовке HTTP → большие токены замедляют каждый запрос.
+- Нельзя хранить конфиденциальные данные: пароли, пин-коды, кредитные карты и т.д. payload читается любым base64.
+- payload должен быть стабильным, т.е. не стоит класть туда данные, которые часто меняются. Если данные изменились, то токен устарел.
+- payload не должен быть слишком большим. Рекомендация: < 1–2 KB. Причина: токен передаётся в заголовке HTTP → большие токены замедляют каждый запрос.
 
 ### Signature - подпись
 
 Создаётся сервером с помощью секретного ключа. Гарантирует, что токен не подделан.
 ❗Секрет никогда не хранят в коде.
 
-Для симметричных алгоритмов HS256/384/512 размер ключа "256/384/512 бит". 
+Для симметричных алгоритмов `HS256/384/512` размер ключа "256/384/512 бит". 
 Секрет должен быть достаточно длинным, иначе подпись будет уязвима.
 
 Мы будем использовать в проекте алгоритм HS256, поэтому секрет (64 байта) для него можно сгенерировать простой функцией:
 
-    ```go
-    package key
+```go
+package key
 
-    import (
-        "crypto/rand"
-        "encoding/base64"
-        "fmt"
-    )
+import (
+    "crypto/rand"
+    "encoding/base64"
+    "fmt"
+)
 
-    func Generate() {
-        key := make([]byte, 64)
-        _, err := rand.Read(key)
-        if err != nil {
-            panic(err)
-        }
-
-        encoded := base64.StdEncoding.EncodeToString(key)
-        fmt.Println(encoded)
+func Generate() {
+    key := make([]byte, 64)
+    _, err := rand.Read(key)
+    if err != nil {
+        panic(err)
     }
-    ```
+
+    encoded := base64.StdEncoding.EncodeToString(key)
+    fmt.Println(encoded)
+}
+```
 
 Для ассиметричный алгоритмов это пара ключей: private.pem, public.pem. 
 Для RSA обычно 2048–4096 бит (256–512 байт), для ECDSA меньше (например, ES256 → 256 бит / 32 байта).
-
-
-
 
 
 ## Как работать в продакшене с JWT?
@@ -174,65 +171,65 @@ JWT токен еще называют `access` токеном.
 
 В проекте, для генерации JWT будем использовать библиотеку:
 
-    ```go
-    go get github.com/golang-jwt/jwt/v5
-    ```
+```go
+go get github.com/golang-jwt/jwt/v5
+```
 
 Создадим пакет `internal/infrastructure/security/jwt.go`
 
-    ```go
-    package security
+```go
+package security
 
-    import (
-        "errors"
-        "time"
+import (
+    "errors"
+    "time"
 
-        "github.com/golang-jwt/jwt/v5"
-    )
+    "github.com/golang-jwt/jwt/v5"
+)
 
-    type JWTService interface {
-        Create(uId int) (string, error)
-        Parse(token string) (jwt.MapClaims, error)
+type JWTService interface {
+    Create(uId int) (string, error)
+    Parse(token string) (jwt.MapClaims, error)
+}
+
+type JWT struct {
+    Secret string
+}
+
+func NewJWTService(secret string) JWTService {
+    return &JWT{
+        Secret: secret,
     }
+}
 
-    type JWT struct {
-        Secret string
+func (j *JWT) Create(uId int) (string, error) {
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+        "iat": jwt.NewNumericDate(time.Now()),
+        "exp": jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+        "sub": uId,
+    })
+
+    s, err := token.SignedString([]byte(j.Secret))
+    if err != nil {
+        return "", err
     }
+    return s, nil
+}
 
-    func NewJWTService(secret string) JWTService {
-        return &JWT{
-            Secret: secret,
-        }
+func (j *JWT) Parse(tokenStr string) (jwt.MapClaims, error) {
+    claims := jwt.MapClaims{}
+    t, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+        return []byte(j.Secret), nil
+    })
+    if err != nil {
+        return nil, err
     }
-
-    func (j *JWT) Create(uId int) (string, error) {
-        token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-            "iat": jwt.NewNumericDate(time.Now()),
-            "exp": jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-            "sub": uId,
-        })
-
-        s, err := token.SignedString([]byte(j.Secret))
-        if err != nil {
-            return "", err
-        }
-        return s, nil
+    if !t.Valid {
+        return nil, errors.New("Invalid token")
     }
-
-    func (j *JWT) Parse(tokenStr string) (jwt.MapClaims, error) {
-        claims := jwt.MapClaims{}
-        t, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-            return []byte(j.Secret), nil
-        })
-        if err != nil {
-            return nil, err
-        }
-        if !t.Valid {
-            return nil, errors.New("Invalid token")
-        }
-        return claims, nil
-    }
-    ```
+    return claims, nil
+}
+```
 
 В пакете есть интерфейс с 2 методами: `Create`(создает токен) и `Parse`(проверяет подпись).
 Структура, которая зависит от секретного ключа. И функция констуктор.
@@ -336,10 +333,10 @@ func (r *refreshTokenService) Hash(token string) []byte {
 Клиент получает новую пару токенов.
 
 🔥 Best Practice
-✔️ Refresh Token Rotation
-✔️ Хранение в БД (или Redis)
-✔️ Поле revoked
-✔️ Поле expires_at
-✔️ Связка с устройством (device_id)
+- Refresh Token Rotation
+- Хранение в БД (или Redis)
+- Поле revoked
+- Поле expires_at
+- Связка с устройством (device_id)
 
 В проекте мы как раз реализуем хранение в БД, с полями revoked и expires_at. А также Refresh Token Rotation.
