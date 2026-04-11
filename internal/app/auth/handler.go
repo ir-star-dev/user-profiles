@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"net/http"
+	"user-profiles/internal/middleware"
 	"user-profiles/pkg/req"
 	"user-profiles/pkg/resp"
-	"user-profiles/internal/middleware"
-	"net/http"
 )
 
 func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {

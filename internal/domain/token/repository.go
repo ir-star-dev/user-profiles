@@ -7,5 +7,6 @@ type Repository interface {
 	FindTokenByHash(hash []byte) (*RefreshToken, error)
 	FindUserIdByHash(hash []byte) (int, error)
 	
+	WithTx(fn func(repo Repository) error) error
 }
 

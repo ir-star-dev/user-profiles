@@ -10,7 +10,7 @@ import (
 	"user-profiles/internal/infrastructure/db/postgres/user"
 	"user-profiles/internal/infrastructure/security"
 	"user-profiles/pkg/db"
-	"user-profiles/pkg/logger"
+	//"user-profiles/pkg/logger"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -41,12 +41,12 @@ func Run() error {
 	profileService := profile.NewProfileService(userRepo)
 
 	// Logger 
-	log := logger.New()
+	//log := logger.New()
 
 	// Handlers
 	r := chi.NewRouter()
 	// Middlewares
-	r.Use(middleware.Logger(log))
+	//r.Use(middleware.Logger(log))
 	r.Use(middleware.CORS)
 
 	auth.NewAuthHandler(r, auth.AuthHandlerDeps{

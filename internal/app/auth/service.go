@@ -35,10 +35,7 @@ func NewAuthService(uRepo user.Repository, tRepo token.Repository, jS security.J
 }
 
 func (s *authService) Register(email, password, name string) (*RegisterResponse, error) {
-	existedUser, err := s.uRepo.FindByEmail(email)
-	if err != nil {
-		return nil, err
-	}
+	existedUser, _ := s.uRepo.FindByEmail(email)
 	if existedUser != nil {
 		return nil, errors.New(UserExists)
 	}
@@ -66,14 +63,11 @@ func (s *authService) Register(email, password, name string) (*RegisterResponse,
 }
 
 func (s *authService) Login(email, password string) (*AuthResponse, error) {
-	existedUser, err := s.uRepo.FindByEmail(email)
-	if err != nil {
-		return nil, err
-	}
+	existedUser, _ := s.uRepo.FindByEmail(email)
 	if existedUser == nil {
 		return nil, errors.New(LoginError)
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
 	if err != nil {
 		return nil, errors.New(WrongPassword)
 	}
@@ -91,7 +85,7 @@ func (s *authService) Login(email, password string) (*AuthResponse, error) {
 
 func (s *authService) Logout(uId int, refreshToken string) error {
 	tokenHash := s.rtService.Hash(refreshToken)
-	err := s.revoke(tokenHash, uId)
+	err := s.tRepo.Revoke(tokenHash, uId)
 	if err != nil {
 		return errors.New(Unauthorized)
 	}
@@ -103,28 +97,36 @@ func (s *authService) Refresh(refreshToken string) (*AuthResponse, error) {
 	if err != nil { 
         return nil, errors.New(InvalidOrExpires)
     }
-	if t.Revoked {
-		// 💥 compromise detected
-		_ = s.tRepo.RevokeFamily(t.FamilyID)
-		return nil, errors.New(ReuseToken)
-	}
-
 	tokens, err := s.generateTokens(t.UserId)
 	if err != nil {
 		return nil, err
 	}
 	newRefreshHash := s.rtService.Hash(tokens.Refresh)
-	err = s.saveRefreshToken(newRefreshHash, t.UserId, t.FamilyID)
-	if err != nil {
-		return nil, err
-	}	
-	err = s.revoke(t.TokenHash, t.UserId)
+
+	// 🔥 transaction
+	err = s.tRepo.WithTx(func(repo token.Repository) error {
+		if !t.Revoked {
+			// 💥 compromise detected
+			_ = repo.RevokeFamily(t.FamilyID)
+			if err := repo.Revoke(t.TokenHash, t.UserId); err != nil {
+				return err
+			}
+		}
+
+		return repo.Save(&token.RefreshToken{
+			TokenHash: newRefreshHash,
+			ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+			Revoked:   false,
+			UserId:    t.UserId,
+			FamilyID:  t.FamilyID,
+		})
+	})
+
 	if err != nil {
 		return nil, err
 	}
 	return tokens, nil
 }
-
 
 func (s *authService) saveRefreshToken(hash []byte, uId int, fId string) error {
 	token := &token.RefreshToken{
@@ -159,14 +161,6 @@ func (s *authService) generateTokens(uId int) (*AuthResponse, error) {
 		Refresh: refreshToken,
 		RefreshHash: hash,
 	}, nil
-}
-
-func (s *authService) revoke(hash []byte, uId int) error {
-	err := s.tRepo.Revoke(hash, uId)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *authService) validateRefresh(token string) (*token.RefreshToken, error) {

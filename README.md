@@ -17,6 +17,64 @@
 
 =====================================================================
 ## Structure
+📁 cmd/
+--📄 main.go
+📁 configs/
+--📄 config.go
+📁 internal/
+--📁 app/
+----📄 app.go
+----📁 auth/
+------📄 cookie.go
+------📄 dto.go
+------📄 errors.go
+------📄 handler.go
+------📄 routes.go
+------📄 service.go
+----📁 profile/
+------📄 dto.go
+------📄 errors.go
+------📄 handler.go
+------📄 routes.go
+------📄 service.go
+--📁 domain/
+----📁 token/
+------📄 model.go
+------📄 repository.go
+----📁 user/
+------📄 model.go
+------📄 repository.go
+--📁 infrastructure/
+----📁 db/
+------📁 postgres/
+--------📁 user/
+----------📄 repository.go
+----📁 security/
+------📄 jwt.go
+------📄 refresh.go
+------📄 repository.go
+--📁 middleware/
+----📄 context.go
+----📄 cors.go
+----📄 jwt.go
+----📄 logger.go
+📄 main.go
+📁 migrations/
+--📄 0001_create_users_and_tokens_tables.down.sql
+--📄 0001_create_users_and_tokens_tables.up.sql
+--📄 0002_add_more_columns_to_tokens.up.sql
+📁 pkg/
+--📁 db/
+----📄 postgres.go
+--📁 logger/
+----📄 logger.go
+--📁 req/
+----📄 decode.go
+----📄 handler.go
+----📄 validate.go
+--📁 resp/
+----📄 resp.go
+
 
 ### cmd/main.go - Entry point приложения
 Роль:
