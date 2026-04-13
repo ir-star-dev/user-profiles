@@ -29,7 +29,9 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) {
 	router.Route(("/auth"), func(router chi.Router) {
 		router.Post("/login", handler.Login)
 		router.Post("/register", handler.Register)
+
+		router.With(middleware.JWTMiddleware(handler.JWTService)).Post("/logout", handler.Logout)
+		router.Post("/refresh", handler.Refresh)
 	})
-	router.With(middleware.JWTMiddleware(handler.JWTService)).Post("/logout", handler.Logout)
-	router.Post("/refresh", handler.Refresh)
+	
 }
