@@ -2,7 +2,7 @@ package auth
 
 import (
 	"user-profiles/configs"
-	"user-profiles/internal/infrastructure/security"
+	"user-profiles/internal/security"
 	"user-profiles/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
@@ -30,7 +30,7 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) {
 		router.Post("/login", handler.Login)
 		router.Post("/register", handler.Register)
 
-		router.With(middleware.JWTMiddleware(handler.JWTService)).Post("/logout", handler.Logout)
+		router.With(middleware.AuthMiddleware(handler.JWTService)).Post("/logout", handler.Logout)
 		router.Post("/refresh", handler.Refresh)
 	})
 	

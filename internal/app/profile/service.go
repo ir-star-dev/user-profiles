@@ -7,6 +7,7 @@ import (
 
 type Service interface {
 	View(uId int) (*user.User, error)
+	ViewAll() ([]*user.User, error)
 	ChangeName(uId int, name string) (*user.User, error)
 	Delete(uId int) error
 }
@@ -29,6 +30,14 @@ func (s *profileService) View(uId int) (*user.User, error) {
 	return user, nil
 }
 
+func (s *profileService) ViewAll() ([]*user.User, error) {
+	users, err := s.uRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (s *profileService) ChangeName(uId int, name string) (*user.User, error) {
 	user, err := s.uRepo.FindById(uId)
 	if user == nil {
@@ -37,8 +46,7 @@ func (s *profileService) ChangeName(uId int, name string) (*user.User, error) {
 	if len(name) < 2 {
 		return nil, errors.New(ShortName)
 	}
-	user.Name = name
-	data, err := s.uRepo.UpdateName(user)
+	data, err := s.uRepo.UpdateName(name, uId)
 	if err != nil {
 		return nil, err
 	}

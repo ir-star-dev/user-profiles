@@ -6,8 +6,8 @@ import (
 	"user-profiles/configs"
 	"user-profiles/internal/app/auth"
 	"user-profiles/internal/app/profile"
-	"user-profiles/internal/infrastructure/db/postgres/user"
-	"user-profiles/internal/infrastructure/security"
+	"user-profiles/internal/storage/postgres/user"
+	"user-profiles/internal/security"
 	"user-profiles/internal/middleware"
 	"user-profiles/pkg/db"
 

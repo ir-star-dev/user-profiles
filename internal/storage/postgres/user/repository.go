@@ -16,8 +16,14 @@ func NewUserRepository(db *sqlx.DB) user.Repository {
 
 func (repo *userRepository) Create(user *user.User) (*user.User, error) {
 	query := `
-        INSERT INTO users (name, email, password) 
-        VALUES (:name, :email, :password)
+        INSERT INTO users (name, email, password, role_id)
+		SELECT 
+			:name,
+			:email,
+			:password,
+			r.id
+		FROM roles AS r
+		WHERE r.role = :role
     `
 	_, err := repo.db.NamedExec(query, user)
 	if err != nil {
@@ -27,7 +33,15 @@ func (repo *userRepository) Create(user *user.User) (*user.User, error) {
 }
 
 func (repo *userRepository) FindById(uId int) (*user.User, error) {
-	query := `SELECT * FROM users WHERE id = $1`
+	query := `
+		SELECT 
+			u.name,
+			u.email,
+			r.role
+		FROM users AS u
+		JOIN roles AS r ON r.id = u.role_id
+		WHERE u.id = $1
+	`
 	var user user.User
 	err := repo.db.Get(&user, query, uId)
 	if err != nil {
@@ -36,8 +50,32 @@ func (repo *userRepository) FindById(uId int) (*user.User, error) {
 	return &user, nil
 }
 
+func (repo *userRepository) FindRoleByUserId(uId int) (string, error) {
+	query := `
+		SELECT role 
+		FROM roles as r 
+		JOIN users 
+		as u ON r.id = u.role_id 
+		WHERE u.id = $1
+	`
+	var role string
+	err := repo.db.Get(role, query, uId)
+	if err != nil {
+		return "", err
+	}
+	return role, nil
+}
+
 func (repo *userRepository) FindByEmail(email string) (*user.User, error) {
-	query := `SELECT * FROM users WHERE email = $1`
+	query := `
+		SELECT 
+			u.id, 
+			u.password,
+			r.role
+		FROM users AS u
+		JOIN roles AS r ON r.id = u.role_id
+		WHERE u.email = $1
+	`
 	var user user.User
 	err := repo.db.Get(&user, query, email)
 	if err != nil {
@@ -55,7 +93,11 @@ func (repo *userRepository) Delete(uId int) error {
 	return nil
 }
 
-func (repo *userRepository) UpdateName(user *user.User) (*user.User, error) {
+func (repo *userRepository) UpdateName(userName string, uId int) (*user.User, error) {
+	user := &user.User{
+		Id:   uId,
+		Name: userName,
+	}
 	query := `
         UPDATE users 
         SET name = :name
@@ -69,11 +111,40 @@ func (repo *userRepository) UpdateName(user *user.User) (*user.User, error) {
 }
 
 func (repo *userRepository) FindEmailById(uId int) (string, error) {
-	query := `SELECT email FROM users WHERE id = $1`
+	query := `
+		SELECT 
+			u.name,
+			u.email
+			u.password,
+			u.created_at, 
+			r.role
+		FROM users AS u
+		JOIN roles AS r ON r.id = u.role_id
+		WHERE u.id = $1
+	`
 	var user user.User
 	err := repo.db.Get(&user, query, uId)
 	if err != nil {
 		return "", err
 	}
 	return user.Email, nil
+}
+
+func (repo *userRepository) GetAll() ([]*user.User, error) {
+	query := `
+		SELECT 
+			u.id, 
+			u.name, 
+			u.email, 
+			u.created_at, 
+			r.role
+		FROM users AS u
+		JOIN roles AS r ON r.id = u.role_id
+	`
+	users := []*user.User{}
+	err := repo.db.Select(&users, query)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
