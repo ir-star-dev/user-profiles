@@ -6,11 +6,10 @@ import (
 	"user-profiles/configs"
 	"user-profiles/internal/app/auth"
 	"user-profiles/internal/app/profile"
-	"user-profiles/internal/middleware"
 	"user-profiles/internal/infrastructure/db/postgres/user"
 	"user-profiles/internal/infrastructure/security"
+	"user-profiles/internal/middleware"
 	"user-profiles/pkg/db"
-	//"user-profiles/pkg/logger"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -40,26 +39,23 @@ func Run() error {
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
 	profileService := profile.NewProfileService(userRepo)
 
-	// Logger 
-	//log := logger.New()
-
 	// Handlers
 	r := chi.NewRouter()
+
 	// Middlewares
-	//r.Use(middleware.Logger(log))
 	r.Use(middleware.CORS)
 
 	auth.NewAuthHandler(r, auth.AuthHandlerDeps{
-		Config:      conf,
-		Service: authService,
+		Config:     conf,
+		Service:    authService,
 		JWTService: jwtService,
 	})
 	profile.NewProfileHandler(r, profile.ProfileHandlerDeps{
-		Config:         conf,
-		Service: profileService,
+		Config:     conf,
+		Service:    profileService,
 		JWTService: jwtService,
 	})
-	
+
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: r,

@@ -12,7 +12,7 @@ import (
 )
 
 type Service interface {
-	Register(email, password, name string) (*RegisterResponse, error)
+	Register(email, password, name string) error
 	Login(email, password string) (*AuthResponse, error)
 	Refresh(refreshToken string) (*AuthResponse, error)
 	Logout(uId int, refreshToken string) error
@@ -34,32 +34,25 @@ func NewAuthService(uRepo user.Repository, tRepo token.Repository, jS security.J
 	}
 }
 
-func (s *authService) Register(email, password, name string) (*RegisterResponse, error) {
+func (s *authService) Register(email, password, name string) error {
 	existedUser, _ := s.uRepo.FindByEmail(email)
 	if existedUser != nil {
-		return nil, errors.New(UserExists)
+		return errors.New(UserExists)
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	newUser := &user.User{
 		Email:    email,
 		Name:     name,
 		Password: hash,
 	}
-	user, err := s.uRepo.Create(newUser)
+	_, err = s.uRepo.Create(newUser)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	tokens, err := s.generateTokens(user.Id)
-	if err != nil {
-		return nil, err
-	}
-	res := &RegisterResponse{
-		Token: tokens.Access,
-	}
-	return res, nil
+	return nil
 }
 
 func (s *authService) Login(email, password string) (*AuthResponse, error) {
