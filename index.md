@@ -245,6 +245,9 @@ defer dbConn.Close()
 - выполняют миграции,
 - запускают приложение.
 
+!!!Миграции не используют для переноса данных БД.
+Дамп БД - это отдельный процесс и для него используют отдельный инструмент `pg_dump/mysqldump`.
+
 Для выполнения миграций, мы создадим отдельный пакет `cmd/migrate/auto.go`
 И будем запускать в терминале до запуска приложения.
 
@@ -282,37 +285,77 @@ SQL файлы для миграции - это последовательнос
 - 0001_название.up.sql
 - 0001_название.down.sql
 
-Номер `0001` обязателен, и каждое последующее действие для БД, должно быть описано в файле с номерами 0002, 0003 и т.д.
+#### Номер
+
+Номер имеет определенный формат, например `0001` и является обязательным, и каждое последующее действие для БД, должно быть описано в файле с номерами 0002, 0003 и т.д.
 Номера представляют собой историю изменений.
 
-Название обычно описывает то, что делает эта миграция, например `create_users_table`, `alter_column_code_to_users_table`.
+Почему именно 0001, а не просто 1?
+
+Используют zero-padding (дополнение нулями):
+```
+0001_init.sql
+0002_add_users.sql
+0010_add_orders.sql
+```
+Если бы было так:
+```
+1_init.sql
+2_add_users.sql
+10_add_orders.sql
+```
+
+То при строковой (лексикографической) сортировке это бы сломало порядок выполнения миграций.
+
+`0001` сразу задаёт масштаб:
+- 0001–9999 → до 10k миграций,
+- иногда используют 000001 → ещё больше запас.
+
+АЛЬТЕРНАТИВА
+
+Некоторые системы используют timestamp:
+
+`20260115123045_create_users.sql`
+👉 избегает конфликтов при параллельной работе команд
+
+#### Название
+
+Название обычно описывает то, что эта миграция, например `create_users_table`, `alter_column_code_to_users_table`.
+
+#### Расширения
 
 Расширения `.up.sql` и `.down.sql` также обязательны и обозначают:
 - up - применить изменения, 
 - down - откатить.
 
-На практике, на продакшене файлы `.down.sql` могут отсутствовать, то есть откат через `down` не делают.
+На практике, на продакшене файлы `.down.sql` могут отсутствовать, то есть откат через `down` не делают:
 - Так как можно потерять данные, они безвозвратно удаляются.
 - Откат может сломать приложение, если колонки из БД уже используются в коде.
 
 Вместо этого делают новую миграцию, с необходимыми изменениями.
 
-Пример файла `0001_create_users_and_tokens_tables.up.sql` миграции для создания таблиц `users` и `tokens`.
+Пример файла `0001_create_users_and_tokens_tables.up.sql` миграции для создания таблиц `users` и `tokens`, `roles`.
 
 ```sql
+CREATE TABLE IF NOT EXISTS roles (
+    id SERIAL PRIMARY KEY,
+    role VARCHAR(20) UNIQUE NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(25) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    role_id INT REFERENCES roles(id) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tokens (
     id SERIAL PRIMARY KEY,
-    refresh_token TEXT NOT NULL,
+    token_hash BYTEA UNIQUE NOT NULL,
     revoked BOOLEAN NOT NULL DEFAULT FALSE,
-    expired_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL
 );
 ```
@@ -327,7 +370,7 @@ ADD COLUMN ip TEXT,
 ADD COLUMN user_agent VARCHAR(50);
 ```
 
-В результате применения миграций, создадутся 2 таблицы. Потом в таблицу `tokens` добавятся 4 новых поля.
+В результате применения миграций, создадутся 3 таблицы. Потом в таблицу `tokens` добавятся 4 новых поля.
 
 ## Реализация миграций
 
@@ -341,11 +384,16 @@ _ "github.com/golang-migrate/migrate/v4/source/file"
 Они напрямую не используются, но необходимы для выполнения миграций и будут работать "за кулисами".
 
 Функция `MigrationsUp` принимает `dsn` - подключение к БД и `mPath` - путь к директории с SQL файлами миграций, который мы определили в файле `.env`.
+Для удобства локальной разработки, в функции `main` считиваются переданные флаги:
+- up - применить миграции,
+- down - отменить миграции.
 
-`main` функция загрузит наш конгфиг, и вызовет функцию для запуска миграций. Если миграции успешно выполнены, то в терминале мы увидим: 
-
+```go
+go run cmd/migrate/auto.go -up
+go run cmd/migrate/auto.go -down
+```
+Если миграции успешно выполнены, то в терминале мы увидим: 
 `Migrations applied successfully ✔️`
-
 
 ```go
 package main
