@@ -19,9 +19,11 @@
 ## Structure
 ```
 📁 cmd/
---📄 main.go
+--📁 user-profiles/
+----📄 main.go
 📁 configs/
 --📄 config.go
+📄 dump.go
 📁 internal/
 --📁 app/
 ----📄 app.go
@@ -33,6 +35,7 @@
 ------📄 routes.go
 ------📄 service.go
 ----📁 profile/
+------📄 admin-handler.go
 ------📄 dto.go
 ------📄 errors.go
 ------📄 handler.go
@@ -45,36 +48,36 @@
 ----📁 user/
 ------📄 model.go
 ------📄 repository.go
---📁 infrastructure/
-----📁 db/
-------📁 postgres/
---------📁 user/
-----------📄 repository.go
-----📁 security/
-------📄 jwt.go
-------📄 refresh.go
-------📄 repository.go
+--📁 http/
+----📁 req/
+------📄 decode.go
+------📄 handler.go
+------📄 validate.go
+----📁 resp/
+------📄 resp.go
 --📁 middleware/
+----📄 auth.go
+----📄 ban.go
 ----📄 context.go
 ----📄 cors.go
+----📄 role.go
+--📁 security/
 ----📄 jwt.go
-----📄 logger.go
-📄 main.go
+----📄 refresh.go
+----📄 repository.go
+--📁 storage/
+----📁 postgres/
+------📁 user/
+--------📄 repository.go
 📁 migrations/
 --📄 0001_create_users_and_tokens_tables.down.sql
 --📄 0001_create_users_and_tokens_tables.up.sql
---📄 0002_add_more_columns_to_tokens.up.sql
+--📄 0002_add_admin_to_users.up.sql
+--📄 0003_add_more_columns_to_tokens.up.sql
+--📄 0004_add_ban_column_to_users.up.sql
 📁 pkg/
 --📁 db/
 ----📄 postgres.go
---📁 logger/
-----📄 logger.go
---📁 req/
-----📄 decode.go
-----📄 handler.go
-----📄 validate.go
---📁 resp/
-----📄 resp.go
 ```
 
 ### cmd/main.go - Entry point приложения
