@@ -12,10 +12,6 @@ type RegisterInput struct {
 	Role     string `json:"role" validate:"required,oneof=admin user"`
 }
 
-type RegisterResponse struct {
-	Token string `json:"token"`
-}
-
 type LoginResponse struct {
 	Token string `json:"token"`
 }

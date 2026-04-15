@@ -59,12 +59,12 @@ func (s *authService) Register(email, password, name, role string) error {
 }
 
 func (s *authService) Login(email, password string) (*AuthResponse, error) {
-	existedUser, err := s.uRepo.FindByEmail(email)
+	existedUser, _ := s.uRepo.FindByEmail(email)
 	if existedUser == nil {
 		return nil, errors.New(LoginError)
 	}
 	password = strings.TrimSpace(password)
-	err = bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
 	if err != nil {
 		return nil, errors.New(WrongPassword)
 	}
@@ -150,7 +150,11 @@ func (s *authService) generateTokens(uId int, role string) (*AuthResponse, error
 		}
 		role = dbRole
 	}
-	jwt, err := s.jService.Create(uId, role)
+	ban, err := s.uRepo.FindBanStatus(uId)
+	if err != nil {
+		return nil, err
+	}
+	jwt, err := s.jService.Create(uId, role, ban)
 	if err != nil {
 		return nil, err
 	}

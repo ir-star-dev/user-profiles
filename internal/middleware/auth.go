@@ -13,6 +13,7 @@ type contextKey string
 const (
     UserIdKey contextKey = "user_id"
     UserRoleKey contextKey = "user_role"
+	UserBanKey contextKey = "user_ban"
 )
 
 func AuthMiddleware(jwtService security.JWTService) func(http.Handler) http.Handler {
@@ -50,8 +51,16 @@ func AuthMiddleware(jwtService security.JWTService) func(http.Handler) http.Hand
 			if !ok {
 				resp.Json(w, "Invalid token", http.StatusUnauthorized)
 				return
-			}			
+			}
+			// send UserRoleKey in context		
 			ctx = context.WithValue(ctx, UserRoleKey, role)
+			ban, ok := claims["ban"].(bool)
+			if !ok {
+				resp.Json(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
+			// send UseBanKey in context
+			ctx = context.WithValue(ctx, UserBanKey, ban)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

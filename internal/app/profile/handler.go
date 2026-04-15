@@ -2,7 +2,6 @@ package profile
 
 import (
 	"net/http"
-	"strconv"
 	"user-profiles/internal/http/req"
 	"user-profiles/internal/http/resp"
 	"user-profiles/internal/middleware"
@@ -23,28 +22,8 @@ func (handler *ProfileHandler) View(w http.ResponseWriter, r *http.Request) {
 	profile := &ProfileResponse{
 		Name:  user.Name,
 		Email: user.Email,
-		Role:  user.Role,
 	}
 	resp.Json(w, profile, http.StatusOK)
-}
-
-func (handler *ProfileHandler) ViewAll(w http.ResponseWriter, r *http.Request) {
-	users, err := handler.Service.ViewAll()
-	if err != nil {
-		resp.Json(w, EmptyUsers, http.StatusNotFound)
-		return
-	}
-	var profiles []ProfileResponseForAdmin
-	for _, user := range users {
-		profiles = append(profiles, ProfileResponseForAdmin{
-			Id:        user.Id,
-			Name:      user.Name,
-			Email:     user.Email,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
-		})
-	}
-	resp.Json(w, profiles, http.StatusOK)
 }
 
 func (handler *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +42,7 @@ func (handler *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
 		resp.Json(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	resp.Json(w, "Updated", http.StatusOK)
+	resp.Json(w, "Profile updated", http.StatusOK)
 }
 
 func (handler *ProfileHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -81,13 +60,6 @@ func (handler *ProfileHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserId(r *http.Request) (int, error) {
-	if idStr := r.PathValue("id"); idStr != "" {
-		id, err := strconv.Atoi(idStr)
-		if err == nil {
-			return id, nil
-		}
-	}
-
 	uId, err := middleware.GetUserID(r.Context())
 	if err != nil {
 		return 0, err

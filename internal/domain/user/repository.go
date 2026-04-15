@@ -7,9 +7,11 @@ type Repository interface {
 
 	FindByEmail(email string) (*User, error)
 	FindById(uId int) (*User, error)	
-	FindEmailById(uId int) (string, error)
 	FindRoleByUserId(uId int) (string, error)
+	FindBanStatus(uId int) (*bool, error)
 
 	GetAll() ([]*User, error)
+	Ban(uId int) error
+	Unban(uId int) error
 }
 

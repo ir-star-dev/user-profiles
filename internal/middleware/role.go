@@ -16,12 +16,12 @@ func RoleMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
 
 			role, err := GetUserRole(r.Context())
 			if err != nil {
-				resp.Json(w, "Forbidden", http.StatusForbidden)
+				resp.Json(w, err.Error(), http.StatusForbidden)
 				return
 			}
 
 			if _, allowed := roleSet[role]; !allowed {
-				resp.Json(w, "Forbidden", http.StatusForbidden)
+				resp.Json(w, err.Error(), http.StatusForbidden)
 				return
 			}
 

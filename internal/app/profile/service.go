@@ -8,8 +8,10 @@ import (
 type Service interface {
 	View(uId int) (*user.User, error)
 	ViewAll() ([]*user.User, error)
-	ChangeName(uId int, name string) (*user.User, error)
+	ChangeName(uId int, name *string) (*user.User, error)
 	Delete(uId int) error
+	Ban(uId int) error
+	Unban(uId int) error
 }
 
 type profileService struct {
@@ -38,15 +40,18 @@ func (s *profileService) ViewAll() ([]*user.User, error) {
 	return users, nil
 }
 
-func (s *profileService) ChangeName(uId int, name string) (*user.User, error) {
+func (s *profileService) ChangeName(uId int, name *string) (*user.User, error) {
 	user, err := s.uRepo.FindById(uId)
 	if user == nil {
 		return nil, err
 	}
-	if len(name) < 2 {
+	if name == nil {
+		return nil, errors.New(MissingName)
+	}
+	if len(*name) < 2 {
 		return nil, errors.New(ShortName)
 	}
-	data, err := s.uRepo.UpdateName(name, uId)
+	data, err := s.uRepo.UpdateName(*name, uId)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +64,32 @@ func (s *profileService) Delete(uId int) error {
 		return err
 	}
 	
+	
 	err = s.uRepo.Delete(uId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *profileService) Ban(uId int) error {
+	user, err := s.uRepo.FindById(uId)
+	if user == nil {
+		return err
+	}
+	err = s.uRepo.Ban(uId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *profileService) Unban(uId int) error {
+	user, err := s.uRepo.FindById(uId)
+	if user == nil {
+		return err
+	}
+	err = s.uRepo.Unban(uId)
 	if err != nil {
 		return err
 	}

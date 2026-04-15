@@ -2,9 +2,10 @@ package profile
 
 import (
 	"user-profiles/configs"
-	"github.com/go-chi/chi/v5"
 	"user-profiles/internal/middleware"
 	"user-profiles/internal/security"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type ProfileHandler struct {
@@ -20,33 +21,35 @@ type ProfileHandlerDeps struct {
 }
 
 func NewProfileHandler(router chi.Router, deps ProfileHandlerDeps) {
-	handler := &ProfileHandler {
-		Config: deps.Config,
-		Service: deps.Service,
+	handler := &ProfileHandler{
+		Config:     deps.Config,
+		Service:    deps.Service,
 		JWTService: deps.JWTService,
 	}
 
-	// Admin 
+	// Admin
 	router.Route(("/profiles"), func(router chi.Router) {
 		router.Use(middleware.AuthMiddleware(handler.JWTService))
 		router.Use(middleware.RoleMiddleware("admin"))
 
-		router.Get("/", handler.ViewAll)
+		router.Get("/", handler.ViewAllByAdmin)
+		router.Get("/{id}", handler.ViewByAdmin)
 
-		router.Get("/{id}", handler.View)
-		router.Patch("/name/{id}", handler.Update)
-		router.Delete("/{id}", handler.Delete)
+		router.Patch("/name/{id}", handler.UpdateByAdmin)
+		router.Patch("/{id}/ban", handler.BanByAdmin)
+		router.Patch("/{id}/unban", handler.UnbanByAdmin)
+
+		router.Delete("/{id}", handler.DeleteByAdmin)
 	})
 
-
-	// Current user
+	// Other users
 	router.Route(("/profile"), func(router chi.Router) {
 		router.Use(middleware.AuthMiddleware(handler.JWTService))
 
 		router.Get("/", handler.View)
-		router.Patch("/name", handler.Update)
-		router.Delete("/", handler.Delete)
-	})
-	
-}
 
+		router.With(middleware.BanMiddleware).Patch("/name", handler.Update)
+		router.With(middleware.BanMiddleware).Delete("/", handler.Delete)
+	})
+
+}
