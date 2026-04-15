@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 	"user-profiles/internal/middleware"
-	"user-profiles/pkg/req"
-	"user-profiles/pkg/resp"
+	"user-profiles/internal/http/req"
+	"user-profiles/internal/http/resp"
 )
 
 func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -30,12 +30,12 @@ func (handler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	res, err := handler.Service.Register(body.Email, body.Password, body.Name)
+	err = handler.Service.Register(body.Email, body.Password, body.Name, body.Role)
 	if err != nil {
 		resp.Json(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	resp.Json(w, res, http.StatusCreated)
+	resp.Json(w, "Created", http.StatusCreated)
 }
 
 func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {

@@ -1,8 +1,9 @@
 package configs
 
 import (
-	"os"
 	"fmt"
+	"os"
+
 	"github.com/joho/godotenv"
 )
 
@@ -26,22 +27,22 @@ func Load() (*Config, error) {
 	return &Config{
 		Secret: os.Getenv("SECRET"),
 		Db: DbConfig{
-			Dsn:    buildDSN(),
-			Driver: os.Getenv("DRIVER_NAME"),
+			Dsn:            buildDSN(),
+			Driver:         os.Getenv("DRIVER_NAME"),
 			MigrationsPath: os.Getenv("MIGRATIONS_PATH"),
 		},
 	}, nil
 }
 
 func buildDSN() string {
-    return fmt.Sprintf(
-        "%s://%s:%s@%s:%s/%s?sslmode=%s",
+	return fmt.Sprintf(
+		"%s://%s:%s@%s:%s/%s?sslmode=%s",
 		os.Getenv("DRIVER_NAME"),
-        os.Getenv("DB_USER"),
-        os.Getenv("DB_PASS"),
-        os.Getenv("DB_HOST"),
-        os.Getenv("DB_PORT"),
-        os.Getenv("DB_NAME"),
-        os.Getenv("SSL_MODE"),
-    )
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASS"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("SSL_MODE"),
+	)
 }

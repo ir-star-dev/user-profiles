@@ -2,8 +2,8 @@ package profile
 
 import (
 	"net/http"
-	"user-profiles/pkg/req"
-	"user-profiles/pkg/resp"
+	"user-profiles/internal/http/req"
+	"user-profiles/internal/http/resp"
 	"user-profiles/internal/middleware"
 )
 
@@ -20,8 +20,9 @@ func (handler *ProfileHandler) View(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	profile := &ProfileResponse{
-		Name: user.Name,
+		Name:  user.Name,
 		Email: user.Email,
+		Banned: user.Banned,
 	}
 	resp.Json(w, profile, http.StatusOK)
 }
@@ -37,16 +38,12 @@ func (handler *ProfileHandler) Update(w http.ResponseWriter, r *http.Request) {
 		resp.Json(w, UserNotFound, http.StatusNotFound)
 		return
 	}
-	u, err := handler.Service.ChangeName(uId, res.Name)
+	_, err = handler.Service.ChangeName(uId, res.Name)
 	if err != nil {
-		resp.Json(w, UpdateFailed, http.StatusInternalServerError)
+		resp.Json(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	profile := &ProfileResponse{
-		Name: u.Name,
-		Email: u.Email,
-	}
-	resp.Json(w, profile, http.StatusOK)
+	resp.Json(w, "Profile updated", http.StatusOK)
 }
 
 func (handler *ProfileHandler) Delete(w http.ResponseWriter, r *http.Request) {

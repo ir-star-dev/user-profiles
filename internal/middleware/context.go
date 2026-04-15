@@ -12,3 +12,19 @@ func GetUserID(ctx context.Context) (int, error) {
 	}
 	return id, nil
 }
+
+func GetUserRole(ctx context.Context) (string, error) {
+	role, ok := ctx.Value(UserRoleKey).(string)
+	if !ok {
+		return "", errors.New("You not allowed to see this page")
+	}
+	return role, nil
+}
+
+func GetUserBanStatus(ctx context.Context) (*bool, error) {
+	ban, ok := ctx.Value(UserBanKey).(bool)
+	if !ok {
+		return nil, errors.New("You not allowed to see this page")
+	}
+	return &ban, nil
+}

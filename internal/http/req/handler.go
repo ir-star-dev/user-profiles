@@ -3,7 +3,7 @@ package req
 import (
 	"errors"
 	"net/http"
-	"user-profiles/pkg/resp"
+	"user-profiles/internal/http/resp"
 )
 
 func HandleBody[T any](w *http.ResponseWriter, r *http.Request) (*T, error) {

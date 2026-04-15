@@ -8,7 +8,7 @@ import (
 )
 
 type JWTService interface {
-	Create(uId int) (string, error)
+	Create(uId int, role string, ban *bool) (string, error)
 	Parse(token string) (jwt.MapClaims, error)
 }
 
@@ -22,13 +22,14 @@ func NewJWTService(secret string) JWTService {
 	}
 }
 
-func (j *JWT) Create(uId int) (string, error) {
+func (j *JWT) Create(uId int, role string, ban *bool) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"iat": jwt.NewNumericDate(time.Now()),
-		"exp": jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-		"sub": uId,
+		"iat":    jwt.NewNumericDate(time.Now()),
+		"exp":    jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+		"sub":    uId,
+		"role":   role,
+		"banned": ban,
 	})
-
 	s, err := token.SignedString([]byte(j.Secret))
 	if err != nil {
 		return "", err

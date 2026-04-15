@@ -44,9 +44,11 @@ func buildMessage(e validator.FieldError) string {
 		case "email":
 			return "Incorrect email"
 		case "min":
-			return fmt.Sprintf("Min len %s", e.Param())
+			return fmt.Sprintf("Min len: %s", e.Param())
 		case "max":
-			return fmt.Sprintf("Max len %s", e.Param())
+			return fmt.Sprintf("Max len: %s", e.Param())
+		case "oneof":
+			return fmt.Sprintf("Allowed values: %s", e.Param())
 		default:
 			return "Incorrect value"
 	}
