@@ -8,13 +8,18 @@ type ProfileResponse struct {
 	Banned bool   `json:"banned"`
 }
 
-type ProfileResponseForAdmin struct {
+type FullProfileResponseForAdmin struct {
 	Id        int       `json:"id"`
 	Name      string    `json:"name"`
 	Role      string    `json:"role"`
 	Email     string    `json:"email"`
 	Banned    bool      `json:"banned"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type ShortProfileResponseForAdmin struct {
+	Id        int       `json:"id"`
+	Name      string    `json:"name"`
 }
 
 type UpdateNameRequest struct {

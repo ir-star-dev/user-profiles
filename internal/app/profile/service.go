@@ -6,9 +6,9 @@ import (
 )
 
 type Service interface {
-	View(uId int) (*user.User, error)
-	ViewAll() ([]*user.User, error)
-	ChangeName(uId int, name *string) (*user.User, error)
+	View(uId int) (*user.UserWithRole, error)
+	ViewAll() ([]*user.UserWithRole, error)
+	ChangeName(uId int, name *string) (*user.UserWithRole, error)
 	Delete(uId int) error
 	Ban(uId int) error
 	Unban(uId int) error
@@ -24,7 +24,7 @@ func NewProfileService(uRepo user.Repository) Service {
 	}
 }
 
-func (s *profileService) View(uId int) (*user.User, error) {
+func (s *profileService) View(uId int) (*user.UserWithRole, error) {
 	user, err := s.uRepo.FindById(uId)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (s *profileService) View(uId int) (*user.User, error) {
 	return user, nil
 }
 
-func (s *profileService) ViewAll() ([]*user.User, error) {
+func (s *profileService) ViewAll() ([]*user.UserWithRole, error) {
 	users, err := s.uRepo.GetAll()
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *profileService) ViewAll() ([]*user.User, error) {
 	return users, nil
 }
 
-func (s *profileService) ChangeName(uId int, name *string) (*user.User, error) {
+func (s *profileService) ChangeName(uId int, name *string) (*user.UserWithRole, error) {
 	user, err := s.uRepo.FindById(uId)
 	if user == nil {
 		return nil, err

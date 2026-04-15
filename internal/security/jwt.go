@@ -30,7 +30,6 @@ func (j *JWT) Create(uId int, role string, ban *bool) (string, error) {
 		"role":   role,
 		"banned": ban,
 	})
-
 	s, err := token.SignedString([]byte(j.Secret))
 	if err != nil {
 		return "", err

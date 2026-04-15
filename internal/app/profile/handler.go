@@ -22,6 +22,7 @@ func (handler *ProfileHandler) View(w http.ResponseWriter, r *http.Request) {
 	profile := &ProfileResponse{
 		Name:  user.Name,
 		Email: user.Email,
+		Banned: user.Banned,
 	}
 	resp.Json(w, profile, http.StatusOK)
 }

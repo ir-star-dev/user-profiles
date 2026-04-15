@@ -45,7 +45,7 @@ func (s *authService) Register(email, password, name, role string) error {
 	if err != nil {
 		return err
 	}
-	newUser := &user.User{
+	newUser := &user.UserWithRole{
 		Email:    strings.TrimSpace(email),
 		Name:     strings.TrimSpace(name),
 		Password: string(hash),

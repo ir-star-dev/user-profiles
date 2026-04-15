@@ -21,7 +21,7 @@ func RoleMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
 			}
 
 			if _, allowed := roleSet[role]; !allowed {
-				resp.Json(w, err.Error(), http.StatusForbidden)
+				resp.Json(w, "You are not allowed to see this page", http.StatusForbidden)
 				return
 			}
 

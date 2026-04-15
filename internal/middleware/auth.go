@@ -54,7 +54,7 @@ func AuthMiddleware(jwtService security.JWTService) func(http.Handler) http.Hand
 			}
 			// send UserRoleKey in context		
 			ctx = context.WithValue(ctx, UserRoleKey, role)
-			ban, ok := claims["ban"].(bool)
+			ban, ok := claims["banned"].(bool)
 			if !ok {
 				resp.Json(w, "Invalid token", http.StatusUnauthorized)
 				return

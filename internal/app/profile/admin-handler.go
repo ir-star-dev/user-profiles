@@ -20,7 +20,7 @@ func (handler *ProfileHandler) ViewByAdmin(w http.ResponseWriter, r *http.Reques
 		resp.Json(w, UserNotFound, http.StatusNotFound)
 		return
 	}
-	profile := &ProfileResponseForAdmin{
+	profile := &FullProfileResponseForAdmin{
 		Id:        user.Id,
 		Name:      user.Name,
 		Role:      user.Role,
@@ -37,9 +37,9 @@ func (handler *ProfileHandler) ViewAllByAdmin(w http.ResponseWriter, r *http.Req
 		resp.Json(w, EmptyUsers, http.StatusNotFound)
 		return
 	}
-	var profiles []ProfileResponseForAdmin
+	var profiles []FullProfileResponseForAdmin
 	for _, user := range users {
-		profiles = append(profiles, ProfileResponseForAdmin{
+		profiles = append(profiles, FullProfileResponseForAdmin{
 			Id:        user.Id,
 			Name:      user.Name,
 			Role:      user.Role,
@@ -67,13 +67,9 @@ func (handler *ProfileHandler) UpdateByAdmin(w http.ResponseWriter, r *http.Requ
 		resp.Json(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	profile := &ProfileResponseForAdmin{
+	profile := &ShortProfileResponseForAdmin{
 		Id:        user.Id,
 		Name:      user.Name,
-		Role:      user.Role,
-		Email:     user.Email,
-		Banned:    user.Banned,
-		CreatedAt: user.CreatedAt,
 	}
 	resp.Json(w, profile, http.StatusOK)
 }
@@ -103,7 +99,7 @@ func (handler *ProfileHandler) BanByAdmin(w http.ResponseWriter, r *http.Request
 		resp.Json(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	resp.Json(w, "User "+string(*uId)+" banned", http.StatusOK)
+	resp.Json(w, "User banned", http.StatusOK)
 }
 
 func (handler *ProfileHandler) UnbanByAdmin(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +113,7 @@ func (handler *ProfileHandler) UnbanByAdmin(w http.ResponseWriter, r *http.Reque
 		resp.Json(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	resp.Json(w, "User "+string(*uId)+" unbanned", http.StatusOK)
+	resp.Json(w, "User unbanned", http.StatusOK)
 }
 
 func getIdFromReq(w http.ResponseWriter, r *http.Request) (int, error) {
@@ -127,7 +123,7 @@ func getIdFromReq(w http.ResponseWriter, r *http.Request) (int, error) {
 		return 0, errors.New(EmptyParams)
 	}
 	uId, err := strconv.Atoi(idStr)
-	if err == nil {
+	if err != nil {
 		return 0, errors.New(WrongParam)
 	}
 	return uId, nil

@@ -14,14 +14,13 @@ func NewUserRepository(db *sqlx.DB) user.Repository {
 	return &userRepository{db: db}
 }
 
-func (repo *userRepository) Create(user *user.User) (*user.User, error) {
+func (repo *userRepository) Create(user *user.UserWithRole) (*user.UserWithRole, error) {
 	query := `
-        INSERT INTO users (name, email, password, role_id, banned)
+        INSERT INTO users (name, email, password, role_id)
 		SELECT 
 			:name,
 			:email,
 			:password,
-			:banned
 			r.id
 		FROM roles AS r
 		WHERE r.role = :role
@@ -33,18 +32,20 @@ func (repo *userRepository) Create(user *user.User) (*user.User, error) {
 	return user, nil
 }
 
-func (repo *userRepository) FindById(uId int) (*user.User, error) {
+func (repo *userRepository) FindById(uId int) (*user.UserWithRole, error) {
 	query := `
 		SELECT 
+			u.id,
 			u.name,
 			u.email,
 			u.banned,
+			u.created_at,
 			r.role
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
 		WHERE u.id = $1
 	`
-	var user user.User
+	var user user.UserWithRole
 	err := repo.db.Get(&user, query, uId)
 	if err != nil {
 		return nil, err
@@ -61,25 +62,25 @@ func (repo *userRepository) FindRoleByUserId(uId int) (string, error) {
 		WHERE u.id = $1
 	`
 	var role string
-	err := repo.db.Get(role, query, uId)
+	err := repo.db.Get(&role, query, uId)
 	if err != nil {
 		return "", err
 	}
 	return role, nil
 }
 
-func (repo *userRepository) FindByEmail(email string) (*user.User, error) {
+func (repo *userRepository) FindByEmail(email string) (*user.UserWithRole, error) {
 	query := `
 		SELECT 
 			u.id,
-			u.banned, 
 			u.password,
+			u.banned,
 			r.role
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
 		WHERE u.email = $1
 	`
-	var user user.User
+	var user user.UserWithRole
 	err := repo.db.Get(&user, query, email)
 	if err != nil {
 		return nil, err
@@ -94,7 +95,7 @@ func (repo *userRepository) FindBanStatus(uId int) (*bool, error) {
 		WHERE id = $1
 	`
 	var status bool
-	err := repo.db.Get(status, query, uId)
+	err := repo.db.Get(&status, query, uId)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +111,8 @@ func (repo *userRepository) Delete(uId int) error {
 	return nil
 }
 
-func (repo *userRepository) UpdateName(userName string, uId int) (*user.User, error) {
-	user := &user.User{
+func (repo *userRepository) UpdateName(userName string, uId int) (*user.UserWithRole, error) {
+	user := &user.UserWithRole{
 		Id:   uId,
 		Name: userName,
 	}
@@ -127,7 +128,7 @@ func (repo *userRepository) UpdateName(userName string, uId int) (*user.User, er
 	return user, nil
 }
 
-func (repo *userRepository) GetAll() ([]*user.User, error) {
+func (repo *userRepository) GetAll() ([]*user.UserWithRole, error) {
 	query := `
 		SELECT 
 			u.id, 
@@ -139,7 +140,7 @@ func (repo *userRepository) GetAll() ([]*user.User, error) {
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
 	`
-	users := []*user.User{}
+	users := []*user.UserWithRole{}
 	err := repo.db.Select(&users, query)
 	if err != nil {
 		return nil, err
@@ -150,7 +151,7 @@ func (repo *userRepository) GetAll() ([]*user.User, error) {
 func (repo *userRepository) Ban(uId int) error {
 	user := &user.User{
 		Id:     uId,
-		Banned: "true",
+		Banned: true,
 	}
 	query := `
         UPDATE users 
@@ -167,7 +168,7 @@ func (repo *userRepository) Ban(uId int) error {
 func (repo *userRepository) Unban(uId int) error {
 	user := &user.User{
 		Id:     uId,
-		Banned: "false",
+		Banned: false,
 	}
 	query := `
         UPDATE users 
