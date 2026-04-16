@@ -1,4 +1,4 @@
-package profile
+package profile_service
 
 import (
 	"user-profiles/internal/domain/user"
@@ -18,7 +18,7 @@ type profileService struct {
 	uRepo user.Repository
 }
 
-func NewProfileService(uRepo user.Repository) Service {
+func New(uRepo user.Repository) Service {
 	return &profileService{
 		uRepo: uRepo,
 	}

@@ -1,0 +1,10 @@
+{{ define "parts/validation/errors" }}
+    {{ range . }}
+    <div class="alert alert-danger">
+        <h5>Validation failed</h5>
+        {{ .Field }}: {{ .Tag }} <br>
+        Incomming value: {{ .Value }}
+    </div>
+    {{ end }}
+
+{{ end }}

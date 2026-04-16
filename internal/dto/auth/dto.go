@@ -1,4 +1,4 @@
-package auth
+package auth_dto
 
 type LoginInput struct {
 	Email    string `json:"email" validate:"required,email"`
@@ -8,7 +8,7 @@ type LoginInput struct {
 type RegisterInput struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=5,max=12"`
-	Name     string `json:"name" validate:"required"`
+	Name     string `json:"name" validate:"required,min=3"`
 	Role     string `json:"role" validate:"required,oneof=admin user"`
 }
 
@@ -20,4 +20,8 @@ type AuthResponse struct {
 	Access      string
 	Refresh     string
 	RefreshHash []byte
+}
+
+type AuthViewError struct {
+	Message string
 }

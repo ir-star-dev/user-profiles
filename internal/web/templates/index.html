@@ -1,0 +1,14 @@
+{{ define "index" }}
+{{ block "header" . }}{{ end }}  
+
+<body>
+  <main>
+  {{ block "menu" . }}{{ end }}
+
+  <div class="container mt-4">
+    {{ block "content" . }}{{ end }}  
+  </div>
+  </main>
+</body>
+{{ block "footer" . }}{{ end }}  
+{{ end }}
