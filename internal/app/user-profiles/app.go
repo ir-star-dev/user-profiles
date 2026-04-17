@@ -11,12 +11,13 @@ import (
 	"user-profiles/internal/security"
 
 	auth_service "user-profiles/internal/service/auth"
-	//profile_service "user-profiles/internal/service/profile"
+	profile_service "user-profiles/internal/service/profile"
 
 	"user-profiles/internal/storage/db"
 
 	postgres "user-profiles/internal/storage/postgres/user"
 	auth_handlers "user-profiles/internal/web/handlers/auth"
+	profile_handlers "user-profiles/internal/web/handlers/profile"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -44,11 +45,10 @@ func Run() error {
 	refreshTokenService := security.NewRefreshTokenService()
 
 	authService := auth_service.New(userRepo, tokenRepo, jwtService, refreshTokenService)
-	//profileService := profile_service.New(userRepo)
+	profileService := profile_service.New(userRepo)
 
 	// Templates
-	tmpl := template.Must(template.ParseGlob("./internal/web/templates/*.html"))
-	tmpl = template.Must(tmpl.ParseGlob("./internal/web/templates/parts/*/*.html"))
+	tmpl := template.Must(template.ParseGlob("./internal/web/templates/parts/*/*.html"))
 	tmpl = template.Must(tmpl.ParseGlob("./internal/web/templates/pages/*.html"))
 
 	// Handlers
@@ -64,11 +64,12 @@ func Run() error {
 		Tmpl:       tmpl,
 	})
 
-	// profile.NewProfileHandler(r, profile.ProfileHandlerDeps{
-	// 	Config:     conf,
-	// 	Service:    profileService,
-	// 	JWTService: jwtService,
-	// })
+	profile_handlers.New(r, profile_handlers.HandlerDeps{
+		Config:     conf,
+		Service:    profileService,
+		JWTService: jwtService,
+		Tmpl:       tmpl,
+	})
 
 	server := http.Server{
 		Addr:    ":8080",

@@ -2,10 +2,13 @@ package auth_handlers
 
 import (
 	"net/http"
+	"time"
+
 	//"user-profiles/internal/middleware"
-	auth_dto "user-profiles/internal/dto/auth"
-	"user-profiles/internal/http/req"
 	"errors"
+	auth_dto "user-profiles/internal/dto/auth"
+	"user-profiles/internal/http/cookie"
+	"user-profiles/internal/http/req"
 )
 
 func (handler *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -15,29 +18,29 @@ func (handler *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func (handler *Handler) Login(w http.ResponseWriter, r *http.Request) {
-// 	body, err := req.HandleBody[LoginInput](&w, r)
-// 	if err != nil {
-// 		return
-// 	}
-// 	tokens, err := handler.Service.Login(body.Email, body.Password)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	// Send refresh like HttpOnly cookie
-// 	setCookie(tokens.Refresh, w)
-// 	res := &LoginResponse{
-// 		Token: tokens.Access,
-// 	}
-// 	resp.Json(w, res, http.StatusOK)
-// }
-
 func (handler *Handler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	err := handler.Tmpl.ExecuteTemplate(w, "pages/register", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (handler *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	input := &auth_dto.LoginInput{
+		Email:    r.FormValue("email"),
+		Password: r.FormValue("password"),
+	}
+	tokens, err := handler.Service.Login(input.Email, input.Password)
+	if err != nil {
+		handler.Tmpl.ExecuteTemplate(w, "parts/form-submit/error", err.Error())
+		return
+	}
+
+	cookie.Set(tokens.Access, "access_token", 5*time.Minute, w)
+	cookie.Set(tokens.Refresh, "refresh_token", 7*24*time.Hour, w)
+
+	w.Header().Set("HX-Redirect", "/profile")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (handler *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +83,7 @@ func (handler *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // 	if err != nil {
 // 		resp.Json(w, err.Error(), http.StatusBadRequest)
 // 		return
-// 	}	
+// 	}
 // 	setCookie("", w)
 // 	resp.Json(w, "Logged out", http.StatusOK)
 // }

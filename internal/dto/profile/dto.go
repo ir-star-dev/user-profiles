@@ -1,4 +1,4 @@
-package profile
+package profile_dto
 
 import "time"
 

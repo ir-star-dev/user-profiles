@@ -1,14 +1,13 @@
-{{ define "pages/register" }}
+{{ define "index" }}
 {{ block "header" . }}{{ end }}  
 
 <body class="d-flex align-items-center bg-body-tertiary">
   <main class="form-signin w-100 m-auto">
       <nav class="w-100 m-auto">
-        {{ block "sign-out-menu" . }}{{ end }}
+        {{ block "sign-in-menu" . }}{{ end }}
       </nav>
 
-      {{ block "parts/auth/form-register" . }}{{ end }}  
   </main>
-  
-{{ block "footer" . }}{{ end }}
+
+{{ block "footer" . }}{{ end }}  
 {{ end }}

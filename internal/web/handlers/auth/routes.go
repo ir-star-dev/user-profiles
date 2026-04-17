@@ -38,6 +38,7 @@ func New(router chi.Router, deps HandlerDeps) {
 		router.Post("/register", handler.Register)
 
 		router.Get("/login", handler.LoginPage)
+		router.Post("/login", handler.Login)
 
 		// router.With(middleware.AuthMiddleware(handler.JWTService)).Post("/logout", handler.Logout)
 		// router.Post("/refresh", handler.Refresh)

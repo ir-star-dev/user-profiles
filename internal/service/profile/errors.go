@@ -1,4 +1,4 @@
-package profile
+package profile_service
 
 const (
 	UserNotFound    = "Wrong credentials"

@@ -2,14 +2,15 @@ package auth_service
 
 import (
 	"errors"
-	//"time"
+	"time"
 	"user-profiles/internal/domain/token"
 	"user-profiles/internal/domain/user"
 	"user-profiles/internal/security"
 
-	//"github.com/google/uuid"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
+	auth_dto "user-profiles/internal/dto/auth"
 )
 
 type authService struct {
@@ -52,27 +53,32 @@ func (s *authService) Register(email, password, name, role string) error {
 	return nil
 }
 
-// func (s *authService) Login(email, password string) (*AuthResponse, error) {
-// 	existedUser, _ := s.uRepo.FindByEmail(email)
-// 	if existedUser == nil {
-// 		return nil, errors.New(LoginError)
-// 	}
-// 	password = strings.TrimSpace(password)
-// 	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
-// 	if err != nil {
-// 		return nil, errors.New(WrongPassword)
-// 	}
-// 	tokens, err := s.generateTokens(existedUser.Id, existedUser.Role)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	fId := uuid.NewString()
-// 	err = s.saveRefreshToken(tokens.RefreshHash, existedUser.Id, fId)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return tokens, nil
-// }
+func (s *authService) Login(email, password string) (*auth_dto.AuthResponse, error) {
+	existedUser, _ := s.uRepo.FindByEmail(email)
+	if existedUser == nil {
+		return nil, errors.New(LoginError)
+	}
+	password = strings.TrimSpace(password)
+	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	if err != nil {
+		return nil, errors.New(WrongPassword)
+	}
+	tokens, err := s.generateTokens(existedUser.Id, existedUser.Role)
+	if err != nil {
+		return nil, err
+	}
+	fId := uuid.NewString()
+	err = s.saveRefreshToken(tokens.RefreshHash, existedUser.Id, fId)
+	if err != nil {
+		return nil, err
+	}
+	res := &auth_dto.AuthResponse{
+		Access: tokens.Access,
+		Refresh: tokens.Refresh,
+		RefreshHash: tokens.RefreshHash,
+	}
+	return res, nil
+}
 
 // func (s *authService) Logout(uId int, refreshToken string) error {
 // 	tokenHash := s.rtService.Hash(refreshToken)
@@ -119,51 +125,51 @@ func (s *authService) Register(email, password, name, role string) error {
 // 	return tokens, nil
 // }
 
-// func (s *authService) saveRefreshToken(hash []byte, uId int, fId string) error {
-// 	token := &token.RefreshToken{
-// 		TokenHash: hash,
-// 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
-// 		Revoked:   false,
-// 		UserId:    uId,
-// 		FamilyID:  fId,
-// 	}
+func (s *authService) saveRefreshToken(hash []byte, uId int, fId string) error {
+	token := &token.RefreshToken{
+		TokenHash: hash,
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		Revoked:   false,
+		UserId:    uId,
+		FamilyID:  fId,
+	}
 
-// 	err := s.tRepo.Save(token)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	err := s.tRepo.Save(token)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-// func (s *authService) generateTokens(uId int, role string) (*AuthResponse, error) {
-// 	// Access token lived 15 min
-// 	if role == "" {
-// 		dbRole, err := s.uRepo.FindRoleByUserId(uId)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		role = dbRole
-// 	}
-// 	ban, err := s.uRepo.FindBanStatus(uId)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	jwt, err := s.jService.Create(uId, role, ban)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	refreshToken, err := s.rtService.Generate()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	hash := s.rtService.Hash(refreshToken)
+func (s *authService) generateTokens(uId int, role string) (*auth_dto.AuthResponse, error) {
+	// Access token lived 15 min
+	if role == "" {
+		dbRole, err := s.uRepo.FindRoleByUserId(uId)
+		if err != nil {
+			return nil, err
+		}
+		role = dbRole
+	}
+	ban, err := s.uRepo.FindBanStatus(uId)
+	if err != nil {
+		return nil, err
+	}
+	jwt, err := s.jService.Create(uId, role, ban)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := s.rtService.Generate()
+	if err != nil {
+		return nil, err
+	}
+	hash := s.rtService.Hash(refreshToken)
 
-// 	return &AuthResponse{
-// 		Access:      jwt,
-// 		Refresh:     refreshToken,
-// 		RefreshHash: hash,
-// 	}, nil
-// }
+	return &auth_dto.AuthResponse{
+		Access:      jwt,
+		Refresh:     refreshToken,
+		RefreshHash: hash,
+	}, nil
+}
 
 // func (s *authService) validateRefresh(token string) (*token.RefreshToken, error) {
 // 	hash := s.rtService.Hash(token)
