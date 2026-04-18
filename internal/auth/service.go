@@ -77,14 +77,14 @@ func (s *authService) Login(email, password string) (*AuthResponse, error) {
 	return res, nil
 }
 
-// func (s *authService) Logout(uId int, refreshToken string) error {
-// 	tokenHash := s.rtService.Hash(refreshToken)
-// 	err := s.tRepo.Revoke(tokenHash, uId)
-// 	if err != nil {
-// 		return errors.New(Unauthorized)
-// 	}
-// 	return nil
-// }
+func (s *authService) Logout(uId int, refreshToken string) error {
+	tokenHash := s.rtService.Hash(refreshToken)
+	err := s.tRepo.Revoke(tokenHash, uId)
+	if err != nil {
+		return errors.New(Unauthorized)
+	}
+	return nil
+}
 
 // func (s *authService) Refresh(refreshToken string) (*AuthResponse, error) {
 // 	t, err := s.validateRefresh(refreshToken)

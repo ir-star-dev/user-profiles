@@ -3,9 +3,9 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
-	"user-profiles/internal/http/resp"
 	"user-profiles/internal/auth"
+	"user-profiles/internal/http/cookie"
+	"user-profiles/internal/http/resp"
 )
 
 type contextKey string
@@ -19,19 +19,13 @@ const (
 func AuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				resp.Json(w, "Missing token", http.StatusUnauthorized)
+			cookie, err := cookie.Get("__up_access_token", r)
+			if cookie == nil {
+				resp.Json(w, err, http.StatusUnauthorized)
 				return
 			}
 
-			parts := strings.Split(authHeader, " ")
-			if len(parts) != 2 || parts[0] != "Bearer" {
-				resp.Json(w, "Invalid token format", http.StatusUnauthorized)
-				return
-			}
-
-			token := parts[1]
+			token := cookie.Value
 			claims, err := jwtService.Parse(token)
 			if err != nil {
 				resp.Json(w, err.Error(), http.StatusUnauthorized)

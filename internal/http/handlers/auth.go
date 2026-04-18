@@ -6,10 +6,10 @@ import (
 	"time"
 	"user-profiles/configs"
 
-	//"user-profiles/internal/middleware"
 	"errors"
 	"user-profiles/internal/auth"
 	"user-profiles/internal/http/cookie"
+	"user-profiles/internal/http/middleware"
 	"user-profiles/internal/http/req"
 
 	"github.com/go-chi/chi/v5"
@@ -64,8 +64,8 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie.Set(tokens.Access, "access_token", 5*time.Minute, w)
-	cookie.Set(tokens.Refresh, "refresh_token", 7*24*time.Hour, w)
+	cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
+	cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 
 	w.Header().Set("HX-Redirect", "/profile")
 	w.WriteHeader(http.StatusOK)
@@ -96,25 +96,28 @@ func (handler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-// 	userId, err := middleware.GetUserID(r.Context())
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusUnauthorized)
-// 		return
-// 	}
-// 	token, err := getRefreshTokenFromCookie(r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	err = handler.Service.Logout(userId, token)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	setCookie("", w)
-// 	resp.Json(w, "Logged out", http.StatusOK)
-// }
+func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	userId, err := middleware.GetUserID(r.Context())
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	token, err := cookie.Get("__up_refresh_token", r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	err = handler.Service.Logout(userId, token.Value)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	cookie.Set("", "__up_access_token", -time.Minute, w)
+	cookie.Set("", "__up_refresh_token", -time.Hour, w)
+
+	w.Header().Set("HX-Redirect", "/auth/login")
+	w.WriteHeader(http.StatusOK)
+}
 
 // func (handler *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 // 	token, err := getRefreshTokenFromCookie(r)

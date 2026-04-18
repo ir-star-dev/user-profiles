@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-func Get(name string, r *http.Request) (string, error) {
+func Get(name string, r *http.Request) (*http.Cookie, error) {
 	cookie, err := r.Cookie(name)
 	if err != nil {
 		if err == http.ErrNoCookie {
-			return "", err
+			return nil, err
 		}
-		return "", err
+		return nil, err
 	}
-	return cookie.Value, nil
+	return cookie, nil
 }
 
 func Set(token string, name string, ttl time.Duration, w http.ResponseWriter) {
