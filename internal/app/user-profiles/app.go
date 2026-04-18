@@ -6,18 +6,15 @@ import (
 	"net/http"
 	"user-profiles/configs"
 
-	//"user-profiles/internal/app/profile"
-	"user-profiles/internal/middleware"
-	"user-profiles/internal/security"
-
-	auth_service "user-profiles/internal/service/auth"
-	profile_service "user-profiles/internal/service/profile"
-
+	"user-profiles/internal/auth"
+	"user-profiles/internal/http/middleware"
 	"user-profiles/internal/storage/db"
+	"user-profiles/internal/users"
 
-	postgres "user-profiles/internal/storage/postgres/user"
-	auth_handlers "user-profiles/internal/web/handlers/auth"
-	profile_handlers "user-profiles/internal/web/handlers/profile"
+	"user-profiles/internal/http/handlers"
+	"user-profiles/internal/http/routes"
+	auth_postgres "user-profiles/internal/storage/postgres/auth"
+	users_postgres "user-profiles/internal/storage/postgres/users"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -37,45 +34,54 @@ func Run() error {
 	defer dbConn.Close()
 
 	// Repositories
-	userRepo := postgres.NewUserRepository(dbConn)
-	tokenRepo := security.NewTokenRepository(dbConn)
+	userRepo := users_postgres.NewUsersRepository(dbConn)
+	tokenRepo := auth_postgres.NewTokenRepository(dbConn)
 
 	// Services
-	jwtService := security.NewJWTService(conf.Secret)
-	refreshTokenService := security.NewRefreshTokenService()
-
-	authService := auth_service.New(userRepo, tokenRepo, jwtService, refreshTokenService)
-	profileService := profile_service.New(userRepo)
+	jwtService := auth.NewJWTService(conf.Secret)
+	refreshTokenService := auth.NewRefreshTokenService()
+	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
+	userService := users.NewUsersService(userRepo)
+	adminService := users.NewAdminService(userRepo)
 
 	// Templates
 	tmpl := template.Must(template.ParseGlob("./internal/web/templates/parts/*/*.html"))
 	tmpl = template.Must(tmpl.ParseGlob("./internal/web/templates/pages/*.html"))
 
-	// Handlers
+	// Mux
 	r := chi.NewRouter()
 
 	// Middlewares
 	r.Use(middleware.CORS)
 
-	auth_handlers.New(r, auth_handlers.HandlerDeps{
+	auth_handler := handlers.NewAuthHandler(r, handlers.AuthHandlerDeps{
 		Config:     conf,
 		Service:    authService,
 		JWTService: jwtService,
 		Tmpl:       tmpl,
 	})
+	routes.InitAuthRoutes(r, auth_handler)
 
-	profile_handlers.New(r, profile_handlers.HandlerDeps{
+	admin_handler := handlers.NewAdminHandler(r, handlers.AdminHandlerDeps{
 		Config:     conf,
-		Service:    profileService,
+		Service:    adminService,
 		JWTService: jwtService,
 		Tmpl:       tmpl,
 	})
+	routes.InitAdminRoutes(r, admin_handler)
+
+	user_handler := handlers.NewUserHandler(r, handlers.UserHandlerDeps{
+		Config:     conf,
+		Service:    userService,
+		JWTService: jwtService,
+		Tmpl:       tmpl,
+	})
+	routes.InitUserRoutes(r, user_handler)
 
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: r,
 	}
 	fmt.Println("Server is listening on port 8080")
-
 	return server.ListenAndServe()
 }
