@@ -37,8 +37,15 @@ func NewAdminHandler(router chi.Router, deps AdminHandlerDeps) *AdminHandler {
 	}
 }
 
-func (handler *AdminHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "index", nil)
+func (handler *AdminHandler) AdminProfilePage(w http.ResponseWriter, r *http.Request) {
+	err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
+	err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

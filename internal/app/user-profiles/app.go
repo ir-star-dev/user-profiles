@@ -45,8 +45,8 @@ func Run() error {
 	adminService := users.NewAdminService(userRepo)
 
 	// Templates
-	tmpl := template.Must(template.ParseGlob("./internal/web/templates/parts/*/*.html"))
-	tmpl = template.Must(tmpl.ParseGlob("./internal/web/templates/pages/*.html"))
+	tmpl := template.Must(template.ParseGlob("./ui/templates/parts/*/*.html"))
+	tmpl = template.Must(tmpl.ParseGlob("./ui/templates/pages/*.html"))
 
 	// Mux
 	r := chi.NewRouter()
