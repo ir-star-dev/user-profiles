@@ -4,10 +4,12 @@ import (
 	"net/http"
 	// "user-profiles/internal/http/req"
 	// "user-profiles/internal/http/resp"
-	// "user-profiles/internal/middleware"
+	"user-profiles/internal/http/middleware"
 	//"html/template"
+	"time"
 	"user-profiles/cmd/view"
 	"user-profiles/configs"
+	"user-profiles/internal/http/cookie"
 
 	"user-profiles/internal/auth"
 	"user-profiles/internal/users"
@@ -42,7 +44,8 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
 		"././ui/templates/pages/profile.tmpl",
-		"././ui/templates/parts/layout/user-data.tmpl",
+		"././ui/templates/pages/profile-admin.tmpl",
+		"././ui/templates/parts/layout/user.tmpl",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,12 +62,19 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	profile := &users.UsersProfileResponse{
-		Name:   user.Name,
-		Email:  user.Email,
-		Banned: user.Banned,
+	profile := &users.ProfileResponse{
+		Id:        user.Id,
+		Role:      user.Role,
+		Name:      user.Name,
+		Email:     user.Email,
+		Banned:    user.Banned,
+		CreatedAt: user.CreatedAt,
 	}
-	err = tmpl.ExecuteTemplate(w, "profile", profile)
+	tmplName := "profile"
+	if user.Role == "admin"  {
+		tmplName = "profile-admin"
+	}
+	err = tmpl.ExecuteTemplate(w, tmplName, profile)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -104,27 +114,29 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 // 	resp.Json(w, "Profile updated", http.StatusOK)
 // }
 
-// func (handler *Handler) DeleteById(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := getUserId(r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusUnauthorized)
-// 		return
-// 	}
-// 	err = handler.AuthService.Delete(uId)
-// 	if err != nil {
-// 		resp.Json(w, DeleteFailed, http.StatusInternalServerError)
-// 		return
-// 	}
-// 	resp.Json(w, "Profile deleted", http.StatusOK)
-// }
+func (handler *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	uId, err := getUserId(r)
+	if err != nil {
+		return
+	}
+	err = handler.UsersService.Delete(uId)
+	if err != nil {
+		return
+	}
+	cookie.Set("", "__up_access_token", -time.Minute, w)
+	cookie.Set("", "__up_refresh_token", -time.Hour, w)
 
-// func getUserId(r *http.Request) (int, error) {
-// 	uId, err := middleware.GetUserID(r.Context())
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return uId, nil
-// }
+	w.Header().Set("HX-Redirect", "/auth/login")
+	w.WriteHeader(http.StatusOK)
+}
+
+func getUserId(r *http.Request) (int, error) {
+	uId, err := middleware.GetUserID(r.Context())
+	if err != nil {
+		return 0, err
+	}
+	return uId, nil
+}
 
 // func getIdFromReq(w http.ResponseWriter, r *http.Request) (int, error) {
 // 	idStr := strings.TrimSpace(r.PathValue("id"))

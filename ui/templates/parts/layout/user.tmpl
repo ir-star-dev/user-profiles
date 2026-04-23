@@ -1,4 +1,13 @@
-{{ define "user-data"}}
+{{ define "nav" }}
+<ul class="navbar-nav ms-auto">
+    {{if .Role "admin"}}
+    <li class="nav-item"><a class="nav-link" href="/profiles">Users</a></li>
+    {{end}}
+    <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
+</ul>
+{{ end }}
+
+{{ define "user"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
     <h1>Profile</h1>
 
@@ -28,10 +37,11 @@
                         <a href="/profile/update-name" class="btn btn-outline-primary btn-sm w-100">
                             Update name
                         </a>
-
-                        <a href="/profile/delete" class="btn btn-outline-danger btn-sm w-100">
+                        {{if .Role "admin"}}
+                        <a hx-delete="/profile" class="btn btn-outline-danger btn-sm w-100">
                             Delete
                         </a>
+                        {{end}}
                     </div>
                 </div>
             </div>

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"user-profiles/internal/auth"
 	"user-profiles/internal/http/cookie"
-	"user-profiles/internal/http/resp"
 )
 
 type contextKey string
@@ -21,20 +20,20 @@ func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Ha
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			accessCookie, err := cookie.Get("__up_access_token", r)
 			if accessCookie == nil || accessCookie.Value == "" {
-				resp.Json(w, "Unauthorized", http.StatusUnauthorized)
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}		
 
 			token := accessCookie.Value
 			claims, err := jwtService.Parse(token)
 			if err != nil {
-				resp.Json(w, "Unauthorized", http.StatusUnauthorized)
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
 
 			sub, ok := claims["sub"].(float64)
 			if !ok {
-				resp.Json(w, "Invalid token", http.StatusUnauthorized)
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
 			uId := int(sub)
@@ -43,14 +42,14 @@ func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Ha
 
 			role, ok := claims["role"].(string)
 			if !ok {
-				resp.Json(w, "Invalid token", http.StatusUnauthorized)
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
 			// send UserRoleKey in context		
 			ctx = context.WithValue(ctx, UserRoleKey, role)
 			ban, ok := claims["banned"].(bool)
 			if !ok {
-				resp.Json(w, "Invalid token", http.StatusUnauthorized)
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
 			// send UseBanKey in context

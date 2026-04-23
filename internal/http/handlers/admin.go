@@ -6,7 +6,7 @@ import (
 	// "user-profiles/internal/http/resp"
 	//"html/template"
 	"user-profiles/configs"
-	"user-profiles/internal/http/middleware"
+	//"user-profiles/internal/http/middleware"
 
 	"user-profiles/internal/auth"
 	"user-profiles/internal/users"
@@ -104,13 +104,6 @@ func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Requ
 // 	resp.Json(w, "Profile deleted", http.StatusOK)
 // }
 
-func getUserId(r *http.Request) (int, error) {
-	uId, err := middleware.GetUserID(r.Context())
-	if err != nil {
-		return 0, err
-	}
-	return uId, nil
-}
 
 // func (handler *Handler) ViewByAdmin(w http.ResponseWriter, r *http.Request) {
 // 	uId, err := getIdFromReq(w, r)

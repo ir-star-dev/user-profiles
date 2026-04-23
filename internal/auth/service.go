@@ -172,12 +172,14 @@ func (s *authService) generateTokens(uId int, role string) (*AuthResponse, error
 
 func (s *authService) validateRefresh(token string) (*RefreshToken, error) {
 	hash := s.rtService.Hash(token)
+	
 	existedToken, err := s.tRepo.FindTokenByHash(hash)
+	log.Println(existedToken)
+	log.Println(err)
 	if existedToken == nil {
 		return nil, err
 	}
 	if existedToken.Revoked || existedToken.ExpiresAt.Before(time.Now()) {
-		log.Panicln(existedToken)
 		return nil, err
 	}
 	return existedToken, nil
