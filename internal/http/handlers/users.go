@@ -5,7 +5,8 @@ import (
 	// "user-profiles/internal/http/req"
 	// "user-profiles/internal/http/resp"
 	// "user-profiles/internal/middleware"
-	"html/template"
+	//"html/template"
+	"user-profiles/cmd/view"
 	"user-profiles/configs"
 
 	"user-profiles/internal/auth"
@@ -15,43 +16,63 @@ import (
 )
 
 type UserHandler struct {
-	Config     *configs.Config
-	Service    users.UsersService
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config       *configs.Config
+	AuthService  auth.AuthService
+	UsersService users.UsersService
+	JWTService   auth.JWTService
 }
 
 type UserHandlerDeps struct {
-	Config     *configs.Config
-	Service    users.UsersService
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config       *configs.Config
+	AuthService  auth.AuthService
+	UsersService users.UsersService
+	JWTService   auth.JWTService
 }
 
 func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
 	return &UserHandler{
-		Config:     deps.Config,
-		Service:    deps.Service,
-		JWTService: deps.JWTService,
-		Tmpl:       deps.Tmpl,
+		Config:       deps.Config,
+		AuthService:  deps.AuthService,
+		UsersService: deps.UsersService,
+		JWTService:   deps.JWTService,
 	}
 }
 
 func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "index", nil)
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/profile.tmpl",
+		"././ui/templates/parts/layout/user-data.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	uId, err := getUserId(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	user, err := handler.UsersService.View(uId)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	profile := &users.UsersProfileResponse{
+		Name:   user.Name,
+		Email:  user.Email,
+		Banned: user.Banned,
+	}
+	err = tmpl.ExecuteTemplate(w, "profile", profile)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // func (handler *Handler) ViewById(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := getUserId(r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusUnauthorized)
-// 		return
-// 	}
 
-// 	user, err := handler.Service.View(uId)
+// 	user, err := handler.AuthService.View(uId)
 // 	if err != nil {
 // 		resp.Json(w, UserNotFound, http.StatusNotFound)
 // 		return
@@ -75,7 +96,7 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 // 		resp.Json(w, UserNotFound, http.StatusNotFound)
 // 		return
 // 	}
-// 	_, err = handler.Service.ChangeName(uId, res.Name)
+// 	_, err = handler.AuthService.ChangeName(uId, res.Name)
 // 	if err != nil {
 // 		resp.Json(w, err.Error(), http.StatusInternalServerError)
 // 		return
@@ -89,7 +110,7 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 // 		resp.Json(w, err.Error(), http.StatusUnauthorized)
 // 		return
 // 	}
-// 	err = handler.Service.Delete(uId)
+// 	err = handler.AuthService.Delete(uId)
 // 	if err != nil {
 // 		resp.Json(w, DeleteFailed, http.StatusInternalServerError)
 // 		return

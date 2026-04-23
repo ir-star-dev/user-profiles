@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"html/template"
+	//"html/template"
 	"net/http"
 	"time"
+	"user-profiles/cmd/view"
 	"user-profiles/configs"
 
 	"errors"
@@ -15,39 +16,71 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-
 type AuthHandlerDeps struct {
-	Config     *configs.Config
-	Service    auth.Service
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config      *configs.Config
+	AuthService auth.AuthService
+	JWTService  auth.JWTService
 }
 
 type AuthHandler struct {
-	Config     *configs.Config
-	Service    auth.Service
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config      *configs.Config
+	AuthService auth.AuthService
+	JWTService  auth.JWTService
 }
 
 func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 	return &AuthHandler{
-		Config:     deps.Config,
-		Service:    deps.Service,
-		JWTService: deps.JWTService,
-		Tmpl:       deps.Tmpl,
+		Config:      deps.Config,
+		AuthService: deps.AuthService,
+		JWTService:  deps.JWTService,
+	}
+}
+
+func (handler *AuthHandler) MainPage(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/index.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "index", nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "pages/login", nil)
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/login.tmpl",
+		"././ui/templates/parts/auth/form-login.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "login", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func (handler *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "pages/register", nil)
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/register.tmpl",
+		"././ui/templates/parts/auth/form-register.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "register", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -58,9 +91,16 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    r.FormValue("email"),
 		Password: r.FormValue("password"),
 	}
-	tokens, err := handler.Service.Login(input.Email, input.Password)
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/register.tmpl",
+		"././ui/templates/parts/auth/form-register.tmpl",
+		"././ui/templates/parts/validation/errors.tmpl",
+		"././ui/templates/parts/form-submit/error.tmpl",
+	)
+	tokens, err := handler.AuthService.Login(input.Email, input.Password)
 	if err != nil {
-		handler.Tmpl.ExecuteTemplate(w, "parts/form-submit/error", err.Error())
+		tmpl.ExecuteTemplate(w, "form-submit-error", err.Error())
 		return
 	}
 
@@ -78,17 +118,28 @@ func (handler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Name:     r.FormValue("name"),
 		Role:     r.FormValue("role"),
 	}
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/register.tmpl",
+		"././ui/templates/parts/auth/form-register.tmpl",
+		"././ui/templates/parts/validation/errors.tmpl",
+		"././ui/templates/parts/form-submit/error.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if err := req.IsValid(input); err != nil {
 		var ve req.ValidationErrors
 		if errors.As(err, &ve) {
-			if err := handler.Tmpl.ExecuteTemplate(w, "parts/validation/errors", ve); err != nil {
+			if err := tmpl.ExecuteTemplate(w, "validation-error", ve); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
 	}
-	if err := handler.Service.Register(input.Email, input.Password, input.Name, input.Role); err != nil {
-		handler.Tmpl.ExecuteTemplate(w, "parts/form-submit/error", err.Error())
+	if err := handler.AuthService.Register(input.Email, input.Password, input.Name, input.Role); err != nil {
+		tmpl.ExecuteTemplate(w, "form-submit-error", err.Error())
 		return
 	}
 
@@ -107,7 +158,7 @@ func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	err = handler.Service.Logout(userId, token.Value)
+	err = handler.AuthService.Logout(userId, token.Value)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
@@ -125,7 +176,7 @@ func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 // 		resp.Json(w, err.Error(), http.StatusBadRequest)
 // 		return
 // 	}
-// 	tokens, err := handler.Service.Refresh(token)
+// 	tokens, err := handler.AuthService.Refresh(token)
 // 	if err != nil {
 // 		resp.Json(w, err.Error(), http.StatusBadRequest)
 // 		return

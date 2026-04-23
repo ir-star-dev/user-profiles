@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"user-profiles/configs"
 
@@ -44,43 +43,38 @@ func Run() error {
 	userService := users.NewUsersService(userRepo)
 	adminService := users.NewAdminService(userRepo)
 
-	// Templates
-	tmpl := template.Must(template.ParseGlob("./ui/templates/parts/*/*.html"))
-	tmpl = template.Must(tmpl.ParseGlob("./ui/templates/pages/*.html"))
-
 	// Mux
-	r := chi.NewRouter()
+	mux := chi.NewRouter()
 
 	// Middlewares
-	r.Use(middleware.CORS)
+	mux.Use(middleware.CORS)
 
-	auth_handler := handlers.NewAuthHandler(r, handlers.AuthHandlerDeps{
-		Config:     conf,
-		Service:    authService,
-		JWTService: jwtService,
-		Tmpl:       tmpl,
+	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
+		Config:      conf,
+		AuthService: authService,
+		JWTService:  jwtService,
 	})
-	routes.InitAuthRoutes(r, auth_handler)
+	routes.InitAuthRoutes(mux, auth_handler)
 
-	admin_handler := handlers.NewAdminHandler(r, handlers.AdminHandlerDeps{
-		Config:     conf,
-		Service:    adminService,
-		JWTService: jwtService,
-		Tmpl:       tmpl,
+	admin_handler := handlers.NewAdminHandler(mux, handlers.AdminHandlerDeps{
+		Config:       conf,
+		AdminService: adminService,
+		AuthService:  authService,
+		JWTService:   jwtService,
 	})
-	routes.InitAdminRoutes(r, admin_handler)
+	routes.InitAdminRoutes(mux, admin_handler)
 
-	user_handler := handlers.NewUserHandler(r, handlers.UserHandlerDeps{
-		Config:     conf,
-		Service:    userService,
-		JWTService: jwtService,
-		Tmpl:       tmpl,
+	user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
+		Config:       conf,
+		UsersService: userService,
+		AuthService:  authService,
+		JWTService:   jwtService,
 	})
-	routes.InitUserRoutes(r, user_handler)
+	routes.InitUserRoutes(mux, user_handler)
 
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: r,
+		Handler: mux,
 	}
 	fmt.Println("Server is listening on port 8080")
 	return server.ListenAndServe()

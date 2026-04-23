@@ -16,19 +16,19 @@ const (
 	UserBanKey contextKey = "user_ban"
 )
 
-func AuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Handler {
+func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := cookie.Get("__up_access_token", r)
-			if cookie == nil {
-				resp.Json(w, err, http.StatusUnauthorized)
+			accessCookie, err := cookie.Get("__up_access_token", r)
+			if accessCookie == nil || accessCookie.Value == "" {
+				resp.Json(w, "Unauthorized", http.StatusUnauthorized)
 				return
-			}
+			}		
 
-			token := cookie.Value
+			token := accessCookie.Value
 			claims, err := jwtService.Parse(token)
 			if err != nil {
-				resp.Json(w, err.Error(), http.StatusUnauthorized)
+				resp.Json(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 

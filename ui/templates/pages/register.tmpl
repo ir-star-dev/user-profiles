@@ -1,0 +1,16 @@
+{{ define "register" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{ define "title" }}Sign In{{ end }}
+
+{{ define "nav" }}
+<ul class="navbar-nav ms-auto">
+    <li class="nav-item"><a class="nav-link active" href="/auth/register">Sign In</a></li>
+    <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
+</ul>
+{{ end }}
+
+{{ define "content" }}
+  {{template "form-register" .}}
+{{ end }}

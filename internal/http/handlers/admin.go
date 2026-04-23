@@ -4,9 +4,9 @@ import (
 	"net/http"
 	// "user-profiles/internal/http/req"
 	// "user-profiles/internal/http/resp"
-	// "user-profiles/internal/middleware"
-	"html/template"
+	//"html/template"
 	"user-profiles/configs"
+	"user-profiles/internal/http/middleware"
 
 	"user-profiles/internal/auth"
 	"user-profiles/internal/users"
@@ -15,40 +15,40 @@ import (
 )
 
 type AdminHandler struct {
-	Config     *configs.Config
-	Service    users.AdminService
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config       *configs.Config
+	AdminService users.AdminService
+	AuthService  auth.AuthService
+	JWTService   auth.JWTService
 }
 
 type AdminHandlerDeps struct {
-	Config     *configs.Config
-	Service    users.AdminService
-	JWTService auth.JWTService
-	Tmpl       *template.Template
+	Config       *configs.Config
+	AdminService users.AdminService
+	AuthService  auth.AuthService
+	JWTService   auth.JWTService
 }
 
 func NewAdminHandler(router chi.Router, deps AdminHandlerDeps) *AdminHandler {
 	return &AdminHandler{
-		Config:     deps.Config,
-		Service:    deps.Service,
-		JWTService: deps.JWTService,
-		Tmpl:       deps.Tmpl,
+		Config:       deps.Config,
+		AdminService: deps.AdminService,
+		AuthService:  deps.AuthService,
+		JWTService:   deps.JWTService,
 	}
 }
 
 func (handler *AdminHandler) AdminProfilePage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// }
 }
 
 func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
-	err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// }
 }
 
 // func (handler *Handler) ViewById(w http.ResponseWriter, r *http.Request) {
@@ -104,14 +104,13 @@ func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Requ
 // 	resp.Json(w, "Profile deleted", http.StatusOK)
 // }
 
-// func getUserId(r *http.Request) (int, error) {
-// 	uId, err := middleware.GetUserID(r.Context())
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return uId, nil
-// }
-
+func getUserId(r *http.Request) (int, error) {
+	uId, err := middleware.GetUserID(r.Context())
+	if err != nil {
+		return 0, err
+	}
+	return uId, nil
+}
 
 // func (handler *Handler) ViewByAdmin(w http.ResponseWriter, r *http.Request) {
 // 	uId, err := getIdFromReq(w, r)

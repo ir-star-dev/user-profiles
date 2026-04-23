@@ -1,0 +1,12 @@
+{{ define "index" }}
+    {{ template "base" . }}
+{{ end }}
+
+{{ define "title" }}Main Page{{ end }}
+
+{{ define "nav" }}
+<ul class="navbar-nav ms-auto">
+    <li class="nav-item"><a class="nav-link" href="/auth/register">Sign In</a></li>
+    <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
+</ul>
+{{ end }}

@@ -10,7 +10,7 @@ import (
 func InitAdminRoutes(router chi.Router, handler *handlers.AdminHandler) {
 	// Admin
 	router.Route(("/profiles"), func(router chi.Router) {
-		router.Use(middleware.AuthMiddleware(handler.JWTService))
+		router.Use(middleware.SoftAuthMiddleware(handler.JWTService, handler.AuthService))
 		router.Use(middleware.RoleMiddleware("admin"))
 
 		router.Get("/profile", handler.AdminProfilePage)

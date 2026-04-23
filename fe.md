@@ -297,7 +297,7 @@ click → request → HTML → replace DOM
 Чтобы собирать страницы с помощью него нужно:
 1. Иметь страницу каркас:
 ```html
-base.html
+base.tmpl
 
 <!doctype html>
 <html>
@@ -315,7 +315,7 @@ base.html
 ```
 2. Часть страницы, которую надо вставить в каркас
 ```html
-register.html
+register.tmpl
 
 {{ define "content" }}
 

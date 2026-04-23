@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Service interface {
+type AuthService interface {
 	Register(email, password, name, role string) error
 	Login(email, password string) (*AuthResponse, error)
 	Refresh(refreshToken string) (*AuthResponse, error)

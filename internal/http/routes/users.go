@@ -1,7 +1,7 @@
 package routes
 
 import (
-	//"user-profiles/internal/middleware"
+	"user-profiles/internal/http/middleware"
 	"user-profiles/internal/http/handlers"
 
 	"github.com/go-chi/chi/v5"
@@ -10,7 +10,7 @@ import (
 func InitUserRoutes(router chi.Router, handler *handlers.UserHandler) {
 	// Other users
 	router.Route(("/profile"), func(router chi.Router) {
-		//router.Use(middleware.AuthMiddleware(handler.JWTService))
+		router.Use(middleware.SoftAuthMiddleware(handler.JWTService, handler.AuthService))
 
 		router.Get("/", handler.ProfilePage)
 

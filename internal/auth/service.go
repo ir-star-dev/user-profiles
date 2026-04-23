@@ -2,12 +2,14 @@ package auth
 
 import (
 	"errors"
+	"log"
 	"time"
 	"user-profiles/internal/users"
 
+	"strings"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
 )
 
 type authService struct {
@@ -17,7 +19,7 @@ type authService struct {
 	rtService RefreshTokenService
 }
 
-func NewAuthService(uRepo users.Repository, tRepo RefreshRepository, jS JWTService, rtS RefreshTokenService) Service {
+func NewAuthService(uRepo users.Repository, tRepo RefreshRepository, jS JWTService, rtS RefreshTokenService) AuthService {
 	return &authService{
 		uRepo:     uRepo,
 		tRepo:     tRepo,
@@ -175,6 +177,7 @@ func (s *authService) validateRefresh(token string) (*RefreshToken, error) {
 		return nil, err
 	}
 	if existedToken.Revoked || existedToken.ExpiresAt.Before(time.Now()) {
+		log.Panicln(existedToken)
 		return nil, err
 	}
 	return existedToken, nil
