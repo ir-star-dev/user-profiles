@@ -99,6 +99,61 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 	w.Write(buf.Bytes())
 }
 
+func (handler *UserHandler) UsersProfilePage(w http.ResponseWriter, r *http.Request) {
+	var tmpl *template.Template
+	tmpl, err := view.LoadTemplate(
+		"././ui/templates/base.tmpl",
+		"././ui/templates/pages/profile-admin.tmpl",
+		"././ui/templates/parts/layout/user.tmpl",
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	users, err := handler.UsersService.ViewAll()
+	if err == nil {
+
+	}
+	var profiles []*ProfileResponse
+	for _, user := range users {
+		profiles = append(profiles, ProfileResponse{
+			Id:        user.Id,
+			Name:      user.Name,
+			Role:      user.Role,
+			Email:     user.Email,
+			Banned:    user.Banned,
+			CreatedAt: user.CreatedAt,
+		})
+	}
+	var tmplName string
+	if user.Role == "admin" {
+		
+		tmplName = "profile-admin"
+	} else {
+		tmpl, err = view.LoadTemplate(
+			"././ui/templates/base.tmpl",
+			"././ui/templates/pages/profile.tmpl",
+			"././ui/templates/parts/layout/user.tmpl",
+		)
+		tmplName = "profile"
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var buf bytes.Buffer
+
+	err = tmpl.ExecuteTemplate(&buf, tmplName, profile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(buf.Bytes())
+}
+
 // func (handler *Handler) ViewById(w http.ResponseWriter, r *http.Request) {
 
 // 	user, err := handler.AuthService.View(uId)

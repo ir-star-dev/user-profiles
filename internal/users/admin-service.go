@@ -20,13 +20,13 @@ func (s *adminService) View(uId int) (*UserWithRole, error) {
 	return user, nil
 }
 
-func (s *adminService) ViewAll() ([]*UserWithRole, error) {
-	users, err := s.uRepo.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
+// func (s *adminService) ViewAll() ([]*UserWithRole, error) {
+// 	users, err := s.uRepo.GetAll()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return users, nil
+// }
 
 func (s *adminService) ChangeNameById(uId int, name *string) (*UserWithRole, error) {
 	if name == nil {

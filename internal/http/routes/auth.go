@@ -8,9 +8,7 @@ import (
 )
 
 func InitAuthRoutes(router chi.Router, handler *handlers.AuthHandler) {
-
 	router.With(middleware.RedirectIfAuth(handler.JWTService)).Get("/", handler.MainPage)
-
 
 	router.Route(("/auth"), func(router chi.Router) {
 		router.With(middleware.RedirectIfAuth(handler.JWTService)).Get("/register", handler.RegisterPage)

@@ -1,15 +1,15 @@
 {{ define "nav" }}
 <ul class="navbar-nav ms-auto">
     {{ if eq .Role "admin" }}
-    <li class="nav-item"><a class="nav-link" href="/profiles">Users</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/profiles">Users</a></li>
     {{end}}
     <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
 </ul>
 {{ end }}
 
-{{ define "user"}}
+{{ define "users"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
-    <h1>Profile</h1>
+    <h1>User Profiles</h1>
 
     <div class="row">
         <div class="col-12 col-lg-6 mb-3">
@@ -37,7 +37,7 @@
                         <a href="/profile/update-name" class="btn btn-outline-primary btn-sm w-100">
                             Update name
                         </a>
-                        {{ if ne .Role "admin" }}
+                        {{ if eq .Role "admin" }}
                         <a hx-delete="/profile" class="btn btn-outline-danger btn-sm w-100">
                             Delete
                         </a>

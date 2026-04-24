@@ -89,10 +89,10 @@ func (s *authService) Logout(uId int, refreshToken string) error {
 
 func (s *authService) Refresh(refreshToken string) (*AuthResponse, error) {
 	t, err := s.validateRefresh(refreshToken)
-	if t == nil {
+	if err != nil {
 		return nil, err
 	}
-	if t.Revoked || t.ExpiresAt.Before(time.Now()) {
+	if !t.Revoked || !t.ExpiresAt.Before(time.Now()) {
 		tokens, err := s.generateTokens(t.UserId, "")
 		if err != nil {
 			return nil, err

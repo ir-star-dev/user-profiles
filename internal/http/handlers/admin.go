@@ -105,47 +105,7 @@ func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Requ
 // }
 
 
-// func (handler *Handler) ViewByAdmin(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := getIdFromReq(w, r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusForbidden)
-// 		return
-// 	}
-// 	user, err := handler.Service.View(uId)
-// 	if err != nil {
-// 		resp.Json(w, UserNotFound, http.StatusNotFound)
-// 		return
-// 	}
-// 	profile := &FullProfileResponseForAdmin{
-// 		Id:        user.Id,
-// 		Name:      user.Name,
-// 		Role:      user.Role,
-// 		Email:     user.Email,
-// 		Banned:    user.Banned,
-// 		CreatedAt: user.CreatedAt,
-// 	}
-// 	resp.Json(w, profile, http.StatusOK)
-// }
 
-// func (handler *Handler) ViewAllByAdmin(w http.ResponseWriter, r *http.Request) {
-// 	users, err := handler.Service.ViewAll()
-// 	if err != nil {
-// 		resp.Json(w, EmptyUsers, http.StatusNotFound)
-// 		return
-// 	}
-// 	var profiles []FullProfileResponseForAdmin
-// 	for _, user := range users {
-// 		profiles = append(profiles, FullProfileResponseForAdmin{
-// 			Id:        user.Id,
-// 			Name:      user.Name,
-// 			Role:      user.Role,
-// 			Email:     user.Email,
-// 			Banned:    user.Banned,
-// 			CreatedAt: user.CreatedAt,
-// 		})
-// 	}
-// 	resp.Json(w, profiles, http.StatusOK)
-// }
 
 // func (handler *Handler) UpdateByAdmin(w http.ResponseWriter, r *http.Request) {
 // 	uId, err := getIdFromReq(w, r)
@@ -223,19 +183,4 @@ func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Requ
 // 		return 0, errors.New(WrongParam)
 // 	}
 // 	return uId, nil
-// }
-
-// func selfDeletionDetected(w http.ResponseWriter, r *http.Request) (*int, error) {
-// 	uId, err := getIdFromReq(w, r)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	adminId, err := getUserId(r)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if uId == adminId {
-// 		return nil, errors.New(DeleteYourself)
-// 	}
-// 	return &uId, nil
 // }

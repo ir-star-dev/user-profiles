@@ -19,10 +19,11 @@ type UsersService interface {
 	View(uId int) (*UserWithRole, error)
 	ChangeName(uId int, name *string) (*UserWithRole, error)
 	Delete(uId int) error
+	ViewAll() ([]*UserWithRole, error)
 }
 
 type AdminService interface {
-	ViewAll() ([]*UserWithRole, error)
+	//ViewAll() ([]*UserWithRole, error)
 	ChangeNameById(uId int, name *string) (*UserWithRole, error)
 	DeleteById(uId int) error
 	BanById(uId int) error

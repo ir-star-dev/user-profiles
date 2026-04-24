@@ -16,5 +16,7 @@ func InitUserRoutes(router chi.Router, handler *handlers.UserHandler) {
 
 		// router.With(middleware.BanMiddleware).Patch("/name", handler.Update)
 		router.With(middleware.BanMiddleware).Delete("/", handler.Delete)
+
+		router.With(middleware.RoleMiddleware("admin")).Get("/users", handler.UsersProfilePage)
 	})
 }

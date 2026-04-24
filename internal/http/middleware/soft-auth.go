@@ -18,7 +18,7 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 					tokens, _ := authService.Refresh(refreshCookie)
 					if tokens == nil {
 						cookie.Set("", "__up_access_token", -time.Minute, w)
-						cookie.Set("", "__up_refresh_token", -time.Hour, w)
+						cookie.Set("", "__up_refresh_token", -time.Minute, w)
 						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 						return
 					} else {
@@ -35,7 +35,7 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 					tokens, _ := authService.Refresh(refreshCookie)
 					if tokens == nil {
 						cookie.Set("", "__up_access_token", -time.Minute, w)
-						cookie.Set("", "__up_refresh_token", -time.Hour, w)
+						cookie.Set("", "__up_refresh_token", -time.Minute, w)
 						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 						return
 					} else {

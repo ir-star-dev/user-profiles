@@ -41,3 +41,11 @@ func (s *usersService) Delete(uId int) error {
 	}
 	return nil
 }
+
+func (s *usersService) ViewAll() ([]*UserWithRole, error) {
+	users, err := s.uRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
