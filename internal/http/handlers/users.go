@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+	"html/template"
 	"net/http"
+
 	// "user-profiles/internal/http/req"
 	// "user-profiles/internal/http/resp"
 	"user-profiles/internal/http/middleware"
@@ -41,27 +44,18 @@ func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
 }
 
 func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := view.LoadTemplate(
-		"././ui/templates/base.tmpl",
-		"././ui/templates/pages/profile.tmpl",
-		"././ui/templates/pages/profile-admin.tmpl",
-		"././ui/templates/parts/layout/user.tmpl",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	uId, err := getUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
+
 	user, err := handler.UsersService.View(uId)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
+
 	profile := &users.ProfileResponse{
 		Id:        user.Id,
 		Role:      user.Role,
@@ -70,14 +64,39 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 		Banned:    user.Banned,
 		CreatedAt: user.CreatedAt,
 	}
-	tmplName := "profile"
-	if user.Role == "admin"  {
+
+	var tmpl *template.Template
+	var tmplName string
+	if user.Role == "admin" {
+		tmpl, err = view.LoadTemplate(
+			"././ui/templates/base.tmpl",
+			"././ui/templates/pages/profile-admin.tmpl",
+			"././ui/templates/parts/layout/user.tmpl",
+		)
 		tmplName = "profile-admin"
+	} else {
+		tmpl, err = view.LoadTemplate(
+			"././ui/templates/base.tmpl",
+			"././ui/templates/pages/profile.tmpl",
+			"././ui/templates/parts/layout/user.tmpl",
+		)
+		tmplName = "profile"
 	}
-	err = tmpl.ExecuteTemplate(w, tmplName, profile)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	var buf bytes.Buffer
+
+	err = tmpl.ExecuteTemplate(&buf, tmplName, profile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(buf.Bytes())
 }
 
 // func (handler *Handler) ViewById(w http.ResponseWriter, r *http.Request) {

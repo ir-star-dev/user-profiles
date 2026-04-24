@@ -158,7 +158,7 @@ func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	err = handler.AuthService.Logout(userId, token.Value)
+	err = handler.AuthService.Logout(userId, token)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return

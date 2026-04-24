@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 	"user-profiles/internal/auth"
@@ -14,31 +13,34 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			accessCookie, _ := cookie.Get("__up_access_token", r)
 			refreshCookie, err := cookie.Get("__up_refresh_token", r)
-			if accessCookie == nil {
-				if refreshCookie != nil && refreshCookie.Value != ""  {
-					tokens, err := authService.Refresh(refreshCookie.Value)
-					log.Println(err.Error())
-					if err == nil {
-						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
-						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
-					} else {
+			if accessCookie == "" {
+				if refreshCookie != ""  {
+					tokens, _ := authService.Refresh(refreshCookie)
+					if tokens == nil {
+						cookie.Set("", "__up_access_token", -time.Minute, w)
+						cookie.Set("", "__up_refresh_token", -time.Hour, w)
 						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 						return
+					} else {
+						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
+						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 					}
 				}
 			}
 
-			token := accessCookie.Value
+			token := accessCookie
 			claims, err := jwtService.Parse(token)
 			if err != nil {
-				if refreshCookie != nil {
-					tokens, err := authService.Refresh(refreshCookie.Value)
-					if err == nil {
-						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
-						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
-					} else {
+				if refreshCookie != "" {
+					tokens, _ := authService.Refresh(refreshCookie)
+					if tokens == nil {
+						cookie.Set("", "__up_access_token", -time.Minute, w)
+						cookie.Set("", "__up_refresh_token", -time.Hour, w)
 						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 						return
+					} else {
+						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
+						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 					}
 				} else {
 					http.Redirect(w, r, "/auth/login", http.StatusSeeOther)

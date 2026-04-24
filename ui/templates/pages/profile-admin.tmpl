@@ -1,8 +1,4 @@
-{{ define "profile-admin" }}
-    {{ template "base" . }}
-{{ end }}
-
-{{ define "title" }}Profile{{ end }}
+{{ define "title" }}Admin Profile{{ end }}
 
 {{ define "nav" }}
 <ul class="navbar-nav ms-auto">
@@ -13,4 +9,8 @@
 
 {{ define "content" }}
   {{template "user" .}}
+{{ end }}
+
+{{ define "profile-admin" }}
+    {{ template "base" . }}
 {{ end }}

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"log"
 	"time"
 	"user-profiles/internal/users"
 
@@ -90,38 +89,39 @@ func (s *authService) Logout(uId int, refreshToken string) error {
 
 func (s *authService) Refresh(refreshToken string) (*AuthResponse, error) {
 	t, err := s.validateRefresh(refreshToken)
-	if err != nil {
-		return nil, errors.New(InvalidOrExpires)
-	}
-	tokens, err := s.generateTokens(t.UserId, "")
-	if err != nil {
+	if t == nil {
 		return nil, err
 	}
-	newRefreshHash := s.rtService.Hash(tokens.Refresh)
-
-	// 🔥 transaction
-	err = s.tRepo.WithTx(func(repo RefreshRepository) error {
-		if !t.Revoked {
-			// 💥 compromise detected
-			_ = repo.RevokeFamily(t.FamilyID)
-			if err := repo.Revoke(t.TokenHash, t.UserId); err != nil {
-				return err
-			}
+	if t.Revoked || t.ExpiresAt.Before(time.Now()) {
+		tokens, err := s.generateTokens(t.UserId, "")
+		if err != nil {
+			return nil, err
 		}
+		newRefreshHash := s.rtService.Hash(tokens.Refresh)
+		// 🔥 transaction
+		err = s.tRepo.WithTx(func(repo RefreshRepository) error {
+			if !t.Revoked {
+				// 💥 compromise detected
+				_ = repo.RevokeFamily(t.FamilyID)
+				if err := repo.Revoke(t.TokenHash, t.UserId); err != nil {
+					return err
+				}
+			}
 
-		return repo.Save(&RefreshToken{
-			TokenHash: newRefreshHash,
-			ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
-			Revoked:   false,
-			UserId:    t.UserId,
-			FamilyID:  t.FamilyID,
+			return repo.Save(&RefreshToken{
+				TokenHash: newRefreshHash,
+				ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+				Revoked:   false,
+				UserId:    t.UserId,
+				FamilyID:  t.FamilyID,
+			})
 		})
-	})
-
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		return tokens, nil
 	}
-	return tokens, nil
+	return nil, err
 }
 
 func (s *authService) saveRefreshToken(hash []byte, uId int, fId string) error {
@@ -172,14 +172,8 @@ func (s *authService) generateTokens(uId int, role string) (*AuthResponse, error
 
 func (s *authService) validateRefresh(token string) (*RefreshToken, error) {
 	hash := s.rtService.Hash(token)
-	
 	existedToken, err := s.tRepo.FindTokenByHash(hash)
-	log.Println(existedToken)
-	log.Println(err)
 	if existedToken == nil {
-		return nil, err
-	}
-	if existedToken.Revoked || existedToken.ExpiresAt.Before(time.Now()) {
 		return nil, err
 	}
 	return existedToken, nil

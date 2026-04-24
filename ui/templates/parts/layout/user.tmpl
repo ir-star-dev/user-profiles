@@ -1,6 +1,6 @@
 {{ define "nav" }}
 <ul class="navbar-nav ms-auto">
-    {{if .Role "admin"}}
+    {{ if eq .Role "admin" }}
     <li class="nav-item"><a class="nav-link" href="/profiles">Users</a></li>
     {{end}}
     <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
@@ -37,7 +37,7 @@
                         <a href="/profile/update-name" class="btn btn-outline-primary btn-sm w-100">
                             Update name
                         </a>
-                        {{if .Role "admin"}}
+                        {{ if eq .Role "admin" }}
                         <a hx-delete="/profile" class="btn btn-outline-danger btn-sm w-100">
                             Delete
                         </a>

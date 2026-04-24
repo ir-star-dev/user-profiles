@@ -19,12 +19,12 @@ func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Ha
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			accessCookie, err := cookie.Get("__up_access_token", r)
-			if accessCookie == nil || accessCookie.Value == "" {
+			if accessCookie == "" {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}		
 
-			token := accessCookie.Value
+			token := accessCookie
 			claims, err := jwtService.Parse(token)
 			if err != nil {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
