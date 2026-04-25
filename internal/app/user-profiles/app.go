@@ -41,7 +41,6 @@ func Run() error {
 	refreshTokenService := auth.NewRefreshTokenService()
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
 	userService := users.NewUsersService(userRepo)
-	adminService := users.NewAdminService(userRepo)
 
 	// Mux
 	mux := chi.NewRouter()
@@ -55,14 +54,6 @@ func Run() error {
 		JWTService:  jwtService,
 	})
 	routes.InitAuthRoutes(mux, auth_handler)
-
-	admin_handler := handlers.NewAdminHandler(mux, handlers.AdminHandlerDeps{
-		Config:       conf,
-		AdminService: adminService,
-		AuthService:  authService,
-		JWTService:   jwtService,
-	})
-	routes.InitAdminRoutes(mux, admin_handler)
 
 	user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
 		Config:       conf,

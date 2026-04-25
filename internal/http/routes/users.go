@@ -12,10 +12,13 @@ func InitUserRoutes(router chi.Router, handler *handlers.UserHandler) {
 	router.Route(("/profile"), func(router chi.Router) {
 		router.Use(middleware.SoftAuthMiddleware(handler.JWTService, handler.AuthService))
 
-		router.Get("/", handler.ProfilePage)
+		router.Get("/{id}", handler.ProfilePage)
 
-		// router.With(middleware.BanMiddleware).Patch("/name", handler.Update)
-		router.With(middleware.BanMiddleware).Delete("/", handler.Delete)
+		// router.With(middleware.BanMiddleware).Patch("/{id}/name", handler.Update)
+		// router.With(middleware.RoleMiddleware("admin")).Patch("/{id}/ban", handler.Ban)
+		// router.With(middleware.RoleMiddleware("admin")).Patch("/{id}/unban", handler.Unban)
+
+		router.With(middleware.BanMiddleware).Delete("/{id}", handler.Delete)
 
 		router.With(middleware.RoleMiddleware("admin")).Get("/users", handler.UsersProfilePage)
 	})

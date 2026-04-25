@@ -12,11 +12,8 @@ type RegisterInput struct {
 	Role     string `json:"role" validate:"required,oneof=admin user"`
 }
 
-type LoginResponse struct {
-	Token string `json:"token"`
-}
-
 type AuthResponse struct {
+	UserId		int
 	Access      string
 	Refresh     string
 	RefreshHash []byte

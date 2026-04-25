@@ -28,7 +28,7 @@ func NewAuthService(uRepo users.Repository, tRepo RefreshRepository, jS JWTServi
 }
 
 func (s *authService) Register(email, password, name, role string) error {
-	
+
 	existedUser, _ := s.uRepo.FindByEmail(email)
 	if existedUser != nil {
 		return errors.New(UserExists)
@@ -71,8 +71,9 @@ func (s *authService) Login(email, password string) (*AuthResponse, error) {
 		return nil, err
 	}
 	res := &AuthResponse{
-		Access: tokens.Access,
-		Refresh: tokens.Refresh,
+		UserId:      existedUser.Id,
+		Access:      tokens.Access,
+		Refresh:     tokens.Refresh,
 		RefreshHash: tokens.RefreshHash,
 	}
 	return res, nil

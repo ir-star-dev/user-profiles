@@ -1,7 +1,10 @@
+{{ define "title" }} Profile {{ end }}
+
 {{ define "nav" }}
 <ul class="navbar-nav ms-auto">
-    {{ if eq .Role "admin" }}
-    <li class="nav-item"><a class="nav-link" href="/profiles">Users</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/profile/{{.Cards.Profile.Id}}">Profile</a></li>
+    {{ if eq .CurrentUserRole "admin" }}
+    <li class="nav-item"><a class="nav-link" href="/profile/users">Users</a></li>
     {{end}}
     <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
 </ul>
@@ -9,42 +12,21 @@
 
 {{ define "user"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
-    <h1>Profile</h1>
+    <h1>{{ if eq .Profile.Role "admin" }} Admin Profile {{else}} {{.Profile.Name}} Profile {{end}}</h1>
 
     <div class="row">
-        <div class="col-12 col-lg-6 mb-3">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
 
-                    <!-- HEADER -->
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                    
-                    <div>
-                        <h5 class="card-title mb-1">{{.Name}}</h5>
-                        <div class="text-muted small">{{.Email}}</div>
+        <div id="flash-message"></div>
+        <script>
+            document.body.addEventListener("userDeleted", function () {
+                document.getElementById("flash-message").innerHTML = `
+                    <div class="alert alert-success" role="alert">
+                        User successfully deleted
                     </div>
-
-                    <!-- BANNED STATUS -->
-                    <span class="badge text-bg-success">
-                        {{if .Banned}} Banned  {{else}} Active {{end}}
-                    </span>
-
-                    </div>
-
-                    <hr>
-                    <!-- ACTIONS -->
-                    <div class="d-flex gap-2">
-                        <a href="/profile/update-name" class="btn btn-outline-primary btn-sm w-100">
-                            Update name
-                        </a>
-                        {{ if ne .Role "admin" }}
-                        <a hx-delete="/profile" class="btn btn-outline-danger btn-sm w-100">
-                            Delete
-                        </a>
-                        {{end}}
-                    </div>
-                </div>
-            </div>
+                `;
+            });
+        </script>
+        {{template "user-card" .}}
         </div>
     </div>
 

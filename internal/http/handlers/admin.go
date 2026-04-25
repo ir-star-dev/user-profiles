@@ -1,55 +1,55 @@
 package handlers
 
-import (
-	"net/http"
-	// "user-profiles/internal/http/req"
-	// "user-profiles/internal/http/resp"
-	//"html/template"
-	"user-profiles/configs"
-	//"user-profiles/internal/http/middleware"
+// import (
+// 	"net/http"
+// 	// "user-profiles/internal/http/req"
+// 	// "user-profiles/internal/http/resp"
+// 	//"html/template"
+// 	"user-profiles/configs"
+// 	//"user-profiles/internal/http/middleware"
 
-	"user-profiles/internal/auth"
-	"user-profiles/internal/users"
+// 	"user-profiles/internal/auth"
+// 	"user-profiles/internal/users"
 
-	"github.com/go-chi/chi/v5"
-)
+// 	"github.com/go-chi/chi/v5"
+// )
 
-type AdminHandler struct {
-	Config       *configs.Config
-	AdminService users.AdminService
-	AuthService  auth.AuthService
-	JWTService   auth.JWTService
-}
+// type AdminHandler struct {
+// 	Config       *configs.Config
+// 	UsersService users.AdminService
+// 	AuthService  auth.AuthService
+// 	JWTService   auth.JWTService
+// }
 
-type AdminHandlerDeps struct {
-	Config       *configs.Config
-	AdminService users.AdminService
-	AuthService  auth.AuthService
-	JWTService   auth.JWTService
-}
+// type AdminHandlerDeps struct {
+// 	Config       *configs.Config
+// 	AdminService users.AdminService
+// 	AuthService  auth.AuthService
+// 	JWTService   auth.JWTService
+// }
 
-func NewAdminHandler(router chi.Router, deps AdminHandlerDeps) *AdminHandler {
-	return &AdminHandler{
-		Config:       deps.Config,
-		AdminService: deps.AdminService,
-		AuthService:  deps.AuthService,
-		JWTService:   deps.JWTService,
-	}
-}
+// func NewAdminHandler(router chi.Router, deps AdminHandlerDeps) *AdminHandler {
+// 	return &AdminHandler{
+// 		Config:       deps.Config,
+// 		AdminService: deps.AdminService,
+// 		AuthService:  deps.AuthService,
+// 		JWTService:   deps.JWTService,
+// 	}
+// }
 
-func (handler *AdminHandler) AdminProfilePage(w http.ResponseWriter, r *http.Request) {
-	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// }
-}
+// func (handler *AdminHandler) AdminProfilePage(w http.ResponseWriter, r *http.Request) {
+// 	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
+// 	// if err != nil {
+// 	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	// }
+// }
 
-func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
-	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// }
-}
+// func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
+// 	// err := handler.Tmpl.ExecuteTemplate(w, "profile", nil)
+// 	// if err != nil {
+// 	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	// }
+// }
 
 // func (handler *Handler) ViewById(w http.ResponseWriter, r *http.Request) {
 // 	uId, err := getUserId(r)
@@ -144,33 +144,7 @@ func (handler *AdminHandler) UserProfilePage(w http.ResponseWriter, r *http.Requ
 // 	resp.Json(w, "Profile deleted", http.StatusOK)
 // }
 
-// func (handler *Handler) BanByAdmin(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := selfDeletionDetected(w, r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	err = handler.Service.Ban(*uId)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	resp.Json(w, "User banned", http.StatusOK)
-// }
 
-// func (handler *Handler) UnbanByAdmin(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := selfDeletionDetected(w, r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	err = handler.Service.Unban(*uId)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	resp.Json(w, "User unbanned", http.StatusOK)
-// }
 
 // func getIdFromReq(w http.ResponseWriter, r *http.Request) (int, error) {
 // 	idStr := strings.TrimSpace(r.PathValue("id"))

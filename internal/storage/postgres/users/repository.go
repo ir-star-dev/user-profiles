@@ -128,7 +128,7 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*users.UserWi
 	return user, nil
 }
 
-func (repo *usersRepository) GetAll() ([]*users.UserWithRole, error) {
+func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
 	query := `
 		SELECT 
 			u.id, 
@@ -139,8 +139,9 @@ func (repo *usersRepository) GetAll() ([]*users.UserWithRole, error) {
 			r.role
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
+		ORDER BY u.id DESC
 	`
-	users := []*users.UserWithRole{}
+	users := []users.UserWithRole{}
 	err := repo.db.Select(&users, query)
 	if err != nil {
 		return nil, err

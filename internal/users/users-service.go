@@ -42,10 +42,34 @@ func (s *usersService) Delete(uId int) error {
 	return nil
 }
 
-func (s *usersService) ViewAll() ([]*UserWithRole, error) {
+func (s *usersService) ViewAll() ([]UserWithRole, error) {
 	users, err := s.uRepo.GetAll()
 	if err != nil {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (s *usersService) Ban(uId int) error {
+	err := s.uRepo.Ban(uId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *usersService) Unban(uId int) error {
+	err := s.uRepo.Unban(uId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *usersService) Role(uId int) (string, error) {
+	role, err := s.uRepo.FindRoleByUserId(uId)
+	if err != nil {
+		return "", err
+	}
+	return role, nil
 }

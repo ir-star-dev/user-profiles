@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	//"html/template"
 	"net/http"
+	"strconv"
 	"time"
 	"user-profiles/cmd/view"
 	"user-profiles/configs"
@@ -46,7 +46,7 @@ func (handler *AuthHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "index", nil)
+	err = tmpl.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -63,7 +63,7 @@ func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "login", nil)
+	err = tmpl.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -80,7 +80,7 @@ func (handler *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "register", nil)
+	err = tmpl.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -98,16 +98,15 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		"././ui/templates/parts/validation/errors.tmpl",
 		"././ui/templates/parts/form-submit/error.tmpl",
 	)
-	tokens, err := handler.AuthService.Login(input.Email, input.Password)
+	res, err := handler.AuthService.Login(input.Email, input.Password)
 	if err != nil {
 		tmpl.ExecuteTemplate(w, "form-submit-error", err.Error())
 		return
 	}
+	cookie.Set(res.Access, "__up_access_token", 5*time.Minute, w)
+	cookie.Set(res.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 
-	cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
-	cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
-
-	w.Header().Set("HX-Redirect", "/profile")
+	w.Header().Set("HX-Redirect", "/profile/"+ strconv.Itoa(res.UserId))
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -169,21 +168,3 @@ func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Redirect", "/auth/login")
 	w.WriteHeader(http.StatusOK)
 }
-
-// func (handler *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-// 	token, err := getRefreshTokenFromCookie(r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	tokens, err := handler.AuthService.Refresh(token)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	setCookie(tokens.Refresh, w)
-// 	res := &LoginResponse{
-// 		Token: tokens.Access,
-// 	}
-// 	resp.Json(w, res, http.StatusOK)
-// }

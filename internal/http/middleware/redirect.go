@@ -2,20 +2,17 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"user-profiles/internal/auth"
-	"user-profiles/internal/http/cookie"
 )
 
-func RedirectIfAuth(jwtService auth.JWTService) func(http.Handler) http.Handler {
+func CheckAuthAndRedirect(jwtService auth.JWTService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cookie, err := cookie.Get("__up_access_token", r)
-			if err == nil && cookie != "" {
-				_, err := jwtService.Parse(cookie)
-				if err == nil {
-					http.Redirect(w, r, "/profile", http.StatusSeeOther)
-					return
-				}
+			uId, err := GetUserID(r.Context())
+			if err == nil {
+				http.Redirect(w, r, "/profile/"+strconv.Itoa(uId), http.StatusSeeOther)
+				return
 			}
 			next.ServeHTTP(w, r)
 		})
