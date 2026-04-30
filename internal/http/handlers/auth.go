@@ -36,21 +36,7 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 	}
 }
 
-func (handler *AuthHandler) MainPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := view.LoadTemplate(
-		"././ui/templates/base.tmpl",
-		"././ui/templates/pages/index.tmpl",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
-	err = tmpl.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
 
 func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(

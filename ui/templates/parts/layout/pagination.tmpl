@@ -1,0 +1,47 @@
+{{define "pagination"}}
+    {{ if .Pagination.TotalPages }}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                {{ if .Pagination.HasPrev }}
+                <li class="page-item">
+                    <a class="page-link" href="/profile/users/page/{{.Pagination.PrevPage}}">
+                        Prev
+                    </a>
+                </li>
+                {{ end }}
+
+                {{ range .Pagination.Pages }}
+                <li class="page-item">
+                    <a class="page-link {{if eq . $.Pagination.Page}}active{{end}}"
+                    href="/profile/users/page/{{.}}">
+                        {{.}}
+                    </a>
+                </li>
+                {{ end }}
+
+                {{ if .Pagination.ShowDots }}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+
+                <li class="page-item">
+                    <a class="page-link"
+                    href="/profile/users/page/{{.Pagination.LastPage}}">
+                        {{.Pagination.LastPage}}
+                    </a>
+                </li>
+                {{ end }}
+
+                {{ if .Pagination.HasNext }}
+                <li class="page-item">
+                    <a class="page-link" href="/profile/users/page/{{.Pagination.NextPage}}">
+                        Next
+                    </a>
+                </li>
+                {{ end }}
+
+            </ul>
+        </nav>
+        {{ end }}
+{{end}}

@@ -2,9 +2,9 @@
 
 {{ define "nav" }}
 <ul class="navbar-nav ms-auto">
-    <li class="nav-item"><a class="nav-link active" href="/profile/{{.Cards.Profile.Id}}">Profile</a></li>
+    <li class="nav-item"><a class="nav-link {{if eq .RequestedUserId .CurrentUserId}}active{{end}}" href="/profile/{{.CurrentUserId}}">My Profile</a></li>
     {{ if eq .CurrentUserRole "admin" }}
-    <li class="nav-item"><a class="nav-link" href="/profile/users">Users</a></li>
+    <li class="nav-item"><a class="nav-link" href="/profile/users/page/1">Users</a></li>
     {{end}}
     <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
 </ul>
@@ -12,23 +12,27 @@
 
 {{ define "user"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
-    <h1>{{ if eq .Profile.Role "admin" }} Admin Profile {{else}} {{.Profile.Name}} Profile {{end}}</h1>
+    {{if .Cards}}
+        {{$page := .}}
+        {{range .Cards}}
+        <h1>{{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}</h1>
+        <div class="row">
 
-    <div class="row">
-
-        <div id="flash-message"></div>
-        <script>
-            document.body.addEventListener("userDeleted", function () {
-                document.getElementById("flash-message").innerHTML = `
-                    <div class="alert alert-success" role="alert">
-                        User successfully deleted
-                    </div>
-                `;
-            });
-        </script>
-        {{template "user-card" .}}
+            <div id="flash-message"></div>
+            <script>
+                document.body.addEventListener("userDeleted", function () {
+                    document.getElementById("flash-message").innerHTML = `
+                        <div class="alert alert-success" role="alert">
+                            User successfully deleted
+                        </div>
+                    `;
+                });
+            </script>
+            {{template "user-card" .}}
+            </div>
         </div>
-    </div>
+        {{end}}
+    {{end}}
 
 </section>
 {{end}}

@@ -24,6 +24,7 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 					} else {
 						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
 						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
+						return
 					}
 				}
 			}
@@ -41,6 +42,7 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 					} else {
 						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
 						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
+						return 
 					}
 				} else {
 					http.Redirect(w, r, "/auth/login", http.StatusSeeOther)

@@ -128,7 +128,20 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*users.UserWi
 	return user, nil
 }
 
-func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
+func (repo *usersRepository) GetAll(page int) ([]users.UserWithRole, int, error) {
+	limit := 10
+	offset := (page-1)*limit
+
+	var totalCount int
+	countQuery := `
+		SELECT COUNT(*)
+		FROM users
+	`
+	err := repo.db.Get(&totalCount, countQuery)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	query := `
 		SELECT 
 			u.id, 
@@ -140,13 +153,14 @@ func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
 		ORDER BY u.id DESC
+		LIMIT $1 OFFSET $2
 	`
 	users := []users.UserWithRole{}
-	err := repo.db.Select(&users, query)
+	err = repo.db.Select(&users, query, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
+	return users, totalCount, nil
 }
 
 func (repo *usersRepository) Ban(uId int) error {

@@ -42,12 +42,12 @@ func (s *usersService) Delete(uId int) error {
 	return nil
 }
 
-func (s *usersService) ViewAll() ([]UserWithRole, error) {
-	users, err := s.uRepo.GetAll()
+func (s *usersService) ViewAll(page int) ([]UserWithRole, int, error) {
+	users, res, err := s.uRepo.GetAll(page)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
+	return users, res, nil
 }
 
 func (s *usersService) Ban(uId int) error {

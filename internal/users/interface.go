@@ -10,7 +10,7 @@ type Repository interface {
 	FindRoleByUserId(uId int) (string, error)
 	FindBanStatus(uId int) (*bool, error)
 
-	GetAll() ([]UserWithRole, error)
+	GetAll(page int) ([]UserWithRole, int, error)
 	Ban(uId int) error
 	Unban(uId int) error
 }
@@ -19,7 +19,7 @@ type UsersService interface {
 	View(uId int) (*UserWithRole, error)
 	ChangeName(uId int, name *string) (*UserWithRole, error)
 	Delete(uId int) error
-	ViewAll() ([]UserWithRole, error)
+	ViewAll(page int) ([]UserWithRole, int, error)
 	Role(uId int) (string, error)
 
 	Ban(uId int) error
