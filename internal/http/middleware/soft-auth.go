@@ -11,6 +11,7 @@ import (
 func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var accessToken string
 			accessCookie, _ := cookie.Get("__up_access_token", r)
 			refreshCookie, err := cookie.Get("__up_refresh_token", r)
 			if accessCookie == "" {
@@ -22,32 +23,17 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 						return
 					} else {
+						accessToken = tokens.Access
 						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
 						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
-						return
 					}
 				}
 			}
 
-			token := accessCookie
-			claims, err := jwtService.Parse(token)
+			claims, err := jwtService.Parse(accessToken)
 			if err != nil {
-				if refreshCookie != "" {
-					tokens, _ := authService.Refresh(refreshCookie)
-					if tokens == nil {
-						cookie.Set("", "__up_access_token", -time.Minute, w)
-						cookie.Set("", "__up_refresh_token", -time.Minute, w)
-						http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-						return
-					} else {
-						cookie.Set(tokens.Access, "__up_access_token", 5*time.Minute, w)
-						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
-						return 
-					}
-				} else {
-					http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-					return
-				}
+				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+				return
 			}
 
 			sub, ok := claims["sub"].(float64)
