@@ -8,7 +8,7 @@ import (
 )
 
 func InitUserRoutes(router chi.Router, handler *handlers.UserHandler) {
-	router.With(middleware.SoftAuthMiddleware(handler.JWTService, handler.AuthService)).Get("/", handler.MainPage)
+	router.Get("/", handler.MainPage)
 
 	router.Route(("/profile"), func(router chi.Router) {
 		router.Use(middleware.SoftAuthMiddleware(handler.JWTService, handler.AuthService))
