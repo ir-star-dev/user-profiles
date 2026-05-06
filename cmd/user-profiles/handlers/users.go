@@ -75,26 +75,6 @@ func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
 	}
 }
 
-func (handler *UserHandler) MainPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := view.LoadTemplate(
-		"././ui/templates/base.tmpl",
-		"././ui/templates/pages/index.tmpl",
-		"././ui/templates/parts/layout/posts.tmpl",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	data := PageData{}
-	var buf bytes.Buffer
-
-	err = tmpl.ExecuteTemplate(&buf, "base", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Write(buf.Bytes())
-}
 
 func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
 	uIdFromReq, err := getIdFromReq(r)

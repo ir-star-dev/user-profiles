@@ -16,7 +16,7 @@ func (s *postService) Delete(pId int) error {
 	return nil
 }
 
-func (s *postService) Update(post *Post) (int, error) {
+func (s *postService) Update(post *Post) (int64, error) {
 	return 0, nil
 }
 
@@ -25,7 +25,7 @@ func (s *postService) FindById(uId int) ([]Post, error) {
 	return posts, nil
 }
 
-func (s *postService) GetAll() ([]Post, error) {
+func (s *postService) GetAll(page int) ([]Post, int, error) {
 	var posts []Post
-	return posts, nil
+	return posts, 0, nil
 }
