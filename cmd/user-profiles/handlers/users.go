@@ -11,15 +11,14 @@ import (
 
 	//"html/template"
 	//"time"
-	"user-profiles/cmd/view"
+	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 
 	//"user-profiles/internal/http/cookie"
 	"user-profiles/internal/http/cookie"
 	"user-profiles/internal/http/middleware"
-
-	"user-profiles/internal/auth"
-	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -38,34 +37,6 @@ type UserHandlerDeps struct {
 	JWTService   auth.JWTService
 }
 
-type PageData struct {
-	RequestedUserId int
-	CurrentUserId   int
-	CurrentUserRole string
-	Cards           []UserCardData
-	Pagination      PaginationData
-}
-
-type UserCardData struct {
-	Profiles        users.UserWithRole
-	CanDelete       bool
-	CanBan			bool
-	CurrentUserId   int
-	CurrentUserRole string
-}
-
-type PaginationData struct {
-	Page       int
-	TotalPages int
-	Pages      []int
-	HasPrev    bool
-	HasNext    bool
-	PrevPage   int
-	NextPage   int
-	ShowDots   bool
-	LastPage   int
-}
-
 func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
 	return &UserHandler{
 		Config:       deps.Config,
@@ -74,7 +45,6 @@ func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
 		JWTService:   deps.JWTService,
 	}
 }
-
 
 func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
 	uIdFromReq, err := getIdFromReq(r)
@@ -90,11 +60,11 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 	}
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/profile.tmpl",
 		"././ui/templates/parts/layout/user.tmpl",
 		"././ui/templates/parts/layout/user-card.tmpl",
 		"././ui/templates/parts/layout/delete-modal.tmpl",
-		
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -107,15 +77,15 @@ func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) 
 	}
 	currUserRole, _ := handler.UsersService.Role(currUserId)
 
-	var cards []UserCardData
-	cards = append(cards, UserCardData{
+	var cards []view.UserCardData
+	cards = append(cards, view.UserCardData{
 		Profiles:        *profile,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
-		CanDelete: canDelete(currUserRole, currUserId, profile.Id),
-		CanBan: canBan(currUserRole, currUserId, profile.Id),
+		CanDelete:       canDelete(currUserRole, currUserId, profile.Id),
+		CanBan:          canBan(currUserRole, currUserId, profile.Id),
 	})
-	data := PageData{
+	data := view.PageData{
 		RequestedUserId: uIdFromReq,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
@@ -154,6 +124,7 @@ func (handler *UserHandler) UserListPage(w http.ResponseWriter, r *http.Request)
 	var tmpl *template.Template
 	tmpl, err = view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/users-profile.tmpl",
 		"././ui/templates/parts/layout/users.tmpl",
 		"././ui/templates/parts/layout/pagination.tmpl",
@@ -169,12 +140,12 @@ func (handler *UserHandler) UserListPage(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var cards []UserCardData
+	var cards []view.UserCardData
 	for _, profile := range profiles {
-		cards = append(cards, UserCardData{
-			Profiles: profile,
+		cards = append(cards, view.UserCardData{
+			Profiles:  profile,
 			CanDelete: canDelete(currRole, uId, profile.Id),
-			CanBan: canBan(currRole, uId, profile.Id),
+			CanBan:    canBan(currRole, uId, profile.Id),
 		})
 	}
 
@@ -185,10 +156,11 @@ func (handler *UserHandler) UserListPage(w http.ResponseWriter, r *http.Request)
 		pages = append(pages, i)
 	}
 	pagination := BuildPagination(page, totalPages)
-	data := PageData{
-		Cards:         cards,
-		Pagination:    pagination,
-		CurrentUserId: uId,
+	data := view.PageData{
+		Cards:           cards,
+		Pagination:      pagination,
+		CurrentUserId:   uId,
+		CurrentUserRole: currRole,
 	}
 	var buf bytes.Buffer
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -233,11 +205,11 @@ func (handler *UserHandler) DeleteConfirm(w http.ResponseWriter, r *http.Request
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	var cards []UserCardData
-	cards = append(cards, UserCardData{
-		Profiles:        *profile,
+	var cards []view.UserCardData
+	cards = append(cards, view.UserCardData{
+		Profiles: *profile,
 	})
-	data := PageData{
+	data := view.PageData{
 		Cards: cards,
 	}
 	tmpl.ExecuteTemplate(w, "delete-modal", data)
@@ -249,7 +221,7 @@ func (handler *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HX-Redirect", "/auth/login")
 		w.WriteHeader(http.StatusOK)
 		return
-	} 
+	}
 	role, err := handler.UsersService.Role(currId)
 	if err != nil {
 		return
@@ -268,8 +240,8 @@ func (handler *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func BuildPagination(currentPage, totalPages int) PaginationData {
-	p := PaginationData{
+func BuildPagination(currentPage, totalPages int) view.PaginationData {
+	p := view.PaginationData{
 		Page:       currentPage,
 		TotalPages: totalPages,
 		HasPrev:    currentPage > 1,
@@ -331,11 +303,11 @@ func (handler *UserHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	data := UserCardData{
+	data := view.UserCardData{
 		Profiles:      *user,
 		CurrentUserId: currId,
-		CanDelete: canDelete(currRole, currId, reqId),
-		CanBan: canBan(currRole, currId, reqId),
+		CanDelete:     canDelete(currRole, currId, reqId),
+		CanBan:        canBan(currRole, currId, reqId),
 	}
 	tmpl.ExecuteTemplate(w, "user-"+v, data)
 }
@@ -367,11 +339,11 @@ func (handler *UserHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	data := UserCardData{
+	data := view.UserCardData{
 		Profiles:      *user,
 		CurrentUserId: currId,
-		CanDelete: canDelete(currRole, currId, reqId),
-		CanBan: canBan(currRole, currId, reqId),
+		CanDelete:     canDelete(currRole, currId, reqId),
+		CanBan:        canBan(currRole, currId, reqId),
 	}
 	tmpl.ExecuteTemplate(w, "user-"+v, data)
 }

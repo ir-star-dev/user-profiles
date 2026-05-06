@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"user-profiles/cmd/view"
+	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 
 	"errors"
-	"user-profiles/internal/auth"
 	"user-profiles/internal/http/cookie"
 	"user-profiles/internal/http/middleware"
 	"user-profiles/internal/http/req"
@@ -36,11 +36,10 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 	}
 }
 
-
-
 func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/login.tmpl",
 		"././ui/templates/parts/auth/form-login.tmpl",
 	)
@@ -48,8 +47,8 @@ func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	err = tmpl.ExecuteTemplate(w, "base", nil)
+	data := view.PageData{}
+	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -58,6 +57,7 @@ func (handler *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 func (handler *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/register.tmpl",
 		"././ui/templates/parts/auth/form-register.tmpl",
 	)
@@ -65,8 +65,8 @@ func (handler *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	err = tmpl.ExecuteTemplate(w, "base", nil)
+	data := view.PageData{}
+	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -79,6 +79,7 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/register.tmpl",
 		"././ui/templates/parts/auth/form-register.tmpl",
 		"././ui/templates/parts/validation/errors.tmpl",
@@ -92,7 +93,7 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	cookie.Set(res.Access, "__up_access_token", 5*time.Minute, w)
 	cookie.Set(res.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 
-	w.Header().Set("HX-Redirect", "/profile/"+ strconv.Itoa(res.UserId))
+	w.Header().Set("HX-Redirect", "/panel/profile/"+ strconv.Itoa(res.UserId))
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -105,6 +106,7 @@ func (handler *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/register.tmpl",
 		"././ui/templates/parts/auth/form-register.tmpl",
 		"././ui/templates/parts/validation/errors.tmpl",

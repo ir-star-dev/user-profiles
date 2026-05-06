@@ -1,7 +1,7 @@
 package users_postgres
 
 import (
-	"user-profiles/internal/users"
+	"user-profiles/cmd/user-profiles/users"
 
 	"github.com/jmoiron/sqlx"
 )

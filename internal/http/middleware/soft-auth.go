@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 	"time"
-	"user-profiles/internal/auth"
+	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/internal/http/cookie"
 )
 
@@ -28,8 +28,9 @@ func SoftAuthMiddleware(jwtService auth.JWTService, authService auth.AuthService
 						cookie.Set(tokens.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 					}
 				}
-			}
-
+			} 
+			
+			accessToken = accessCookie
 			claims, err := jwtService.Parse(accessToken)
 			if err != nil {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)

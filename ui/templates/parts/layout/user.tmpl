@@ -1,15 +1,5 @@
 {{ define "title" }} Profile {{ end }}
 
-{{ define "nav" }}
-<ul class="navbar-nav ms-auto">
-    <li class="nav-item"><a class="nav-link {{if eq .RequestedUserId .CurrentUserId}}active{{end}}" href="/profile/{{.CurrentUserId}}">My Profile</a></li>
-    {{ if eq .CurrentUserRole "admin" }}
-    <li class="nav-item"><a class="nav-link" href="/profile/users/page/1">Users</a></li>
-    {{end}}
-    <li class="nav-item"><a class="nav-link" hx-post="/auth/logout">Sign Out</a></li>
-</ul>
-{{ end }}
-
 {{ define "user"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
     {{if .Cards}}

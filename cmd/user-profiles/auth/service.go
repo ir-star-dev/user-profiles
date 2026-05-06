@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 	"time"
-	"user-profiles/internal/users"
+	"user-profiles/cmd/user-profiles/users"
 
 	"strings"
 

@@ -1,7 +1,7 @@
 package auth_postgres
 
 import (
-	"user-profiles/internal/auth"
+	"user-profiles/cmd/user-profiles/auth"
 
 	"github.com/jmoiron/sqlx"
 )

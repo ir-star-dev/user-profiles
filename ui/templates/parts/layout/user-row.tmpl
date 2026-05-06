@@ -44,7 +44,7 @@
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
 
                 <a
-                    href="/profile/{{ .Profiles.Id }}"
+                    href="/panel/profile/{{ .Profiles.Id }}"
                     target="_blank"
                     class="btn btn-sm btn-outline-primary">
                     View
@@ -54,7 +54,7 @@
 
                     {{ if .Profiles.Banned }}
                         <a
-                            hx-patch="/profile/{{ .Profiles.Id }}/unban?view=row"
+                            hx-patch="/panel/profile/{{ .Profiles.Id }}/unban?view=row"
                             hx-target="#user-{{ .Profiles.Id }}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
@@ -62,7 +62,7 @@
                         </a>
                     {{ else }}
                         <a
-                            hx-patch="/profile/{{ .Profiles.Id }}/ban?view=row"
+                            hx-patch="/panel/profile/{{ .Profiles.Id }}/ban?view=row"
                             hx-target="#user-{{ .Profiles.Id }}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
@@ -71,7 +71,7 @@
                     {{ end }}
 
                     {{if .CanDelete}}
-                        <a  hx-get="/profile/{{.Profiles.Id}}/delete-confirm"
+                        <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
                             hx-target="#modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">

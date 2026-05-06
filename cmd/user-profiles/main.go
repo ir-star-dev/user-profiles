@@ -3,32 +3,19 @@ package main
 import (
 	"log"
 	"net/http"
+	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/handlers"
+	"user-profiles/cmd/user-profiles/posts"
+	"user-profiles/cmd/user-profiles/users"
 	"user-profiles/configs"
-	"user-profiles/internal/auth"
 	"user-profiles/internal/http/middleware"
-	"user-profiles/internal/posts"
 	"user-profiles/internal/storage/db"
 	auth_postgres "user-profiles/internal/storage/postgres/auth"
 	posts_postgres "user-profiles/internal/storage/postgres/posts"
 	users_postgres "user-profiles/internal/storage/postgres/users"
-	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
 )
-
-type services struct {
-	auth.AuthService
-	auth.JWTService
-	auth.RefreshTokenService
-	users.UsersService
-	posts.PostService
-}
-
-type app struct {
-	*configs.Config
-	*services
-}
 
 func main() {
 	// Config
@@ -56,17 +43,6 @@ func main() {
 	userService := users.NewUsersService(userRepo)
 	postService := posts.PostService(postRepo)
 
-	services := services{
-		authService,
-		jwtService,
-		refreshTokenService,
-		userService,
-		postService,
-	}
-	app := app{
-		conf,
-		&services,
-	}
 	// Mux
 	mux := chi.NewRouter()
 
@@ -74,21 +50,21 @@ func main() {
 	mux.Use(middleware.CORS)
 
 	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
-		Config:      app.Config,
-		AuthService: app.services.AuthService,
-		JWTService:  app.services.JWTService,
+		Config:      conf,
+		AuthService: authService,
+		JWTService:  jwtService,
 	})
 	user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
-		Config:       app.Config,
-		AuthService:  app.services.AuthService,
-		JWTService:   app.services.JWTService,
-		UsersService: app.services.UsersService,
+		Config:       conf,
+		AuthService:  authService,
+		JWTService:   jwtService,
+		UsersService: userService,
 	})
 	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
-		Config:      app.Config,
-		AuthService: app.services.AuthService,
-		JWTService:  app.services.JWTService,
-		PostService: app.services.PostService,
+		Config:      conf,
+		AuthService: authService,
+		JWTService:  jwtService,
+		PostService: postService,
 	})
 	InitRoutes(mux, auth_handler, user_handler, post_handler)
 

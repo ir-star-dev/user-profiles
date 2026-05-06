@@ -6,13 +6,13 @@ import (
 
 	//"html/template"
 	//"time"
-	"user-profiles/cmd/view"
+	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 
 	//"user-profiles/internal/http/cookie"
 
-	"user-profiles/internal/auth"
-	"user-profiles/internal/posts"
+	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/posts"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -43,6 +43,7 @@ func NewPostHandler(router chi.Router, deps PostHandlerDeps) *PostHandler {
 func (handler *PostHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -50,7 +51,7 @@ func (handler *PostHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -64,6 +65,7 @@ func (handler *PostHandler) MainPage(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/post.tmpl",
 	)
@@ -71,7 +73,7 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -85,6 +87,7 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/post.tmpl",
 	)
@@ -92,7 +95,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -106,6 +109,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -113,7 +117,7 @@ func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -127,6 +131,7 @@ func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -134,7 +139,7 @@ func (handler *PostHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -148,6 +153,7 @@ func (handler *PostHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -155,7 +161,7 @@ func (handler *PostHandler) Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -169,6 +175,7 @@ func (handler *PostHandler) Publish(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) Review(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -176,7 +183,7 @@ func (handler *PostHandler) Review(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -190,6 +197,7 @@ func (handler *PostHandler) Review(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) CreateForm(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -197,7 +205,7 @@ func (handler *PostHandler) CreateForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -211,6 +219,7 @@ func (handler *PostHandler) CreateForm(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -218,7 +227,7 @@ func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -232,6 +241,7 @@ func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -239,7 +249,7 @@ func (handler *PostHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)
@@ -253,6 +263,7 @@ func (handler *PostHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := view.LoadTemplate(
 		"././ui/templates/base.tmpl",
+		"././ui/templates/parts/layout/nav.tmpl",
 		"././ui/templates/pages/index.tmpl",
 		"././ui/templates/parts/layout/posts.tmpl",
 	)
@@ -260,7 +271,7 @@ func (handler *PostHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	data := PageData{}
+	data := view.PageData{}
 	var buf bytes.Buffer
 
 	err = tmpl.ExecuteTemplate(&buf, "base", data)

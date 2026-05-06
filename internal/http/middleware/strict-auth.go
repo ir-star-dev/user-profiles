@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"user-profiles/internal/auth"
+	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/internal/http/cookie"
 )
 

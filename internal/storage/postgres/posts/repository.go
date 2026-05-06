@@ -1,7 +1,7 @@
 package posts_postgres
 
 import (
-	"user-profiles/internal/posts"
+	"user-profiles/cmd/user-profiles/posts"
 
 	"github.com/jmoiron/sqlx"
 )

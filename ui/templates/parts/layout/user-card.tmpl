@@ -23,19 +23,19 @@
             <hr>
             <!-- ACTIONS -->
             <div id="actions-btn-{{.Profiles.Id}}" class="d-flex gap-2">
-                <a hx-patch="/profile/{{.Profiles.Id}}/name" class="btn btn-outline-primary btn-sm w-100">
+                <a hx-patch="/panel/profile/{{.Profiles.Id}}/name" class="btn btn-outline-primary btn-sm w-100">
                     Update name
                 </a>
                 {{if .CanBan}}
                     {{if .Profiles.Banned}}
-                        <a  hx-patch="/profile/{{.Profiles.Id}}/unban?view=card"
+                        <a  hx-patch="/panel/profile/{{.Profiles.Id}}/unban?view=card"
                             hx-target="#user-{{.Profiles.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-outline-secondary btn-sm w-100">
                             Unban
                         </a>
                     {{else}}
-                        <a  hx-patch="/profile/{{.Profiles.Id}}/ban?view=card"
+                        <a  hx-patch="/panel/profile/{{.Profiles.Id}}/ban?view=card"
                             hx-target="#user-{{.Profiles.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-outline-secondary btn-sm w-100">
@@ -44,7 +44,7 @@
                     {{end}}
                 {{end}}
                 {{if .CanDelete}}
-                <a  hx-get="/profile/{{.Profiles.Id}}/delete-confirm"
+                <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
                     class="btn btn-outline-danger btn-sm w-100">

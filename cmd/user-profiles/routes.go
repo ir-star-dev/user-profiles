@@ -46,6 +46,8 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, uh *handlers.UserHa
 		router.With(middleware.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/publish", ph.Publish)
 		router.With(middleware.RoleMiddleware("admin", "editor")).Delete("/posts/post/{id}", ph.Delete)
 
+		router.With(middleware.RoleMiddleware("admin")).Get("/users/page/{page}", uh.UserListPage)
+
 		router.Route(("/profile"), func(router chi.Router) {
 			router.Use(middleware.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
@@ -57,8 +59,6 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, uh *handlers.UserHa
 
 			router.With(middleware.BanMiddleware).Get("/{id}/delete-confirm", uh.DeleteConfirm)
 			router.With(middleware.BanMiddleware).Delete("/{id}", uh.Delete)
-
-			router.With(middleware.RoleMiddleware("admin")).Get("/users/page/{page}", uh.UserListPage)
 		})
 	})
 }
