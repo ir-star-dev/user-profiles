@@ -16,7 +16,8 @@ var ignoreDirs = map[string]bool{
 	"bin":           true,
 	"dist":          true,
 	"postgres-data": true,
-	"migrate":		 true,
+	"migrate":       true,
+	"seeds":         true,
 }
 
 var ignoreExt = map[string]bool{

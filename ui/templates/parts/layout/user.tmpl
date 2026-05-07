@@ -12,9 +12,9 @@
 
 {{ define "user"}}
 <section class="col-12 col-md-9 col-lg-12 p-4">
-    {{if .Cards}}
+    {{if .User}}
         {{$page := .}}
-        {{range .Cards}}
+        {{range .User}}
         <h1>{{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}</h1>
         <div class="row">
 

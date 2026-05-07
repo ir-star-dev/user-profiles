@@ -1,8 +1,16 @@
-package middleware
+package utils
 
 import (
 	"context"
 	"errors"
+)
+
+type contextKey string
+
+const (
+	UserIdKey   contextKey = "user_id"
+	UserRoleKey contextKey = "user_role"
+	UserBanKey  contextKey = "user_ban"
 )
 
 func GetUserID(ctx context.Context) (int, error) {

@@ -1,18 +1,11 @@
-package middleware
+package middlewares
 
 import (
 	"context"
 	"net/http"
+	"user-profiles/cmd/user-profiles/utils"
 	"user-profiles/internal/auth"
 	"user-profiles/internal/http/cookie"
-)
-
-type contextKey string
-
-const (
-    UserIdKey contextKey = "user_id"
-    UserRoleKey contextKey = "user_role"
-	UserBanKey contextKey = "user_ban"
 )
 
 func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Handler {
@@ -22,7 +15,7 @@ func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Ha
 			if accessCookie == "" {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
-			}		
+			}
 
 			token := accessCookie
 			claims, err := jwtService.Parse(token)
@@ -38,22 +31,22 @@ func StrictAuthMiddleware(jwtService auth.JWTService) func(http.Handler) http.Ha
 			}
 			uId := int(sub)
 			// send UserIdKey in context
-			ctx := context.WithValue(r.Context(), UserIdKey, uId)
+			ctx := context.WithValue(r.Context(), utils.UserIdKey, uId)
 
 			role, ok := claims["role"].(string)
 			if !ok {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
-			// send UserRoleKey in context		
-			ctx = context.WithValue(ctx, UserRoleKey, role)
+			// send UserRoleKey in context
+			ctx = context.WithValue(ctx, utils.UserRoleKey, role)
 			ban, ok := claims["banned"].(bool)
 			if !ok {
 				http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 				return
 			}
 			// send UseBanKey in context
-			ctx = context.WithValue(ctx, UserBanKey, ban)
+			ctx = context.WithValue(ctx, utils.UserBanKey, ban)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

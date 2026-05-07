@@ -18,7 +18,7 @@ func Set(token string, name string, ttl time.Duration, w http.ResponseWriter) {
 		Name:     name,
 		Value:    token,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false, // true
 		SameSite: http.SameSiteLaxMode,
 		Path:     "/",
 		Expires:  time.Now().Add(ttl),
