@@ -1,0 +1,97 @@
+<<<<<<< HEAD
+{{ define "nav" }}
+<ul class="navbar-nav ms-auto">
+    <li class="nav-item">
+        <a class="nav-link" href="/profile/{{.CurrentUserId}}">
+            My Profile
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link active" href="/profile/users/page/1">
+            Users
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" hx-post="/auth/logout">
+            Sign Out
+        </a>
+    </li>
+</ul>
+{{ end }}
+
+
+=======
+>>>>>>> 61eaa76129fa6c9377b43c6f5f7371f6b92e5dd5
+{{ define "users" }}
+<section class="col-12 p-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 mb-1">Users</h1>
+            <p class="text-muted mb-0">
+                Manage users, permissions and statuses
+            </p>
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGE -->
+    <div id="flash-message" class="mb-3"></div>
+
+    <script>
+        document.body.addEventListener("userDeleted", function () {
+            document.getElementById("flash-message").innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    User successfully deleted
+                </div>
+            `;
+        });
+    </script>
+
+    {{ if .User }}
+
+    <!-- TABLE CARD -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- RESPONSIVE TABLE -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {{ range .User }}
+                            {{template "user-row" . }}
+                        {{ end }}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {{template "pagination" .}}
+
+    {{ else }}
+    <div class="alert alert-light border">
+        Users not found.
+    </div>
+
+    {{ end }}
+
+</section>
+{{end}}

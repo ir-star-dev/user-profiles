@@ -1,0 +1,15 @@
+{{define "loadmore"}}
+    {{with .Loadmore}}
+        {{if .HasMore}}
+            <div class="text-center mt-3">
+                <button
+                    class="btn btn-primary"
+                    hx-get="/?page={{.Next}}"
+                    hx-target="#loadmore-container"
+                    hx-swap="outerHTML">
+                    Load more
+                </button>
+            </div>
+        {{end}}
+    {{end}}
+{{end}}

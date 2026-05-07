@@ -1,0 +1,25 @@
+{{define "post-card"}}
+    {{with .Posts}}
+        <div class="col-12 col-md-4 d-flex">
+            <div class="card post-card w-100">
+                <div class="card-body">
+                    <div class="post-title mb-2">{{.Title}}</div>
+                    <div class="text-muted mb-4">
+                        Author:
+                        <a href="/posts/user/{{.Username}}"
+                           class="badge text-bg-success text-decoration-none">
+                            {{.Username}}
+                        </a>
+
+                        <span class="mx-2">•</span>
+
+                        Published:
+                        {{.CreatedAt.Format "02 Jan 2006 15:04"}}
+                    </div>
+                    <div class="post-text flex-grow-1">{{.Content}}</div>
+                    <a href="/posts/post/{{.Slug}}" class="btn btn-primary btn-post mt-3">Read</a>
+                </div>
+            </div>
+        </div>
+    {{end}}
+{{end}}

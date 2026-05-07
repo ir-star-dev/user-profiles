@@ -1,51 +1,48 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/handlers"
 	"user-profiles/cmd/user-profiles/middlewares"
+	"user-profiles/cmd/user-profiles/posts"
+	//"user-profiles/cmd/user-profiles/users"
+	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
-	"user-profiles/internal/auth"
 	"user-profiles/internal/storage/db"
 	auth_postgres "user-profiles/internal/storage/postgres/auth"
+	posts_postgres "user-profiles/internal/storage/postgres/posts"
 	users_postgres "user-profiles/internal/storage/postgres/users"
-	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
 )
-
-type application struct {
-	*configs.Config
-	auth.AuthService
-	auth.JWTService
-	auth.RefreshTokenService
-	users.UsersService
-}
 
 func main() {
 	// Config
 	conf, err := configs.Load()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal("Failed to load config: %w", err)
 	}
 
 	// DB
 	dbConn, err := db.Connect(conf)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal("Failed to connect db: %w", err)
 	}
 	defer dbConn.Close()
 
 	// Repositories
 	userRepo := users_postgres.NewUsersRepository(dbConn)
 	tokenRepo := auth_postgres.NewTokenRepository(dbConn)
+	postRepo := posts_postgres.NewPostRepository(dbConn)
 
 	// Services
 	jwtService := auth.NewJWTService(conf.Secret)
 	refreshTokenService := auth.NewRefreshTokenService()
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
-	userService := users.NewUsersService(userRepo)
+	// userService := users.NewUsersService(userRepo)
+	postService := posts.PostService(postRepo)
 
 	// Mux
 	mux := chi.NewRouter()
@@ -53,19 +50,37 @@ func main() {
 	// Middlewares
 	mux.Use(middlewares.CORS)
 
-	app := application{
-		Config:              conf,
-		AuthService:         authService,
-		JWTService:          jwtService,
-		RefreshTokenService: refreshTokenService,
-		UsersService:        userService,
-	}
-	app.InitRoutes(mux)
+	t := view.NewTemplates()
+
+	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
+		Config:      conf,
+		AuthService: authService,
+		JWTService:  jwtService,
+		Templates:   *t,
+	})
+
+	// user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
+	// 	Config:       conf,
+	// 	AuthService:  authService,
+	// 	JWTService:   jwtService,
+	// 	UsersService: userService,
+	// 	Templates:   t,
+	// })
+
+	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
+		Config:      conf,
+		AuthService: authService,
+		JWTService:  jwtService,
+		PostService: postService,
+		Templates:   *t,
+	})
+	InitRoutes(mux, auth_handler, post_handler)
 
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: mux,
 	}
-	fmt.Println("Server is listening on port 8080")
+	
+	log.Println("Server is listening on port 8080")
 	server.ListenAndServe()
 }

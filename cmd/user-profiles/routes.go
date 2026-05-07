@@ -3,37 +3,64 @@ package main
 import (
 	"net/http"
 	"user-profiles/cmd/user-profiles/middlewares"
+	"user-profiles/cmd/user-profiles/handlers"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) InitRoutes(mux chi.Router) {
-
+func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler,
+	//, uh *handlers.UserHandler, ph *handlers.PostHandler
+	) {
 	fs := http.FileServer(http.Dir("././ui/static"))
-	mux.Handle("/static/*", http.StripPrefix("/static/", fs))
+	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	mux.With(middlewares.SoftAuthMiddleware(app.JWTService, app.AuthService)).Get("/", app.Index)
+	router.Route(("/auth"), func(router chi.Router) {
+		router.With(middlewares.CheckAuthAndRedirect(ah.JWTService)).Get("/signup", ah.SignupForm)
+		router.Post("/signup", ah.Signup)
 
-	mux.Route(("/auth"), func(m chi.Router) {
-		m.With(middlewares.CheckAuthAndRedirect(app.JWTService)).Get("/register", app.RegisterForm)
-		m.With(middlewares.CheckAuthAndRedirect(app.JWTService)).Get("/login", app.LoginForm)
-		
-		m.Post("/register", app.Register)
-		m.Post("/login", app.Login)
-		m.With(middlewares.StrictAuthMiddleware(app.JWTService)).Post("/logout", app.Logout)
+		router.With(middlewares.CheckAuthAndRedirect(ah.JWTService)).Get("/login", ah.LoginForm)
+		router.Post("/login", ah.Login)
+
+		router.With(middlewares.StrictAuthMiddleware(ah.JWTService, ah.AuthService)).Post("/logout", ah.Logout)
 	})
 
-	mux.Route(("/profile"), func(m chi.Router) {
-		m.Use(middlewares.SoftAuthMiddleware(app.JWTService, app.AuthService))
+	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/", ph.Home)
+	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/posts/post/{slug}", ph.ViewPost)
+	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/posts/user/{username}", ph.ViewUserPosts)
 
-		m.Get("/{id}", app.Profile)
-		m.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", app.UserList)
+	router.Route(("/panel"), func(router chi.Router) {
+		//router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
-		// router.With(middleware.BanMiddleware).Patch("/{id}/name", handler.Update)
-		m.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", app.Ban)
-		m.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", app.Unban)
+		// Role-limited action types on posts, role checks based on GET settings
+		// ?role=admin
+		// ?role=editor
+		// ?role=user
+		// router.Get("/posts", ph.PostList)
+		// router.Get("/posts/post/{id}/create", ph.CreateForm)
+		// router.Get("/posts/post/{id}/edit", ph.EditForm)
 
-		m.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", app.DeleteConfirm)
-		m.With(middlewares.BanMiddleware).Delete("/{id}", app.Delete)
+		// After creating, the post will have a review status.
+		//router.Post("/posts/post/{id}/create", ph.Create)
+		// After editing, the post will have a review status.
+		//router.Patch("/posts/post/{id}/edit", ph.Edit)
+
+		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/review", ph.Review)
+		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/publish", ph.Publish)
+		// router.With(middlewares.RoleMiddleware("admin", "editor")).Delete("/posts/post/{id}", ph.Delete)
+
+		// router.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", uh.UserListPage)
+
+		//router.Route(("/profile"), func(router chi.Router) {
+			// router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
+
+			// router.Get("/{id}", uh.ProfilePage)
+
+			// router.With(middlewares.BanMiddleware).Patch("/{id}/name", handler.Update)
+		// 	router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)
+		// 	router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", uh.Unban)
+
+		// 	router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", uh.DeleteConfirm)
+		// 	router.With(middlewares.BanMiddleware).Delete("/{id}", uh.Delete)
+		// })
 	})
 }

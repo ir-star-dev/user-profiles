@@ -1,0 +1,11 @@
+{{define "posts-response"}}
+
+<div id="posts-container" hx-swap-oob="beforeend" class="row g-3">
+    {{template "posts-list" .}}
+</div>
+
+<div id="loadmore-container">
+    {{template "loadmore" .}}
+</div>
+
+{{end}}

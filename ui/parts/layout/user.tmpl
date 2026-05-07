@@ -1,0 +1,28 @@
+{{ define "title" }} Profile {{ end }}
+
+{{ define "user"}}
+<section class="col-12 col-md-9 col-lg-12 p-4">
+    {{if .User}}
+        {{$page := .}}
+        {{range .User}}
+        <h1>{{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}</h1>
+        <div class="row">
+
+            <div id="flash-message"></div>
+            <script>
+                document.body.addEventListener("userDeleted", function () {
+                    document.getElementById("flash-message").innerHTML = `
+                        <div class="alert alert-success" role="alert">
+                            User successfully deleted
+                        </div>
+                    `;
+                });
+            </script>
+            {{template "user-card" .}}
+            </div>
+        </div>
+        {{end}}
+    {{end}}
+
+</section>
+{{end}}

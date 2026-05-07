@@ -1,0 +1,18 @@
+{{ define "home" }}
+
+{{ end }}
+
+{{ define "title" }}Homepage{{ end }}
+
+{{define "content"}}
+    <div class="container py-4">
+        <!-- ROW 2 -->
+        <div id="posts-container" class="row g-3">
+            {{template "posts-list" .}}
+        </div>
+
+        <div id="loadmore-container">
+            {{template "loadmore" .}}
+        </div>
+    </div>
+{{end}}

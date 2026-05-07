@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 	"strconv"
-	"user-profiles/internal/auth"
+	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/internal/http/cookie"
 )
 
@@ -28,7 +28,7 @@ func CheckAuthAndRedirect(jwtService auth.JWTService) func(http.Handler) http.Ha
 				return
 			}
 
-			http.Redirect(w, r, "/profile/"+strconv.Itoa(int(sub)), http.StatusSeeOther)
+			http.Redirect(w, r, "/panel/profile/"+strconv.Itoa(int(sub)), http.StatusSeeOther)
 		})
 	}
 }
