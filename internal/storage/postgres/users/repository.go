@@ -128,7 +128,7 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*users.UserWi
 	return user, nil
 }
 
-func (repo *usersRepository) GetAll(page int) ([]users.UserWithRole, int, error) {
+func (repo *usersRepository) GetOnPage(page int) ([]users.UserWithRole, int, error) {
 	limit := 10
 	offset := (page-1)*limit
 
@@ -163,6 +163,16 @@ func (repo *usersRepository) GetAll(page int) ([]users.UserWithRole, int, error)
 	return users, totalCount, nil
 }
 
+func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
+	query := `SELECT * FROM users`
+	var users []users.UserWithRole
+	err := repo.db.Select(&users, query)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (repo *usersRepository) Ban(uId int) error {
 	user := &users.User{
 		Id:     uId,
@@ -195,4 +205,20 @@ func (repo *usersRepository) Unban(uId int) error {
 		return err
 	}
 	return nil
+}
+
+func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
+	query := `SELECT 
+				COUNT(u.id), 
+				r.role 
+			FROM users AS u 
+			JOIN roles AS r 
+			ON u.role_id = r.id 
+			GROUP BY r.role`
+	var users []users.StatUsers
+	err := repo.db.Select(&users, query)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }

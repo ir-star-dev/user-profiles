@@ -102,7 +102,7 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 }
 
 
-func (repo *postRepository) GetAll(page int, limit int) ([]posts.PostWithUserName, int, error) {
+func (repo *postRepository) GetOnPage(page int, limit int) ([]posts.PostWithUserName, int, error) {
 	offset := (page - 1) * limit
 
 	var totalCount int
@@ -130,4 +130,14 @@ func (repo *postRepository) GetAll(page int, limit int) ([]posts.PostWithUserNam
 		return nil, 0, err
 	}
 	return posts, totalCount, nil
+}
+
+func (repo *postRepository) GetAll() ([]posts.Post, error) {
+	query := `SELECT * FROM posts`
+	var posts []posts.Post
+	err := repo.db.Select(&posts, query)
+	if err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

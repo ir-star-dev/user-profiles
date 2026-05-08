@@ -13,6 +13,7 @@ type PageData struct {
 	PostCards       []PostData
 	Pagination      Pagination
 	Loadmore        Loadmore
+	Stats           Stats
 }
 
 type UserData struct {
@@ -21,6 +22,14 @@ type UserData struct {
 	CanBan          bool
 	CurrentUserId   int
 	CurrentUserRole string
+}
+
+type Stats struct {
+	Role      string
+	Count     int
+	Banned    int
+	Published int
+	Pending   int
 }
 
 type Pagination struct {
@@ -46,4 +55,9 @@ type Loadmore struct {
 	Next    int
 	HasMore bool
 	Total   int
+}
+
+type DashboardService struct {
+    uRepo users.Repository
+    pRepo posts.Repository
 }

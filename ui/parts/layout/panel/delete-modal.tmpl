@@ -23,8 +23,8 @@
 
                 <div class="modal-body">
                     Are you sure you want to delete
-                    {{if .User}}
-                        {{range .User}}
+                    {{if .UserCards}}
+                        {{range .UserCards}}
                             <strong>{{.Profiles.Name}}</strong>?
                         {{end}}
                     {{end}}
@@ -39,10 +39,10 @@
                         Cancel
                     </button>
 
-                    {{if .User}}
-                        {{range .User}}
+                    {{if .UserCards}}
+                        {{range .UserCards}}
                             <button
-                                hx-delete="/profile/{{.Profiles.Id}}"
+                                hx-delete="/panel/profile/{{.Profiles.Id}}"
                                 hx-target="#user-{{.Profiles.Id}}"
                                 hx-swap="outerHTML"
                                 class="btn btn-danger"

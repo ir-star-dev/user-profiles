@@ -1,108 +1,106 @@
 package handlers
 
 import (
-	// "bytes"
-	// "errors"
-	// "html/template"
-	// "net/http"
+
+	//"errors"
+	//"html/template"
+	"net/http"
 	// "strconv"
 	// "strings"
 	// "time"
 
-	//"html/template"
-	//"time"
-	// "user-profiles/cmd/user-profiles/auth"
-	// "user-profiles/cmd/user-profiles/users"
-	// "user-profiles/cmd/user-profiles/utils"
-	// "user-profiles/cmd/user-profiles/view"
-	// "user-profiles/configs"
+	// "html/template"
+	// "time"
+	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/cmd/user-profiles/view"
+	"user-profiles/configs"
 
-	//"user-profiles/internal/http/cookie"
-	// "user-profiles/internal/http/cookie"
-
-	// "github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5"
 )
 
-// type UserHandler struct {
-// 	Config       *configs.Config
-// 	AuthService  auth.AuthService
-// 	UsersService users.UsersService
-// 	JWTService   auth.JWTService
-// 	Templates    view.Templates
-// }
+type UserHandler struct {
+	Config       *configs.Config
+	AuthService  auth.AuthService
+	UsersService users.UsersService
+	JWTService   auth.JWTService
+	Templates    view.Templates
+}
 
-// type UserHandlerDeps struct {
-// 	Config       *configs.Config
-// 	AuthService  auth.AuthService
-// 	UsersService users.UsersService
-// 	JWTService   auth.JWTService
-// 	Templates    view.Templates
-// }
+type UserHandlerDeps struct {
+	Config       *configs.Config
+	AuthService  auth.AuthService
+	UsersService users.UsersService
+	JWTService   auth.JWTService
+	Templates    view.Templates
+}
 
-// func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
-// 	return &UserHandler{
-// 		Config:       deps.Config,
-// 		AuthService:  deps.AuthService,
-// 		UsersService: deps.UsersService,
-// 		JWTService:   deps.JWTService,
-// 		Templates:    deps.Templates,
-// 	}
-// }
+func NewUserHandler(router chi.Router, deps UserHandlerDeps) *UserHandler {
+	return &UserHandler{
+		Config:       deps.Config,
+		AuthService:  deps.AuthService,
+		UsersService: deps.UsersService,
+		JWTService:   deps.JWTService,
+		Templates:    deps.Templates,
+	}
+}
 
-// func (handler *UserHandler) ProfilePage(w http.ResponseWriter, r *http.Request) {
-// 	uIdFromReq, err := getIdFromReq(r)
-// 	if err != nil {
-// 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-// 		return
-// 	}
+func (handler *UserHandler) Profile(w http.ResponseWriter, r *http.Request) {
+	uIdFromReq, err := view.GetIdFromReq(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
 
-// 	profile, err := handler.UsersService.View(uIdFromReq)
-// 	if err != nil {
-// 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-// 		return
-// 	}
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/profile.tmpl",
-// 		"././ui/templates/parts/layout/user.tmpl",
-// 		"././ui/templates/parts/layout/user-card.tmpl",
-// 		"././ui/templates/parts/layout/delete-modal.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	currUserId, err := getUserId(r)
-// 	if err != nil {
-// 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-// 		return
-// 	}
-// 	currUserRole, _ := handler.UsersService.Role(currUserId)
+	profile, err := handler.UsersService.Get(uIdFromReq)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
 
-// 	var cards []view.UserCardData
-// 	cards = append(cards, view.UserCardData{
-// 		Profiles:        *profile,
-// 		CurrentUserId:   currUserId,
-// 		CurrentUserRole: currUserRole,
-// 		CanDelete:       canDelete(currUserRole, currUserId, profile.Id),
-// 		CanBan:          canBan(currUserRole, currUserId, profile.Id),
-// 	})
-// 	data := view.PageData{
-// 		RequestedUserId: uIdFromReq,
-// 		CurrentUserId:   currUserId,
-// 		CurrentUserRole: currUserRole,
-// 		Cards:           cards,
-// 	}
-// 	var buf bytes.Buffer
+	currUserId, err := view.GetUserId(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	currUserRole, _ := handler.UsersService.Role(currUserId)
 
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
+	var cards []view.UserData
+	cards = append(cards, view.UserData{
+		Profiles:        *profile,
+		CurrentUserId:   currUserId,
+		CurrentUserRole: currUserRole,
+		CanDelete:       view.CanDelete(currUserRole, currUserId, profile.Id),
+		CanBan:          view.CanBan(currUserRole, currUserId, profile.Id),
+	})
+	data := view.PageData{
+		RequestedUserId: uIdFromReq,
+		CurrentUserId:   currUserId,
+		CurrentUserRole: currUserRole,
+		UserCards:       cards,
+	}
+
+	err = handler.Templates.Render(w, "profile", data,
+		"././ui/pages/panel/profile.tmpl",
+		"././ui/parts/layout/panel/user.tmpl",
+		"././ui/parts/layout/panel/user-card.tmpl",
+		"././ui/parts/layout/panel/delete-modal.tmpl",
+	)
+	if err != nil {
+		handler.Templates.ServerError(w, err)
+	}
+}
+
+func (handler *UserHandler) statis() (*view.Stats, error) {
+	users, err := handler.UsersService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	posts, err := handler.
+	if err != nil {
+		return nil, err
+	}
+}
 
 // func (handler *UserHandler) UserListPage(w http.ResponseWriter, r *http.Request) {
 // 	page, err := getPageFromReq(r)
@@ -313,62 +311,4 @@ import (
 // 		CanBan:        canBan(currRole, currId, reqId),
 // 	}
 // 	tmpl.ExecuteTemplate(w, "user-"+v, data)
-// }
-
-// func getUserId(r *http.Request) (int, error) {
-// 	uId, err := utils.GetUserID(r.Context())
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return uId, nil
-// }
-
-// func getIdFromReq(r *http.Request) (int, error) {
-// 	idStr := strings.TrimSpace(r.PathValue("id"))
-// 	if idStr == "" {
-// 		return 0, errors.New("Missing param")
-// 	}
-// 	uId, err := strconv.Atoi(idStr)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return uId, nil
-// }
-
-// func getPageFromReq(r *http.Request) (int, error) {
-// 	page := strings.TrimSpace(r.PathValue("page"))
-// 	if page == "" {
-// 		return 0, errors.New("Missing param")
-// 	}
-// 	p, err := strconv.Atoi(page)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return p, nil
-// }
-
-// func selfDeletionDetected(r *http.Request) (int, int, error) {
-// 	reqId, err := getIdFromReq(r)
-// 	if err != nil {
-// 		return 0, 0, err
-// 	}
-// 	currId, err := getUserId(r)
-// 	if err != nil {
-// 		return reqId, currId, err
-// 	}
-// 	if reqId == currId {
-// 		return reqId, currId, errors.New("You can't delete yourself.")
-// 	}
-// 	return reqId, currId, nil
-// }
-
-// func canDelete(currentRole string, currentUserId, profileId int) bool {
-// 	if currentRole == "admin" {
-// 		return currentUserId != profileId
-// 	}
-// 	return currentUserId == profileId
-// }
-
-// func canBan(currentRole string, currentUserId, profileId int) bool {
-// 	return currentRole == "admin" && currentUserId != profileId
 // }

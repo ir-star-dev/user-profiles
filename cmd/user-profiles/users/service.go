@@ -12,7 +12,7 @@ func NewUsersService(uRepo Repository) UsersService {
 	return &usersService{uRepo: uRepo}
 }
 
-func (s *usersService) View(uId int) (*UserWithRole, error) {
+func (s *usersService) Get(uId int) (*UserWithRole, error) {
 	user, err := s.uRepo.FindById(uId)
 	if err != nil {
 		return nil, err
@@ -42,12 +42,20 @@ func (s *usersService) Delete(uId int) error {
 	return nil
 }
 
-func (s *usersService) ViewAll(page int) ([]UserWithRole, int, error) {
-	users, res, err := s.uRepo.GetAll(page)
+func (s *usersService) GetOnPage(page int) ([]UserWithRole, int, error) {
+	users, res, err := s.uRepo.GetOnPage(page)
 	if err != nil {
 		return nil, 0, err
 	}
 	return users, res, nil
+}
+
+func (s *usersService) GetAll() ([]UserWithRole, error) {
+	users, err := s.uRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (s *usersService) Ban(uId int) error {

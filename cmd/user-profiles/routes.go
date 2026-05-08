@@ -8,9 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler,
-	//, uh *handlers.UserHandler, ph *handlers.PostHandler
-	) {
+func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler, uh *handlers.UserHandler) {
 	fs := http.FileServer(http.Dir("././ui/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
@@ -50,17 +48,17 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 
 		// router.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", uh.UserListPage)
 
-		//router.Route(("/profile"), func(router chi.Router) {
-			// router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
+		router.Route(("/profile"), func(router chi.Router) {
+			router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
-			// router.Get("/{id}", uh.ProfilePage)
+			router.Get("/{id}", uh.Profile)
 
 			// router.With(middlewares.BanMiddleware).Patch("/{id}/name", handler.Update)
-		// 	router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)
-		// 	router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", uh.Unban)
+			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)
+			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", uh.Unban)
 
-		// 	router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", uh.DeleteConfirm)
-		// 	router.With(middlewares.BanMiddleware).Delete("/{id}", uh.Delete)
-		// })
+			// router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", uh.DeleteConfirm)
+			// router.With(middlewares.BanMiddleware).Delete("/{id}", uh.Delete)
+		})
 	})
 }

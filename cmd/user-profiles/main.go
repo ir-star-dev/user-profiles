@@ -7,7 +7,7 @@ import (
 	"user-profiles/cmd/user-profiles/handlers"
 	"user-profiles/cmd/user-profiles/middlewares"
 	"user-profiles/cmd/user-profiles/posts"
-	//"user-profiles/cmd/user-profiles/users"
+	"user-profiles/cmd/user-profiles/users"
 	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 	"user-profiles/internal/storage/db"
@@ -41,7 +41,7 @@ func main() {
 	jwtService := auth.NewJWTService(conf.Secret)
 	refreshTokenService := auth.NewRefreshTokenService()
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
-	// userService := users.NewUsersService(userRepo)
+	userService := users.NewUsersService(userRepo)
 	postService := posts.PostService(postRepo)
 
 	// Mux
@@ -59,13 +59,13 @@ func main() {
 		Templates:   *t,
 	})
 
-	// user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
-	// 	Config:       conf,
-	// 	AuthService:  authService,
-	// 	JWTService:   jwtService,
-	// 	UsersService: userService,
-	// 	Templates:   t,
-	// })
+	user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
+		Config:       conf,
+		AuthService:  authService,
+		JWTService:   jwtService,
+		UsersService: userService,
+		Templates:   *t,
+	})
 
 	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
 		Config:      conf,
@@ -74,7 +74,7 @@ func main() {
 		PostService: postService,
 		Templates:   *t,
 	})
-	InitRoutes(mux, auth_handler, post_handler)
+	InitRoutes(mux, auth_handler, post_handler, user_handler)
 
 	server := http.Server{
 		Addr:    ":8080",

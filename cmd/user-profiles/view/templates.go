@@ -2,8 +2,12 @@ package view
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"net/http"
+	"strconv"
+	"strings"
+	"user-profiles/cmd/user-profiles/utils"
 )
 
 type Templates struct {
@@ -44,7 +48,7 @@ func (t *Templates) Render(w http.ResponseWriter, name string, data any, files .
 	return err
 }
 
-func (t *Templates) RenderPartial(w http.ResponseWriter, templateName string, data any,	files ...string) error {
+func (t *Templates) RenderPartial(w http.ResponseWriter, templateName string, data any, files ...string) error {
 	tmpl, err := template.ParseFiles(files...)
 	if err != nil {
 		return err
@@ -99,9 +103,67 @@ func (t *Templates) BuildPagination(currentPage, totalPages int) Pagination {
 }
 
 func Truncate(s string, limit int) string {
-    r := []rune(s)
-    if len(r) > limit {
-        return string(r[:limit]) + "..."
-    }
-    return s
+	r := []rune(s)
+	if len(r) > limit {
+		return string(r[:limit]) + "..."
+	}
+	return s
+}
+
+func GetIdFromReq(r *http.Request) (int, error) {
+	idStr := strings.TrimSpace(r.PathValue("id"))
+	if idStr == "" {
+		return 0, errors.New("Missing param")
+	}
+	uId, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, err
+	}
+	return uId, nil
+}
+
+func GetUserId(r *http.Request) (int, error) {
+	uId, err := utils.GetUserID(r.Context())
+	if err != nil {
+		return 0, err
+	}
+	return uId, nil
+}
+
+func GetPageFromReq(r *http.Request) (int, error) {
+	page := strings.TrimSpace(r.PathValue("page"))
+	if page == "" {
+		return 0, errors.New("Missing param")
+	}
+	p, err := strconv.Atoi(page)
+	if err != nil {
+		return 0, err
+	}
+	return p, nil
+}
+
+func SelfDeletionDetected(r *http.Request) (int, int, error) {
+	reqId, err := GetIdFromReq(r)
+	if err != nil {
+		return 0, 0, err
+	}
+	currId, err := GetUserId(r)
+	if err != nil {
+		return reqId, currId, err
+	}
+	if reqId == currId {
+		return reqId, currId, errors.New("You can't delete yourself.")
+	}
+	return reqId, currId, nil
+}
+
+func CanDelete(currentRole string, currentUserId, profileId int) bool {
+	if currentRole == "admin" {
+		return currentUserId != profileId
+	}
+	return currentUserId == profileId
+}
+
+func CanBan(currentRole string, currentUserId, profileId int) bool {
+	return currentRole == "admin" && currentUserId != profileId
 }

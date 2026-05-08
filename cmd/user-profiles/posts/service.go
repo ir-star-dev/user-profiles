@@ -37,10 +37,18 @@ func (s *postService) FindByUsername(username string) ([]PostWithUserName, error
 	return posts, nil
 }
 
-func (s *postService) GetAll(page int, limit int) ([]PostWithUserName, int, error) {
-	posts, total, err := s.pRepo.GetAll(page, limit)
+func (s *postService) GetOnPage(page int, limit int) ([]PostWithUserName, int, error) {
+	posts, total, err := s.pRepo.GetOnPage(page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 	return posts, total, nil
+}
+
+func (s *postService) GetAll() ([]Post, error) {
+	posts, err := s.pRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

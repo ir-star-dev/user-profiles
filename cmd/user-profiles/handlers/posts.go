@@ -168,7 +168,6 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		handler.Templates.ServerError(w, err)
 	}
-
 }
 
 // func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {
