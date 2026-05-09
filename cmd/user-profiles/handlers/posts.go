@@ -8,13 +8,14 @@ import (
 
 	//"html/template"
 	//"time"
-	"user-profiles/cmd/user-profiles/view"
+
 	"user-profiles/configs"
 
 	//"user-profiles/internal/http/cookie"
 
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/posts"
+	"user-profiles/cmd/user-profiles/app"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -24,7 +25,7 @@ type PostHandler struct {
 	PostService posts.PostService
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   view.Templates
+	Templates   app.Templates
 }
 
 type PostHandlerDeps struct {
@@ -32,7 +33,7 @@ type PostHandlerDeps struct {
 	PostService posts.PostService
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   view.Templates
+	Templates   app.Templates
 }
 
 func NewPostHandler(router chi.Router, deps PostHandlerDeps) *PostHandler {
@@ -57,7 +58,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 	limit := 9
-	posts, total, err := handler.PostService.GetAll(page, limit)
+	posts, total, err := handler.PostService.GetOnPage(page, limit)
 	if err != nil {
 		handler.Templates.ServerError(w, err)
 		return
@@ -65,18 +66,20 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	hasMore := page*limit < total
 
-	postCards := make([]view.PostData, 0, len(posts))
+	postCards := make([]app.PostData, 0, len(posts))
 	for _, post := range posts {
-		cutedContent := view.Truncate(post.Content, 367)
+		cutedContent := app.Truncate(post.Content, 367)
 		post.Content = cutedContent
-		postCards = append(postCards, view.PostData{
+		postCards = append(postCards, app.PostData{
 			Posts: post,
 		})
 	}
+	currUserId, _ := app.GetUserId(r)
 
-	data := view.PageData{
+	data := app.PageData{
+		CurrentUserId: currUserId,
 		PostCards: postCards,
-		Loadmore: view.Loadmore{
+		Loadmore: app.Loadmore{
 			Page:    page,
 			Next:    page + 1,
 			HasMore: hasMore,
@@ -125,11 +128,13 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	var postCards []view.PostData
-	postCards = append(postCards, view.PostData{
+	var postCards []app.PostData
+	postCards = append(postCards, app.PostData{
 		Posts: *post,
 	})
-	data := view.PageData{
+	currUserId, _ := app.GetUserId(r)
+	data := app.PageData{
+		CurrentUserId: currUserId,
 		PostCards: postCards,
 	}
 	err = handler.Templates.Render(w, "post", data, "././ui/pages/post.tmpl")
@@ -149,15 +154,15 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		handler.Templates.ServerError(w, err)
 	}
-	postCards := make([]view.PostData, 0, len(posts))
+	postCards := make([]app.PostData, 0, len(posts))
 	for _, post := range posts {
-		cutedContent := view.Truncate(post.Content, 367)
+		cutedContent := app.Truncate(post.Content, 367)
 		post.Content = cutedContent
-		postCards = append(postCards, view.PostData{
+		postCards = append(postCards, app.PostData{
 			Posts: post,
 		})
 	}
-	data := view.PageData{
+	data := app.PageData{
 		PostCards: postCards,
 	}
 	err = handler.Templates.Render(w, "user-posts", data,

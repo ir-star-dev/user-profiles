@@ -8,3 +8,8 @@ type UpdatePostRequest struct {
 	Approved  bool      `json:"approved"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type PostsStatus struct {
+	Published int `db:"published"`
+	Pending   int `db:"pending"`
+}

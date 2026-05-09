@@ -209,16 +209,17 @@ func (repo *usersRepository) Unban(uId int) error {
 
 func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
 	query := `SELECT 
-				COUNT(u.id), 
-				r.role 
-			FROM users AS u 
-			JOIN roles AS r 
-			ON u.role_id = r.id 
-			GROUP BY r.role`
-	var users []users.StatUsers
-	err := repo.db.Select(&users, query)
+			r.role,
+			COUNT(u.id) AS count,
+			COUNT(u.id) FILTER (WHERE u.banned = true) AS banned
+		FROM users AS u
+		JOIN roles AS r 
+			ON u.role_id = r.id
+		GROUP BY r.role`
+	var stats []users.StatUsers
+	err := repo.db.Select(&stats, query)
 	if err != nil {
 		return nil, err
 	}
-	return users, nil
+	return stats, nil
 }

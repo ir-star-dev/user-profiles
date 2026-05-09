@@ -10,6 +10,7 @@ type Repository interface {
 
 	GetOnPage(page int, limit int) ([]PostWithUserName, int, error)
 	GetAll() ([]Post, error)
+	PostsStatus() ([]PostsStatus, error)
 }
 
 type PostService interface {
@@ -22,4 +23,5 @@ type PostService interface {
 
 	GetOnPage(page int, limit int) ([]PostWithUserName, int, error)
 	GetAll() ([]Post, error)
+	PostsStatus() ([]PostsStatus, error)
 }

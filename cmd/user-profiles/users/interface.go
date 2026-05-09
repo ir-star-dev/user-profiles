@@ -11,7 +11,8 @@ type Repository interface {
 	FindBanStatus(uId int) (*bool, error)
 
 	GetOnPage(page int) ([]UserWithRole, int, error)
-	GetAll() ([]UserWithRole, error)
+	CountRoles() ([]StatUsers, error)
+
 	Ban(uId int) error
 	Unban(uId int) error
 }
@@ -21,7 +22,6 @@ type UsersService interface {
 	ChangeName(uId int, name *string) (*UserWithRole, error)
 	Delete(uId int) error
 	GetOnPage(page int) ([]UserWithRole, int, error)
-	GetAll() ([]UserWithRole, error)
 	Role(uId int) (string, error)
 
 	Ban(uId int) error

@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"user-profiles/cmd/user-profiles/app"
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/handlers"
 	"user-profiles/cmd/user-profiles/middlewares"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
-	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 	"user-profiles/internal/storage/db"
 	auth_postgres "user-profiles/internal/storage/postgres/auth"
@@ -38,11 +38,12 @@ func main() {
 	postRepo := posts_postgres.NewPostRepository(dbConn)
 
 	// Services
+	dashboard := app.NewDashboardService(userRepo, postRepo)
 	jwtService := auth.NewJWTService(conf.Secret)
 	refreshTokenService := auth.NewRefreshTokenService()
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
 	userService := users.NewUsersService(userRepo)
-	postService := posts.PostService(postRepo)
+	postService := posts.NewPostService(postRepo)
 
 	// Mux
 	mux := chi.NewRouter()
@@ -50,7 +51,7 @@ func main() {
 	// Middlewares
 	mux.Use(middlewares.CORS)
 
-	t := view.NewTemplates()
+	t := app.NewTemplates()
 
 	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
 		Config:      conf,
@@ -59,12 +60,14 @@ func main() {
 		Templates:   *t,
 	})
 
-	user_handler := handlers.NewUserHandler(mux, handlers.UserHandlerDeps{
+	dashboard_handler := handlers.NewDashboardHandler(mux, handlers.DashboardHandlerDeps{
 		Config:       conf,
 		AuthService:  authService,
 		JWTService:   jwtService,
 		UsersService: userService,
-		Templates:   *t,
+		PostsService: postService,
+		Templates:    *t,
+		Dashboard:    *dashboard,
 	})
 
 	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
@@ -74,13 +77,13 @@ func main() {
 		PostService: postService,
 		Templates:   *t,
 	})
-	InitRoutes(mux, auth_handler, post_handler, user_handler)
+	InitRoutes(mux, auth_handler, post_handler, dashboard_handler)
 
 	server := http.Server{
 		Addr:    ":8080",
 		Handler: mux,
 	}
-	
+
 	log.Println("Server is listening on port 8080")
 	server.ListenAndServe()
 }

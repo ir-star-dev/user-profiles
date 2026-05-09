@@ -52,3 +52,11 @@ func (s *postService) GetAll() ([]Post, error) {
 	}
 	return posts, nil
 }
+
+func (s *postService) PostsStatus() ([]PostsStatus, error) {
+	posts, err := s.pRepo.PostsStatus()
+	if err != nil {
+		return nil, err
+	}
+	return posts, nil
+}

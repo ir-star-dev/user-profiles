@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"user-profiles/cmd/user-profiles/app"
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/utils"
-	"user-profiles/cmd/user-profiles/view"
 	"user-profiles/configs"
 
 	"errors"
@@ -20,14 +20,14 @@ type AuthHandlerDeps struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   view.Templates
+	Templates   app.Templates
 }
 
 type AuthHandler struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   view.Templates
+	Templates   app.Templates
 }
 
 func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
@@ -40,7 +40,7 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 }
 
 func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
-	data := view.PageData{}
+	data := app.PageData{}
 	err := handler.Templates.Render(w, "login", data,
 		"././ui/pages/login.tmpl",
 		"././ui/parts/forms/login.tmpl",
@@ -52,7 +52,7 @@ func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *AuthHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
-	data := view.PageData{}
+	data := app.PageData{}
 	err := handler.Templates.Render(w, "signup", data,
 		"././ui/pages/signup.tmpl",
 		"././ui/parts/forms/signup.tmpl",
@@ -73,9 +73,11 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		err = handler.Templates.RenderPartial(
 			w,
 			"form-submit-error",
-			err.Error(),
-			"././ui/templates/parts/validation/errors.tmpl",
-			"./ui/templates/parts/forms/error.tmpl",
+			auth.AuthViewError{
+				Message: err.Error(),
+			},
+			"././ui/parts/validation/errors.tmpl",
+			"./ui/parts/forms/error.tmpl",
 		)
 
 		if err != nil {

@@ -141,3 +141,16 @@ func (repo *postRepository) GetAll() ([]posts.Post, error) {
 	}
 	return posts, nil
 }
+
+func (repo *postRepository) PostsStatus() ([]posts.PostsStatus, error) {
+	query := `SELECT
+		COUNT(id) FILTER (WHERE approved = false) AS pending,
+		COUNT(id) FILTER (WHERE approved = true) AS published
+	FROM posts`
+	var pStats []posts.PostsStatus
+	err := repo.db.Select(&pStats, query)
+	if err != nil {
+		return nil, err
+	}
+	return pStats, nil
+}

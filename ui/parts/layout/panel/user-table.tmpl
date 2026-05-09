@@ -1,30 +1,4 @@
-<<<<<<< HEAD
-{{ define "nav" }}
-<ul class="navbar-nav ms-auto">
-    <li class="nav-item">
-        <a class="nav-link" href="/profile/{{.CurrentUserId}}">
-            My Profile
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="nav-link active" href="/profile/users/page/1">
-            Users
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="nav-link" hx-post="/auth/logout">
-            Sign Out
-        </a>
-    </li>
-</ul>
-{{ end }}
-
-
-=======
->>>>>>> 61eaa76129fa6c9377b43c6f5f7371f6b92e5dd5
-{{ define "users" }}
+{{ define "user-table" }}
 <section class="col-12 p-4">
 
     <!-- PAGE HEADER -->
@@ -35,6 +9,43 @@
                 Manage users, permissions and statuses
             </p>
         </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Filter role
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" href="/panel/users">
+                    All
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" href="/panel/users?role=admin">
+                    Admin
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" href="/panel/users?role=moderator">
+                    Moderator
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" href="/panel/users?role=user">
+                    User
+                </a>
+            </li>
+        </ul>
     </div>
 
     <!-- FLASH MESSAGE -->
@@ -50,7 +61,7 @@
         });
     </script>
 
-    {{ if .User }}
+    {{ if .UserCards }}
 
     <!-- TABLE CARD -->
     <div class="card shadow-sm border-0">
@@ -73,7 +84,7 @@
 
                     <tbody>
 
-                        {{ range .User }}
+                        {{ range .UserCards }}
                             {{template "user-row" . }}
                         {{ end }}
 
@@ -84,7 +95,7 @@
     </div>
 
     <!-- PAGINATION -->
-    {{template "pagination" .}}
+    {{template "user-pagin" .}}
 
     {{ else }}
     <div class="alert alert-light border">

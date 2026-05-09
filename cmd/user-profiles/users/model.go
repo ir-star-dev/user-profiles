@@ -23,3 +23,9 @@ type UserWithRole struct {
 	Password  string    `db:"password"`
 	CreatedAt time.Time `db:"created_at"`
 }
+
+type StatUsers struct {
+	Count  int    `db:"count"`
+	Role   string `db:"role"`
+	Banned int    `db:"banned"`
+}

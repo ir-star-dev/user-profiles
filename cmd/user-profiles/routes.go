@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler, uh *handlers.UserHandler) {
+func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler, dh *handlers.DashboardHandler) {
 	fs := http.FileServer(http.Dir("././ui/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
@@ -27,31 +27,32 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/posts/user/{username}", ph.ViewUserPosts)
 
 	router.Route(("/panel"), func(router chi.Router) {
-		//router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
+		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
 		// Role-limited action types on posts, role checks based on GET settings
 		// ?role=admin
-		// ?role=editor
+		// ?role=moderator
 		// ?role=user
-		// router.Get("/posts", ph.PostList)
-		// router.Get("/posts/post/{id}/create", ph.CreateForm)
+		router.Get("/posts/page/{page}", dh.Posts)
+		// router.Get("/post/create", ph.CreateForm)
 		// router.Get("/posts/post/{id}/edit", ph.EditForm)
 
 		// After creating, the post will have a review status.
-		//router.Post("/posts/post/{id}/create", ph.Create)
+		//router.Post("/post/create", ph.Create)
 		// After editing, the post will have a review status.
 		//router.Patch("/posts/post/{id}/edit", ph.Edit)
 
 		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/review", ph.Review)
 		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/publish", ph.Publish)
+		// router.With(middlewares.RoleMiddleware("admin", "editor")).Get("/posts/post/{id}/delete-confirm", ph.DeleteConfirm)
 		// router.With(middlewares.RoleMiddleware("admin", "editor")).Delete("/posts/post/{id}", ph.Delete)
 
-		// router.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", uh.UserListPage)
+		router.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", dh.Users)
 
 		router.Route(("/profile"), func(router chi.Router) {
 			router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
-			router.Get("/{id}", uh.Profile)
+			router.Get("/{id}", dh.Profile)
 
 			// router.With(middlewares.BanMiddleware).Patch("/{id}/name", handler.Update)
 			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)

@@ -1,0 +1,102 @@
+{{ define "post-table" }}
+<section class="col-12 p-4">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 mb-1">Posts</h1>
+            <p class="text-muted mb-0">
+                Manage posts
+            </p>
+        </div>
+    </div>
+
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Filter status
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" href="/panel/posts">
+                    All
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" href="/panel/posts?approved=true">
+                    Published
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" href="/panel/posts?approved=false">
+                    Pending
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- FLASH MESSAGE -->
+    <div id="flash-message" class="mb-3"></div>
+
+    <script>
+        document.body.addEventListener("postDeleted", function () {
+            document.getElementById("flash-message").innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    Post successfully deleted
+                </div>
+            `;
+        });
+    </script>
+
+    {{ if .PostCards }}
+
+    <!-- TABLE CARD -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <!-- RESPONSIVE TABLE -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Slug</th>
+                            <th>CreatedAt</th>
+                            <th>UpdatedAt</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {{ range .PostCards }}
+                            {{template "post-row" . }}
+                        {{ end }}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {{template "post-pagin" .}}
+
+    {{ else }}
+    <div class="alert alert-light border">
+        Posts not found.
+    </div>
+
+    {{ end }}
+
+</section>
+{{end}}

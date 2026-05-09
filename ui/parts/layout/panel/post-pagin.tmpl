@@ -1,41 +1,41 @@
-{{define "pagination"}}
-    {{ if .Pagin.TotalPages }}
+{{define "post-pagin"}}
+    {{ if .Pagination.TotalPages }}
         <nav class="mt-4">
             <ul class="pagination justify-content-center">
 
-                {{ if .Pagin.HasPrev }}
+                {{ if .Pagination.HasPrev }}
                 <li class="page-item">
-                    <a class="page-link" href="/profile/users/page/{{$.Pagin.PrevPage}}">
+                    <a class="page-link" href="/panel/posts/page/{{$.Pagination.PrevPage}}">
                         Prev
                     </a>
                 </li>
                 {{ end }}
 
-                {{ range .Pagin.Pages }}
+                {{ range .Pagination.Pages }}
                 <li class="page-item">
-                    <a class="page-link {{if eq . $.Pagin.Page}}active{{end}}"
-                    href="/profile/users/page/{{.}}">
+                    <a class="page-link {{if eq . $.Pagination.Page}}active{{end}}"
+                    href="/panel/posts/page/{{.}}">
                         {{.}}
                     </a>
                 </li>
                 {{ end }}
 
-                {{ if .Pagin.ShowDots }}
+                {{ if .Pagination.ShowDots }}
                 <li class="page-item disabled">
                     <span class="page-link">...</span>
                 </li>
 
                 <li class="page-item">
                     <a class="page-link"
-                    href="/profile/users/page/{{$.Pagin.LastPage}}">
-                        {{.Pagin.LastPage}}
+                    href="/panel/posts/page/{{$.Pagination.LastPage}}">
+                        {{.Pagination.LastPage}}
                     </a>
                 </li>
                 {{ end }}
 
-                {{ if .Pagin.HasNext }}
+                {{ if .Pagination.HasNext }}
                 <li class="page-item">
-                    <a class="page-link" href="/profile/users/page/{{$.Pagin.NextPage}}">
+                    <a class="page-link" href="/panel/posts/page/{{$.Pagination.NextPage}}">
                         Next
                     </a>
                 </li>

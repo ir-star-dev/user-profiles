@@ -50,14 +50,6 @@ func (s *usersService) GetOnPage(page int) ([]UserWithRole, int, error) {
 	return users, res, nil
 }
 
-func (s *usersService) GetAll() ([]UserWithRole, error) {
-	users, err := s.uRepo.GetAll()
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
 func (s *usersService) Ban(uId int) error {
 	err := s.uRepo.Ban(uId)
 	if err != nil {

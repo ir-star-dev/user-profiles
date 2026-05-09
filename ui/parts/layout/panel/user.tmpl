@@ -5,7 +5,16 @@
     {{if .UserCards}}
         {{$page := .}}
         {{range .UserCards}}
-        <h1>{{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}</h1>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h1 class="h3 mb-1">
+                    {{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}
+                </h1>
+                <p class="text-muted mb-0">
+                    View profile and statistics
+                </p>
+            </div>
+        </div>
         <div class="row">
 
             <div id="flash-message"></div>
@@ -18,7 +27,11 @@
                     `;
                 });
             </script>
+
             {{template "user-card" .}}
+
+
+            {{template "stats" $page}}
             </div>
         </div>
         {{end}}
