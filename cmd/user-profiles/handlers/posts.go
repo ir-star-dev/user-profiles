@@ -13,9 +13,9 @@ import (
 
 	//"user-profiles/internal/http/cookie"
 
+	"user-profiles/cmd/user-profiles/app"
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/posts"
-	"user-profiles/cmd/user-profiles/app"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -68,7 +68,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	postCards := make([]app.PostData, 0, len(posts))
 	for _, post := range posts {
-		cutedContent := app.Truncate(post.Content, 367)
+		cutedContent := app.TruncateContent(post.Content, 367)
 		post.Content = cutedContent
 		postCards = append(postCards, app.PostData{
 			Posts: post,
@@ -78,7 +78,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	data := app.PageData{
 		CurrentUserId: currUserId,
-		PostCards: postCards,
+		PostCards:     postCards,
 		Loadmore: app.Loadmore{
 			Page:    page,
 			Next:    page + 1,
@@ -135,7 +135,7 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 	currUserId, _ := app.GetUserId(r)
 	data := app.PageData{
 		CurrentUserId: currUserId,
-		PostCards: postCards,
+		PostCards:     postCards,
 	}
 	err = handler.Templates.Render(w, "post", data, "././ui/pages/post.tmpl")
 	if err != nil {
@@ -156,7 +156,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	}
 	postCards := make([]app.PostData, 0, len(posts))
 	for _, post := range posts {
-		cutedContent := app.Truncate(post.Content, 367)
+		cutedContent := app.TruncateContent(post.Content, 367)
 		post.Content = cutedContent
 		postCards = append(postCards, app.PostData{
 			Posts: post,

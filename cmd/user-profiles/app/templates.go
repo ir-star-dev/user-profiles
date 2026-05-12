@@ -102,7 +102,7 @@ func (t *Templates) BuildPagination(currentPage, totalPages int) Pagination {
 	return p
 }
 
-func Truncate(s string, limit int) string {
+func TruncateContent(s string, limit int) string {
 	r := []rune(s)
 	if len(r) > limit {
 		return string(r[:limit]) + "..."
