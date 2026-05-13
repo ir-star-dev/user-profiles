@@ -1,0 +1,64 @@
+{{define "user-filter"}}
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Role
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "role" ""}}">
+                    All
+                </a>
+            </li>
+            {{range .Roles}}
+                <li>
+                    <a class="dropdown-item"
+                    href="{{withQuery $.Pagination.Path $.Filters "role" .Role}} ">
+                        {{.Role}}
+                    </a>
+                </li>
+            {{end}}
+        </ul>
+    </div>
+
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Status
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "banned" ""}}">
+                    All
+                </a>
+            </li>
+
+                <li>
+                    <a class="dropdown-item"
+                    href="{{withQuery $.Pagination.Path $.Filters "banned" "true"}}">
+                        Banned
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item"
+                    href="{{withQuery $.Pagination.Path $.Filters "banned" "false"}}">
+                        Not Banned
+                    </a>
+                </li>
+        </ul>
+    </div>
+
+    {{if .HasFilters}}
+        <a class="btn btn-outline-secondary" href="/panel/posts">Reset</a>
+    {{end}}
+{{end}}

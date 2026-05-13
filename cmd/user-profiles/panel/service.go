@@ -1,4 +1,4 @@
-package app
+package panel
 
 import (
 	"user-profiles/cmd/user-profiles/posts"
@@ -24,6 +24,7 @@ type userStats struct {
 type postStats struct {
 	Published int
 	Pending   int
+	Authors   []string
 }
 
 type statUsers struct {
@@ -63,10 +64,27 @@ func (s *DS) GetStats() (*Stats, error) {
 		},
 		)
 	}
+
 	stats := &Stats{
 		UserStats: uS,
-		Banned: banned,
+		Banned:    banned,
 		PostStats: pS,
 	}
 	return stats, nil
+}
+
+func (s *DS) GetAuthors() ([]posts.Authors, error) {
+	authors, err := s.pRepo.Authors()
+	if err != nil {
+		return nil, err
+	}
+	return authors, nil
+}
+
+func (s *DS) GetRoles() ([]users.Roles, error) {
+	roles, err := s.uRepo.Roles()
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }

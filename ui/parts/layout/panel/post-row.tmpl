@@ -34,11 +34,11 @@
         <!-- Status -->
         <td>
             {{ if .Posts.Approved }}
-                <span class="badge text-bg-danger">
+                <span class="badge text-bg-success">
                     Published
                 </span>
             {{ else }}
-                <span class="badge text-bg-success">
+                <span class="badge text-bg-warning">
                     Pending
                 </span>
             {{ end }}
@@ -55,14 +55,14 @@
                     View
                 </a>
 
-                {{if .CanEditPost}}
+                {{if .Actions.CanEditPost}}
                     <a href="/panel/posts/post/{{.Posts.Id}}/edit"
                         class="btn btn-sm btn-outline-danger">
                         Edit
                     </a>
                 {{end}}
 
-                {{ if .CanApprovePost }}
+                {{ if .Actions.CanApprovePost }}
 
                     {{ if .Posts.Approved }}
                         <a
@@ -82,7 +82,7 @@
                         </a>
                     {{ end }}
 
-                    {{if .CanDeletePost}}
+                    {{if .Actions.CanDeletePost}}
                         <a  hx-get="/panel/posts/post/{{.Posts.Id}}/delete-confirm"
                             hx-target="#modal-container"
                             hx-swap="innerHTML"

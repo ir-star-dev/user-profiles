@@ -2,6 +2,7 @@ package users
 
 import (
 	"errors"
+	"strconv"
 )
 
 type usersService struct {
@@ -20,18 +21,16 @@ func (s *usersService) Get(uId int) (*UserWithRole, error) {
 	return user, nil
 }
 
-func (s *usersService) ChangeName(uId int, name *string) (*UserWithRole, error) {
-	if name == nil {
-		return nil, errors.New(MissingName)
-	}
-	if len(*name) < 2 {
+func (s *usersService) ChangeName(uId int, name string) (*string, error) {
+	if len(name) < 2 {
 		return nil, errors.New(ShortName)
 	}
-	data, err := s.uRepo.UpdateName(*name, uId)
+	data, err := s.uRepo.UpdateName(name, uId)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	id := strconv.Itoa(*data)
+	return &id, nil
 }
 
 func (s *usersService) Delete(uId int) error {
@@ -42,8 +41,8 @@ func (s *usersService) Delete(uId int) error {
 	return nil
 }
 
-func (s *usersService) GetOnPage(page int) ([]UserWithRole, int, error) {
-	users, res, err := s.uRepo.GetOnPage(page)
+func (s *usersService) GetOnPage(page int, limit int, banned *bool, role string) ([]UserWithRole, int, error) {
+	users, res, err := s.uRepo.GetOnPage(page, limit, banned, role)
 	if err != nil {
 		return nil, 0, err
 	}

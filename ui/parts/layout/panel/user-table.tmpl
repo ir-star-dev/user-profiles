@@ -9,43 +9,9 @@
                 Manage users, permissions and statuses
             </p>
         </div>
-    </div>
-
-    <!-- FILTER -->
-    <div class="dropdown">
-        <button 
-            class="btn btn-outline-secondary dropdown-toggle" 
-            type="button" 
-            data-bs-toggle="dropdown"
-        >
-            Filter role
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item" href="/panel/users">
-                    All
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item" href="/panel/users?role=admin">
-                    Admin
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item" href="/panel/users?role=moderator">
-                    Moderator
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item" href="/panel/users?role=user">
-                    User
-                </a>
-            </li>
-        </ul>
+        <div class="d-flex flex-column flex-md-row gap-2">
+            {{template "user-filter" .}}
+        </div>
     </div>
 
     <!-- FLASH MESSAGE -->
@@ -95,7 +61,7 @@
     </div>
 
     <!-- PAGINATION -->
-    {{template "user-pagin" .}}
+    {{template "post-pagin" .}}
 
     {{ else }}
     <div class="alert alert-light border">

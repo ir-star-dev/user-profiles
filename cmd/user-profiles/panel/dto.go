@@ -1,4 +1,4 @@
-package app
+package panel
 
 import (
 	"user-profiles/cmd/user-profiles/posts"
@@ -14,17 +14,34 @@ type PageData struct {
 	Pagination      Pagination
 	Loadmore        Loadmore
 	Stats           *Stats
+	Authors         []posts.Authors
+	Filters         map[string]string
+	HasFilters      bool
+	Roles           []users.Roles
 }
 
 type UserData struct {
 	Profiles        users.UserWithRole
-	CanDelete       bool
-	CanBan          bool
 	CurrentUserId   int
 	CurrentUserRole string
+	Actions         Actions
+}
+
+type PostData struct {
+	Posts   posts.PostWithUserName
+	Actions Actions
+}
+
+type Actions struct {
+	CanDeletePost  bool
+	CanApprovePost bool
+	CanEditPost    bool
+	CanDeleteUser  bool
+	CanBanUser     bool
 }
 
 type Pagination struct {
+	Path       string
 	Page       int
 	TotalPages int
 	Pages      []int
@@ -34,13 +51,6 @@ type Pagination struct {
 	NextPage   int
 	ShowDots   bool
 	LastPage   int
-}
-
-type PostData struct {
-	Posts          posts.PostWithUserName
-	CanDeletePost  bool
-	CanApprovePost bool
-	CanEditPost    bool
 }
 
 type Loadmore struct {

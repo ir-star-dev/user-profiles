@@ -9,37 +9,12 @@
                 Manage posts
             </p>
         </div>
+        <div class="d-flex flex-column flex-md-row gap-2">
+            {{template "post-filter" .}}
+        </div>
     </div>
 
-    <div class="dropdown">
-        <button 
-            class="btn btn-outline-secondary dropdown-toggle" 
-            type="button" 
-            data-bs-toggle="dropdown"
-        >
-            Filter status
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item" href="/panel/posts">
-                    All
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item" href="/panel/posts?approved=true">
-                    Published
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item" href="/panel/posts?approved=false">
-                    Pending
-                </a>
-            </li>
-        </ul>
-    </div>
+    
 
     <!-- FLASH MESSAGE -->
     <div id="flash-message" class="mb-3"></div>

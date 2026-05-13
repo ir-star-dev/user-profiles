@@ -1,10 +1,12 @@
-package app
+package panel
 
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"user-profiles/cmd/user-profiles/utils"
@@ -12,6 +14,7 @@ import (
 
 type Templates struct {
 	TemplateCache map[string]*template.Template
+	funcMap       template.FuncMap
 }
 
 var commonTemplates = []string{
@@ -22,6 +25,9 @@ var commonTemplates = []string{
 func NewTemplates() *Templates {
 	return &Templates{
 		TemplateCache: make(map[string]*template.Template),
+		funcMap: template.FuncMap{
+			"withQuery": WithQuery,
+		},
 	}
 }
 
@@ -30,7 +36,7 @@ func (t *Templates) Render(w http.ResponseWriter, name string, data any, files .
 	if !ok {
 		allFiles := append(commonTemplates, files...)
 
-		parsed, err := template.ParseFiles(allFiles...)
+		parsed, err := template.New("base").Funcs(t.funcMap).ParseFiles(allFiles...)
 		if err != nil {
 			return err
 		}
@@ -66,8 +72,9 @@ func (t *Templates) ServerError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func (t *Templates) BuildPagination(currentPage, totalPages int) Pagination {
+func (t *Templates) BuildPagination(currentPage, totalPages int, path string) Pagination {
 	p := Pagination{
+		Path:       path,
 		Page:       currentPage,
 		TotalPages: totalPages,
 		HasPrev:    currentPage > 1,
@@ -102,6 +109,24 @@ func (t *Templates) BuildPagination(currentPage, totalPages int) Pagination {
 	return p
 }
 
+func WithQuery(base string, params map[string]string, key string, value any) string {
+	q := url.Values{}
+
+	for k, v := range params {
+		if v != "" {
+			q.Set(k, v)
+		}
+	}
+
+	if value == nil {
+		return base + "?" + q.Encode()
+	}
+
+	q.Set(key, fmt.Sprint(value))
+
+	return base + "?" + q.Encode()
+}
+
 func TruncateContent(s string, limit int) string {
 	r := []rune(s)
 	if len(r) > limit {
@@ -130,16 +155,21 @@ func GetUserId(r *http.Request) (int, error) {
 	return uId, nil
 }
 
-func GetPageFromReq(r *http.Request) (int, error) {
-	page := strings.TrimSpace(r.PathValue("page"))
-	if page == "" {
-		return 0, errors.New("Missing param")
-	}
+func GetPageFromReq(r *http.Request) int {
+	page := r.URL.Query().Get("page")
 	p, err := strconv.Atoi(page)
-	if err != nil {
-		return 0, err
+	if err != nil || p < 1 {
+		return 1
 	}
-	return p, nil
+	return p
+}
+
+func GetFilterValue(r *http.Request, key string) string {
+	value := r.URL.Query().Get(key)
+	if value == "" {
+		return ""
+	}
+	return value
 }
 
 func SelfDeletionDetected(r *http.Request) (int, int, error) {
@@ -157,14 +187,14 @@ func SelfDeletionDetected(r *http.Request) (int, int, error) {
 	return reqId, currId, nil
 }
 
-func CanDelete(currentRole string, currentUserId, profileId int) bool {
+func CanDeleteUser(currentRole string, currentUserId, profileId int) bool {
 	if currentRole == "admin" {
 		return currentUserId != profileId
 	}
 	return currentUserId == profileId
 }
 
-func CanBan(currentRole string, currentUserId, profileId int) bool {
+func CanBanUser(currentRole string, currentUserId, profileId int) bool {
 	return currentRole == "admin" && currentUserId != profileId
 }
 

@@ -1,0 +1,66 @@
+{{define "post-filter"}}
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Status
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "approved" ""}}">
+                    All
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "approved" "true"}}">
+                    Published
+                </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "approved" "false"}}">
+                    Pending
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="dropdown">
+        <button 
+            class="btn btn-outline-secondary dropdown-toggle" 
+            type="button" 
+            data-bs-toggle="dropdown"
+        >
+            Author
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item"
+                href="{{withQuery $.Pagination.Path $.Filters "username" ""}}">
+                    All
+                </a>
+            </li>
+
+            {{range .Authors}}
+                <li>
+                    <a class="dropdown-item"
+                    href="{{withQuery $.Pagination.Path $.Filters "username" .Username}}">
+                        {{.Username}}
+                    </a>
+                </li>
+            {{end}}
+        </ul>
+    </div>
+
+    {{if .HasFilters}}
+        <a class="btn btn-outline-secondary" href="/panel/posts">Reset</a>
+    {{end}}
+{{end}}

@@ -34,8 +34,16 @@
 
 <script>
   document.body.addEventListener("htmx:afterSwap", function (event) {
-      if (event.detail.target.id === "modal-container") {
+      if (event.detail.target.id === "delete-modal-container") {
           const modalElement = document.getElementById("deleteModal");
+
+          if (modalElement) {
+              const modal = new bootstrap.Modal(modalElement);
+              modal.show();
+          }
+      }
+      if (event.detail.target.id === "update-modal-container") {
+          const modalElement = document.getElementById("updateNameModal");
 
           if (modalElement) {
               const modal = new bootstrap.Modal(modalElement);

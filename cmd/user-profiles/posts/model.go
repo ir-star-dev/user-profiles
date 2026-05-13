@@ -24,3 +24,12 @@ type PostWithUserName struct {
 	Username  string    `db:"username"`
 	UserId    int       `db:"user_id"`
 }
+
+type Authors struct {
+	Username string `db:"username"`
+}
+
+type PostsStatus struct {
+	Published int    `db:"published"`
+	Pending   int    `db:"pending"`
+}

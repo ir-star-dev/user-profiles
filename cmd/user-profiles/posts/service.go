@@ -37,8 +37,8 @@ func (s *postService) FindByUsername(username string) ([]PostWithUserName, error
 	return posts, nil
 }
 
-func (s *postService) GetOnPage(page int, limit int) ([]PostWithUserName, int, error) {
-	posts, total, err := s.pRepo.GetOnPage(page, limit)
+func (s *postService) GetOnPage(page int, limit int, approved *bool, username string) ([]PostWithUserName, int, error) {
+	posts, total, err := s.pRepo.GetOnPage(page, limit, approved, username)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -1,6 +1,8 @@
 package users_postgres
 
 import (
+	"strconv"
+	"strings"
 	"user-profiles/cmd/user-profiles/users"
 
 	"github.com/jmoiron/sqlx"
@@ -111,7 +113,7 @@ func (repo *usersRepository) Delete(uId int) error {
 	return nil
 }
 
-func (repo *usersRepository) UpdateName(userName string, uId int) (*users.UserWithRole, error) {
+func (repo *usersRepository) UpdateName(userName string, uId int) (*int, error) {
 	user := &users.UserWithRole{
 		Id:   uId,
 		Name: userName,
@@ -125,22 +127,47 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*users.UserWi
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &uId, nil
 }
 
-func (repo *usersRepository) GetOnPage(page int) ([]users.UserWithRole, int, error) {
-	limit := 10
-	offset := (page-1)*limit
+func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role string) ([]users.UserWithRole, int, error) {
+	offset := (page - 1) * limit
 
+	args := []any{}
+	conditions := []string{}
+
+	// approved
+	if banned != nil {
+		args = append(args, *banned)
+		conditions = append(conditions, "u.banned = $"+strconv.Itoa(len(args)))
+	}
+
+	// username
+	if role != "" {
+		args = append(args, role)
+		conditions = append(conditions, "r.role = $"+strconv.Itoa(len(args)))
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// COUNT
 	var totalCount int
 	countQuery := `
 		SELECT COUNT(*)
-		FROM users
-	`
-	err := repo.db.Get(&totalCount, countQuery)
+		FROM users AS u
+		JOIN roles AS r ON u.role_id = r.id
+	` + where
+
+	err := repo.db.Get(&totalCount, countQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// pagination
+	args = append(args, limit, offset)
 
 	query := `
 		SELECT 
@@ -152,11 +179,14 @@ func (repo *usersRepository) GetOnPage(page int) ([]users.UserWithRole, int, err
 			r.role
 		FROM users AS u
 		JOIN roles AS r ON r.id = u.role_id
+		` + where + `
 		ORDER BY u.id DESC
-		LIMIT $1 OFFSET $2
-	`
+		LIMIT $` + strconv.Itoa(len(args)-1) + `
+		OFFSET $` + strconv.Itoa(len(args))
+
+
 	users := []users.UserWithRole{}
-	err = repo.db.Select(&users, query, limit, offset)
+	err = repo.db.Select(&users, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -222,4 +252,14 @@ func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
 		return nil, err
 	}
 	return stats, nil
+}
+
+func (repo *usersRepository) Roles() ([]users.Roles, error) {
+	var roles []users.Roles
+	query := `SELECT * FROM roles ORDER BY role`
+	err := repo.db.Select(&roles, query)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
 }

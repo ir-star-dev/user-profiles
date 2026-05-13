@@ -1,10 +1,10 @@
 package handlers
 
 import (
-
 	//"errors"
 	//"html/template"
 	"net/http"
+	"strconv"
 
 	// "strconv"
 	// "strings"
@@ -12,49 +12,39 @@ import (
 
 	// "html/template"
 	// "time"
-	"user-profiles/cmd/user-profiles/app"
-	"user-profiles/cmd/user-profiles/auth"
+
+	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
-	"user-profiles/configs"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type DashboardHandler struct {
-	Config       *configs.Config
-	AuthService  auth.AuthService
 	UsersService users.UsersService
 	PostsService posts.PostService
-	JWTService   auth.JWTService
-	Templates    app.Templates
-	Dashboard    app.DS
+	Templates    panel.Templates
+	Dashboard    panel.DS
 }
 
 type DashboardHandlerDeps struct {
-	Config       *configs.Config
-	AuthService  auth.AuthService
 	UsersService users.UsersService
 	PostsService posts.PostService
-	JWTService   auth.JWTService
-	Templates    app.Templates
-	Dashboard    app.DS
+	Templates    panel.Templates
+	Dashboard    panel.DS
 }
 
 func NewDashboardHandler(router chi.Router, deps DashboardHandlerDeps) *DashboardHandler {
 	return &DashboardHandler{
-		Config:       deps.Config,
-		AuthService:  deps.AuthService,
 		UsersService: deps.UsersService,
 		PostsService: deps.PostsService,
-		JWTService:   deps.JWTService,
 		Templates:    deps.Templates,
 		Dashboard:    deps.Dashboard,
 	}
 }
 
 func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	uIdFromReq, err := app.GetIdFromReq(r)
+	uIdFromReq, err := panel.GetIdFromReq(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
@@ -66,27 +56,29 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	currUserId, err := app.GetUserId(r)
+	currUserId, err := panel.GetUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
 	currUserRole, _ := handler.UsersService.Role(currUserId)
 
-	var cards []app.UserData
-	cards = append(cards, app.UserData{
+	var cards []panel.UserData
+	cards = append(cards, panel.UserData{
 		Profiles:        *profile,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
-		CanDelete:       app.CanDelete(currUserRole, currUserId, profile.Id),
-		CanBan:          app.CanBan(currUserRole, currUserId, profile.Id),
+		Actions: panel.Actions{
+			CanDeleteUser: panel.CanDeleteUser(currUserRole, currUserId, profile.Id),
+			CanBanUser:    panel.CanBanUser(currUserRole, currUserId, profile.Id),
+		},
 	})
 
 	stats, err := handler.Dashboard.GetStats()
 	if err != nil {
 		handler.Templates.ServerError(w, err)
 	}
-	data := app.PageData{
+	data := panel.PageData{
 		RequestedUserId: uIdFromReq,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
@@ -99,7 +91,8 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 		"././ui/parts/layout/panel/user.tmpl",
 		"././ui/parts/layout/panel/user-card.tmpl",
 		"././ui/parts/layout/panel/stats.tmpl",
-		"././ui/parts/layout/panel/delete-modal.tmpl",
+		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
+		"././ui/parts/layout/panel/modals/update-name-modal.tmpl",
 	)
 	if err != nil {
 		handler.Templates.ServerError(w, err)
@@ -107,15 +100,11 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 }
 
 func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
-	page, err := app.GetPageFromReq(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if page <= 0 {
-		page = 1
-	}
-	currUserId, err := app.GetUserId(r)
+	page := panel.GetPageFromReq(r)
+	role := panel.GetFilterValue(r, "role")
+	banned := panel.GetFilterValue(r, "banned")
+
+	currUserId, err := panel.GetUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
@@ -125,17 +114,28 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	profiles, res, err := handler.UsersService.GetOnPage(page)
+	var bn *bool
+	if banned != "" {
+		v, err := strconv.ParseBool(banned)
+		if err != nil {
+			bn = nil
+		}
+		bn = &v
+	}
+
+	profiles, res, err := handler.UsersService.GetOnPage(page, 10, bn, role)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var cards []app.UserData
+	var cards []panel.UserData
 	for _, profile := range profiles {
-		cards = append(cards, app.UserData{
-			Profiles:  profile,
-			CanDelete: app.CanDelete(currRole, currUserId, profile.Id),
-			CanBan:    app.CanBan(currRole, currUserId, profile.Id),
+		cards = append(cards, panel.UserData{
+			Profiles: profile,
+			Actions: panel.Actions{
+				CanDeleteUser: panel.CanDeleteUser(currRole, currUserId, profile.Id),
+				CanBanUser:    panel.CanBanUser(currRole, currUserId, profile.Id),
+			},
 		})
 	}
 
@@ -145,19 +145,27 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
-	pagination := handler.Templates.BuildPagination(page, totalPages)
-	data := app.PageData{
+	pagination := handler.Templates.BuildPagination(page, totalPages, "/panel/users")
+	roles, _ := handler.Dashboard.GetRoles()
+	data := panel.PageData{
 		UserCards:       cards,
 		Pagination:      pagination,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currRole,
+		Roles:           roles,
+		Filters: map[string]string{
+			"banned": banned,
+			"role": role,
+		},
+		HasFilters: page > 1 || banned != "" || role != "",
 	}
 	err = handler.Templates.Render(w, "users", data,
 		"././ui/pages/panel/users.tmpl",
 		"././ui/parts/layout/panel/user-table.tmpl",
-		"././ui/parts/layout/panel/user-pagin.tmpl",
+		"././ui/parts/layout/panel/filters/user-filter.tmpl",
+		"././ui/parts/layout/panel/post-pagin.tmpl",
 		"././ui/parts/layout/panel/user-row.tmpl",
-		"././ui/parts/layout/panel/delete-modal.tmpl",
+		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
 	)
 	if err != nil {
 		handler.Templates.ServerError(w, err)
@@ -165,15 +173,11 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
-	page, err := app.GetPageFromReq(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if page <= 0 {
-		page = 1
-	}
-	currUserId, err := app.GetUserId(r)
+	page := panel.GetPageFromReq(r)
+	approved := panel.GetFilterValue(r, "approved")
+	username := panel.GetFilterValue(r, "username")
+
+	currUserId, err := panel.GetUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
@@ -183,18 +187,31 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	posts, res, err := handler.PostsService.GetOnPage(page, 10)
+	var ap *bool
+	if approved != "" {
+		v, err := strconv.ParseBool(approved)
+		if err != nil {
+			ap = nil
+		}
+		ap = &v
+	}
+	posts, res, err := handler.PostsService.GetOnPage(page, 10, ap, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var cards []app.PostData
+
+	authors, _ := handler.Dashboard.GetAuthors()
+
+	var cards []panel.PostData
 	for _, post := range posts {
-		cards = append(cards, app.PostData{
-			Posts:          post,
-			CanDeletePost:  app.CanDeletePost(currRole),
-			CanApprovePost: app.CanApprovePost(currRole),
-			CanEditPost:    app.CanEditPost(currRole, currUserId, post.UserId),
+		cards = append(cards, panel.PostData{
+			Posts: post,
+			Actions: panel.Actions{
+				CanDeletePost:  panel.CanDeletePost(currRole),
+				CanApprovePost: panel.CanApprovePost(currRole),
+				CanEditPost:    panel.CanEditPost(currRole, currUserId, post.UserId),
+			},
 		})
 	}
 
@@ -204,50 +221,82 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
-	pagination := handler.Templates.BuildPagination(page, totalPages)
-	data := app.PageData{
+	pagination := handler.Templates.BuildPagination(page, totalPages, "/panel/posts")
+	data := panel.PageData{
 		PostCards:       cards,
 		Pagination:      pagination,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currRole,
+		Authors:         authors,
+		Filters: map[string]string{
+			"approved": approved,
+			"username": username,
+		},
+		HasFilters: page > 1 || approved != "" || username != "",
 	}
 	err = handler.Templates.Render(w, "posts", data,
 		"././ui/pages/panel/posts.tmpl",
 		"././ui/parts/layout/panel/post-table.tmpl",
+		"././ui/parts/layout/panel/filters/post-filter.tmpl",
 		"././ui/parts/layout/panel/post-pagin.tmpl",
 		"././ui/parts/layout/panel/post-row.tmpl",
-		"././ui/parts/layout/panel/delete-modal.tmpl",
+		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
 	)
 	if err != nil {
 		handler.Templates.ServerError(w, err)
 	}
 }
 
-// func (handler *Handler) UpdateById(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := getUserId(r)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusUnauthorized)
-// 		return
-// 	}
-// 	res, err := req.HandleBody[UpdateNameRequest](&w, r)
-// 	if err != nil {
-// 		resp.Json(w, UserNotFound, http.StatusNotFound)
-// 		return
-// 	}
-// 	_, err = handler.AuthService.ChangeName(uId, res.Name)
-// 	if err != nil {
-// 		resp.Json(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	resp.Json(w, "Profile updated", http.StatusOK)
-// }
+func (handler *DashboardHandler) UpdateNameModal(w http.ResponseWriter, r *http.Request) {
+	uId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	profile, err := handler.UsersService.Get(uId)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+
+	var cards []panel.UserData
+	cards = append(cards, panel.UserData{
+		Profiles: *profile,
+	})
+	data := panel.PageData{
+		UserCards: cards,
+	}
+	err = handler.Templates.RenderPartial(
+		w,
+		"update-name-modal",
+		data,
+		"././ui/parts/layout/panel/modals/update-name-modal.tmpl",
+	)
+	if err != nil {
+		handler.Templates.ServerError(w, err)
+	}
+}
+
+func (handler *DashboardHandler) UpdateName(w http.ResponseWriter, r *http.Request) {
+	uId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	name := r.FormValue("name")
+	res, err := handler.UsersService.ChangeName(uId, name)
+	if err != nil {
+		handler.Templates.ServerError(w, err)
+	}
+	w.Header().Set("HX-Redirect", "/panel/profile/"+*res)
+}
 
 // func (handler *UserHandler) DeleteConfirm(w http.ResponseWriter, r *http.Request) {
 // 	uId, err := getIdFromReq(r)
 // 	if err != nil {
 // 		return
 // 	}
-// 	tmpl, err := app.LoadTemplate(
+// 	tmpl, err := panel.LoadTemplate(
 // 		"././ui/templates/parts/layout/delete-modal.tmpl",
 // 	)
 // 	if err != nil {
@@ -258,11 +307,11 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 // 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 // 		return
 // 	}
-// 	var cards []app.UserCardData
-// 	cards = append(cards, app.UserCardData{
+// 	var cards []panel.UserCardData
+// 	cards = append(cards, panel.UserCardData{
 // 		Profiles: *profile,
 // 	})
-// 	data := app.PageData{
+// 	data := panel.PageData{
 // 		Cards: cards,
 // 	}
 // 	tmpl.ExecuteTemplate(w, "delete-modal", data)
@@ -302,7 +351,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 // 	if v == "" {
 // 		return
 // 	}
-// 	tmpl, err := app.LoadTemplate(
+// 	tmpl, err := panel.LoadTemplate(
 // 		"./ui/templates/parts/layout/user-" + v + ".tmpl",
 // 	)
 // 	if err != nil {
@@ -320,7 +369,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 // 	if err != nil {
 // 		return
 // 	}
-// 	data := app.UserCardData{
+// 	data := panel.UserCardData{
 // 		Profiles:      *user,
 // 		CurrentUserId: currId,
 // 		CanDelete:     canDelete(currRole, currId, reqId),
@@ -338,7 +387,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 // 	if v == "" {
 // 		return
 // 	}
-// 	tmpl, err := app.LoadTemplate(
+// 	tmpl, err := panel.LoadTemplate(
 // 		"./ui/templates/parts/layout/user-" + v + ".tmpl",
 // 	)
 // 	if err != nil {
@@ -356,7 +405,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 // 	if err != nil {
 // 		return
 // 	}
-// 	data := app.UserCardData{
+// 	data := panel.UserCardData{
 // 		Profiles:      *user,
 // 		CurrentUserId: currId,
 // 		CanDelete:     canDelete(currRole, currId, reqId),

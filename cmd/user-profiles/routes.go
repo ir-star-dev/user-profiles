@@ -29,11 +29,7 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 	router.Route(("/panel"), func(router chi.Router) {
 		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
-		// Role-limited action types on posts, role checks based on GET settings
-		// ?role=admin
-		// ?role=moderator
-		// ?role=user
-		router.Get("/posts/page/{page}", dh.Posts)
+		router.Get("/posts", dh.Posts)
 		// router.Get("/post/create", ph.CreateForm)
 		// router.Get("/posts/post/{id}/edit", ph.EditForm)
 
@@ -47,14 +43,15 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 		// router.With(middlewares.RoleMiddleware("admin", "editor")).Get("/posts/post/{id}/delete-confirm", ph.DeleteConfirm)
 		// router.With(middlewares.RoleMiddleware("admin", "editor")).Delete("/posts/post/{id}", ph.Delete)
 
-		router.With(middlewares.RoleMiddleware("admin")).Get("/users/page/{page}", dh.Users)
+		router.With(middlewares.RoleMiddleware("admin")).Get("/users", dh.Users)
 
 		router.Route(("/profile"), func(router chi.Router) {
 			router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
 			router.Get("/{id}", dh.Profile)
 
-			// router.With(middlewares.BanMiddleware).Patch("/{id}/name", handler.Update)
+			router.With(middlewares.BanMiddleware).Get("/{id}/name", dh.UpdateNameModal)
+			router.With(middlewares.BanMiddleware).Patch("/{id}/name", dh.UpdateName)
 			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)
 			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", uh.Unban)
 

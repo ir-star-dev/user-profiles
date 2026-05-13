@@ -1,6 +1,8 @@
 package posts_postgres
 
 import (
+	"strconv"
+	"strings"
 	"user-profiles/cmd/user-profiles/posts"
 
 	"github.com/jmoiron/sqlx"
@@ -96,39 +98,70 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 	posts := []posts.PostWithUserName{}
 	err := repo.db.Select(&posts, query, username)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	return posts, nil
 }
 
-
-func (repo *postRepository) GetOnPage(page int, limit int) ([]posts.PostWithUserName, int, error) {
+func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, username string) ([]posts.PostWithUserName, int, error) {
 	offset := (page - 1) * limit
 
+	args := []any{}
+	conditions := []string{}
+
+	// approved
+	if approved != nil {
+		args = append(args, *approved)
+		conditions = append(conditions, "p.approved = $"+strconv.Itoa(len(args)))
+	}
+
+	// username
+	if username != "" {
+		args = append(args, username)
+		conditions = append(conditions, "u.username = $"+strconv.Itoa(len(args)))
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// COUNT
 	var totalCount int
+
 	countQuery := `
 		SELECT COUNT(*)
-		FROM posts
-	`
-	err := repo.db.Get(&totalCount, countQuery)
+		FROM posts AS p
+		JOIN users AS u ON p.user_id = u.id
+	` + where
+
+	err := repo.db.Get(&totalCount, countQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// pagination
+	args = append(args, limit, offset)
+
 	query := `
 		SELECT 
 			p.*,
 			u.username
 		FROM posts AS p
 		JOIN users AS u 
-		ON p.user_id = u.id
+			ON p.user_id = u.id
+		` + where + `
 		ORDER BY p.created_at DESC
-		LIMIT $1 OFFSET $2
-	`
+		LIMIT $` + strconv.Itoa(len(args)-1) + `
+		OFFSET $` + strconv.Itoa(len(args))
+
 	posts := []posts.PostWithUserName{}
-	err = repo.db.Select(&posts, query, limit, offset)
+
+	err = repo.db.Select(&posts, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
+
 	return posts, totalCount, nil
 }
 
@@ -144,13 +177,28 @@ func (repo *postRepository) GetAll() ([]posts.Post, error) {
 
 func (repo *postRepository) PostsStatus() ([]posts.PostsStatus, error) {
 	query := `SELECT
-		COUNT(id) FILTER (WHERE approved = false) AS pending,
-		COUNT(id) FILTER (WHERE approved = true) AS published
-	FROM posts`
+			COUNT(id) FILTER (WHERE approved = false) AS pending,
+			COUNT(id) FILTER (WHERE approved = true) AS published
+		FROM posts
+	`
 	var pStats []posts.PostsStatus
 	err := repo.db.Select(&pStats, query)
 	if err != nil {
 		return nil, err
 	}
 	return pStats, nil
+}
+
+func (repo *postRepository) Authors() ([]posts.Authors, error) {
+	query := `SELECT u.username
+		FROM posts AS p
+		JOIN users AS u ON p.user_id = u.id
+		GROUP BY u.username
+	`
+	var authors []posts.Authors
+	err := repo.db.Select(&authors, query)
+	if err != nil {
+		return nil, err
+	}
+	return authors, nil
 }

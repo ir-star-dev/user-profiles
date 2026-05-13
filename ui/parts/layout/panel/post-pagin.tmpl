@@ -5,7 +5,7 @@
 
                 {{ if .Pagination.HasPrev }}
                 <li class="page-item">
-                    <a class="page-link" href="/panel/posts/page/{{$.Pagination.PrevPage}}">
+                    <a class="page-link" href="{{withQuery $.Pagination.Path $.Filters "page" $.Pagination.PrevPage}}">
                         Prev
                     </a>
                 </li>
@@ -13,8 +13,8 @@
 
                 {{ range .Pagination.Pages }}
                 <li class="page-item">
-                    <a class="page-link {{if eq . $.Pagination.Page}}active{{end}}"
-                    href="/panel/posts/page/{{.}}">
+                    <a class="page-link"
+                        href="{{withQuery $.Pagination.Path $.Filters "page" .}}">
                         {{.}}
                     </a>
                 </li>
@@ -27,7 +27,7 @@
 
                 <li class="page-item">
                     <a class="page-link"
-                    href="/panel/posts/page/{{$.Pagination.LastPage}}">
+                    href="{{withQuery $.Pagination.Path $.Filters "page" $.Pagination.LastPage}}">
                         {{.Pagination.LastPage}}
                     </a>
                 </li>
@@ -35,7 +35,7 @@
 
                 {{ if .Pagination.HasNext }}
                 <li class="page-item">
-                    <a class="page-link" href="/panel/posts/page/{{$.Pagination.NextPage}}">
+                    <a class="page-link" href="{{$.Pagination.Path}}?page={{$.Pagination.NextPage}}">
                         Next
                     </a>
                 </li>

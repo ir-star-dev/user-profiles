@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
-	"user-profiles/cmd/user-profiles/app"
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/handlers"
 	"user-profiles/cmd/user-profiles/middlewares"
+	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
 	"user-profiles/configs"
@@ -38,7 +38,7 @@ func main() {
 	postRepo := posts_postgres.NewPostRepository(dbConn)
 
 	// Services
-	dashboard := app.NewDashboardService(userRepo, postRepo)
+	dashboard := panel.NewDashboardService(userRepo, postRepo)
 	jwtService := auth.NewJWTService(conf.Secret)
 	refreshTokenService := auth.NewRefreshTokenService()
 	authService := auth.NewAuthService(userRepo, tokenRepo, jwtService, refreshTokenService)
@@ -49,9 +49,9 @@ func main() {
 	mux := chi.NewRouter()
 
 	// Middlewares
-	mux.Use(middlewares.CORS)
+	mux.Use(middlewares.CORS, middlewares.RecoverPanic)
 
-	t := app.NewTemplates()
+	t := panel.NewTemplates()
 
 	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
 		Config:      conf,
@@ -61,9 +61,6 @@ func main() {
 	})
 
 	dashboard_handler := handlers.NewDashboardHandler(mux, handlers.DashboardHandlerDeps{
-		Config:       conf,
-		AuthService:  authService,
-		JWTService:   jwtService,
 		UsersService: userService,
 		PostsService: postService,
 		Templates:    *t,
@@ -71,9 +68,6 @@ func main() {
 	})
 
 	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
-		Config:      conf,
-		AuthService: authService,
-		JWTService:  jwtService,
 		PostService: postService,
 		Templates:   *t,
 	})

@@ -50,7 +50,7 @@
                     View
                 </a>
 
-                {{ if .CanBan }}
+                {{ if .Actions.CanBanUser }}
 
                     {{ if .Profiles.Banned }}
                         <a
@@ -70,9 +70,9 @@
                         </a>
                     {{ end }}
 
-                    {{if .CanDelete}}
+                    {{if .Actions.CanDeleteUser}}
                         <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
-                            hx-target="#modal-container"
+                            hx-target="#delete-modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">
                             Delete

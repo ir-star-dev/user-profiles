@@ -9,7 +9,3 @@ type UpdatePostRequest struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type PostsStatus struct {
-	Published int `db:"published"`
-	Pending   int `db:"pending"`
-}

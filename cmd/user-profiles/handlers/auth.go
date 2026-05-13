@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"user-profiles/cmd/user-profiles/app"
 	"user-profiles/cmd/user-profiles/auth"
+	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/utils"
 	"user-profiles/configs"
 
@@ -20,14 +20,14 @@ type AuthHandlerDeps struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   app.Templates
+	Templates   panel.Templates
 }
 
 type AuthHandler struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   app.Templates
+	Templates   panel.Templates
 }
 
 func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
@@ -40,7 +40,7 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 }
 
 func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
-	data := app.PageData{}
+	data := panel.PageData{}
 	err := handler.Templates.Render(w, "login", data,
 		"././ui/pages/login.tmpl",
 		"././ui/parts/forms/login.tmpl",
@@ -52,7 +52,7 @@ func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *AuthHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
-	data := app.PageData{}
+	data := panel.PageData{}
 	err := handler.Templates.Render(w, "signup", data,
 		"././ui/pages/signup.tmpl",
 		"././ui/parts/forms/signup.tmpl",

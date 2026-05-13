@@ -4,18 +4,9 @@
         <li class="nav-item"><a class="nav-link" href="/auth/signup">Sign Up</a></li>
         <li class="nav-item"><a class="nav-link" href="/auth/login">Login</a></li>
     {{else}}
-        {{ if eq .CurrentUserRole "admin" }}
-            <li class="nav-item">
-                <a class="nav-link" href="/panel/user/add">
-                    Add user
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/panel/users/page/1">
-                    Users
-                </a>
-            </li>
-        {{end}}
+        <li class="nav-item">
+            <a class="nav-link" href="/panel/profile/{{.CurrentUserId}}">Profile</a>
+        </li>
         <li class="nav-item">
             <a class="nav-link" href="/panel/post/create">
                 Add post
@@ -23,14 +14,23 @@
         </li>
         {{ if .CurrentUserRole }}
         <li class="nav-item">
-            <a class="nav-link" href="/panel/posts/page/1">
+            <a class="nav-link" href="/panel/posts">
                 Posts
             </a>
         </li>
         {{end}}
-        <li class="nav-item">
-            <a class="nav-link" href="/panel/profile/{{.CurrentUserId}}">Profile</a>
-        </li>
+        {{ if eq .CurrentUserRole "admin" }}
+            <li class="nav-item">
+                <a class="nav-link" href="/panel/user/add">
+                    Add user
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/panel/users">
+                    Users
+                </a>
+            </li>
+        {{end}}
         <li class="nav-item">
             <a class="nav-link" hx-post="/auth/logout">
                 Sign Out

@@ -8,9 +8,11 @@ type Repository interface {
 	FindById(pId int) (*PostWithUserName, error)
 	FindByUsername(username string) ([]PostWithUserName, error)
 
-	GetOnPage(page int, limit int) ([]PostWithUserName, int, error)
+	GetOnPage(page int, limit int, approved *bool, username string) ([]PostWithUserName, int, error)
 	GetAll() ([]Post, error)
 	PostsStatus() ([]PostsStatus, error)
+	
+	Authors() ([]Authors, error)
 }
 
 type PostService interface {
@@ -21,7 +23,7 @@ type PostService interface {
 	FindById(pId int) (*PostWithUserName, error)
 	FindByUsername(username string) ([]PostWithUserName, error)
 
-	GetOnPage(page int, limit int) ([]PostWithUserName, int, error)
+	GetOnPage(page int, limit int, approved *bool, username string) ([]PostWithUserName, int, error)
 	GetAll() ([]Post, error)
 	PostsStatus() ([]PostsStatus, error)
 }
