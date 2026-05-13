@@ -6,18 +6,19 @@ import (
 )
 
 type PageData struct {
-	RequestedUserId int
-	CurrentUserId   int
-	CurrentUserRole string
-	UserCards       []UserData
-	PostCards       []PostData
-	Pagination      Pagination
-	Loadmore        Loadmore
-	Stats           *Stats
-	Authors         []posts.Authors
-	Filters         map[string]string
-	HasFilters      bool
-	Roles           []users.Roles
+	RequestedUserId   int
+	CurrentUserId     int
+	CurrentUserRole   string
+	UserCards         []UserData
+	PostCards         []PostData
+	Pagination        Pagination
+	Loadmore          Loadmore
+	Stats             *Stats
+	Authors           []posts.Authors
+	Filters           map[string]string
+	HasFilters        bool
+	Roles             []users.Roles
+	FormValidationErr []FormValidationErr
 }
 
 type UserData struct {
@@ -58,4 +59,9 @@ type Loadmore struct {
 	Next    int
 	HasMore bool
 	Total   int
+}
+
+type FormValidationErr struct {
+	Name    string
+	Message string
 }

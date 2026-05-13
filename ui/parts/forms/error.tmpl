@@ -1,8 +1,11 @@
 {{ define "form-submit-error" }}
 
-<div class="alert alert-error" role="alert">
-    Something went wrong. Try later, please!<br>
-    {{ .Message }}
-</div>
+{{if .FormValidationErr}}
+    {{range .FormValidationErr}}
+        <div class="alert alert-danger" role="alert">
+            {{ .Message }}
+        </div>
+    {{end}}
+{{end}}
 
 {{end}}

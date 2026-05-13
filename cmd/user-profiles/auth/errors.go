@@ -4,7 +4,7 @@ const (
 	UserExists          = "User already exists"
 	UserCreate          = "Cannot create a user"
 	PassHash            = "Password error"
-	LoginError          = "Wrong email or password"
+	LoginError          = "Wrong email"
 	WrongPassword       = "Wrong password"
 	NoRefreshtoken      = "No refresh token"
 	InvalidRefreshToken = "Invalid refresh token"
@@ -13,4 +13,5 @@ const (
 	Unauthorized		= "Unauthorized"
 	WrongCredentials    = "Wrong credentials"
 	ReuseToken			= "Token reuse detected"
+	SomethingWrong		= "Something went wrong. Try later, please!"
 )

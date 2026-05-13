@@ -2,25 +2,23 @@
 
 <div class="row justify-content-center mt-4">
     <div class="col-md-6 col-lg-4">
-        <div id="result" class="my-3"></div>
-
         <form class="px-3" hx-post="/auth/signup" hx-target="#result" hx-swap="innerHTML"> 
             <h1 class="h3 mb-3 fw-normal">Sign Up</h1>
+            <div id="result" class="my-3"></div>
+
             <div class="mb-3">
-                <input hx-validate="true" type="text" class="form-control" name="name" required placeholder="Name">
+                <input type="text" class="form-control" name="name" required placeholder="Name" minlength="3">
             </div>
             <div class="mb-3">
-                <select hx-validate="true" name="role" class="form-select" required placeholder="Email">
+                <select name="role" class="form-select" required placeholder="Role">
                     <option value="user" selected>User</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="admin">Admin</option>
                 </select>
             </div>
             <div class="mb-3">
-                <input hx-validate="true" type="email" class="form-control" name="email" placeholder="Email">
+                <input type="email" class="form-control" name="email" placeholder="Email" required>
             </div>
             <div class="mb-3">
-                <input hx-validate="true" type="password" name="password" class="form-control" required placeholder="Password">
+                <input type="password" name="password" class="form-control" required placeholder="Password" minlength="5" maxlength="8">
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success col-12">Sign Up</button>

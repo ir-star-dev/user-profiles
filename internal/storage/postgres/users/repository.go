@@ -18,10 +18,11 @@ func NewUsersRepository(db *sqlx.DB) users.Repository {
 
 func (repo *usersRepository) Create(user *users.UserWithRole) (*users.UserWithRole, error) {
 	query := `
-        INSERT INTO users (name, email, password, role_id)
+        INSERT INTO users (name, email, username, password, role_id)
 		SELECT 
 			:name,
 			:email,
+			:username,
 			:password,
 			r.id
 		FROM roles AS r

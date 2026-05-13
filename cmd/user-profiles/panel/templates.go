@@ -5,62 +5,85 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"user-profiles/cmd/user-profiles/utils"
+	"user-profiles/ui"
 )
 
 type Templates struct {
-	TemplateCache map[string]*template.Template
-	funcMap       template.FuncMap
+	templateCache  map[string]*template.Template
 }
 
-var commonTemplates = []string{
-	"././ui/base.tmpl",
-	"././ui/parts/layout/nav.tmpl",
+var functions = template.FuncMap{
+	"withQuery": WithQuery,
 }
 
-func NewTemplates() *Templates {
-	return &Templates{
-		TemplateCache: make(map[string]*template.Template),
-		funcMap: template.FuncMap{
-			"withQuery": WithQuery,
-		},
+func NewTemplateCache() (*Templates, error) {
+	cache := map[string]*template.Template{}
+	pages, err := fs.Glob(ui.Files, "pages/*.tmpl")
+	if err != nil {
+		return nil, err
 	}
-}
+	panelPages, err := fs.Glob(ui.Files, "pages/panel/*.tmpl")
+	if err != nil {
+		return nil, err
+	}
+	pages = append(pages, panelPages...)
 
-func (t *Templates) Render(w http.ResponseWriter, name string, data any, files ...string) error {
-	tmpl, ok := t.TemplateCache[name]
-	if !ok {
-		allFiles := append(commonTemplates, files...)
+	for _, page := range pages {
+		name := filepath.Base(page)
 
-		parsed, err := template.New("base").Funcs(t.funcMap).ParseFiles(allFiles...)
-		if err != nil {
-			return err
+		patterns := []string{
+			"base.tmpl",
+			"pages/*.tmpl",
+			"pages/panel/*.tmpl",
+			"parts/*/*.tmpl",
+			"parts/*/*/*.tmpl",
+			page,
 		}
 
-		tmpl = parsed
-		t.TemplateCache[name] = tmpl
-	}
-	var buf bytes.Buffer
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
+		if err != nil {
+			return nil, err
+		}
 
-	err := tmpl.ExecuteTemplate(&buf, "base", data)
-	if err != nil {
-		return err
+		cache[name] = ts
 	}
-	_, err = w.Write(buf.Bytes())
-	return err
+	return &Templates{
+		templateCache: cache,
+	}, nil
 }
 
-func (t *Templates) RenderPartial(w http.ResponseWriter, templateName string, data any, files ...string) error {
-	tmpl, err := template.ParseFiles(files...)
+func (t *Templates) Render(w http.ResponseWriter, r *http.Request, status int, page string, data PageData) {
+	ts, ok := t.templateCache[page]
+	if !ok {
+		err := fmt.Errorf("The template %s does not exist", page)
+		t.ServerError(w, err)
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
-		return err
+		t.ServerError(w, err)
+		return
+	}
+	w.WriteHeader(status)
+	buf.WriteTo(w)
+}
+
+func (t *Templates) RenderPartial(w http.ResponseWriter, page string, templateName string, data any) error {
+	ts, ok := t.templateCache[page]
+	if !ok {
+		return fmt.Errorf("Template %s does not exist", page)
 	}
 	var buf bytes.Buffer
-	err = tmpl.ExecuteTemplate(&buf, templateName, data)
+	err := ts.ExecuteTemplate(&buf, templateName, data)
 	if err != nil {
 		return err
 	}

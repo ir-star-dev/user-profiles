@@ -3,7 +3,9 @@ package auth
 import (
 	"errors"
 	"time"
+	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/internal/validator"
 
 	"strings"
 
@@ -27,58 +29,127 @@ func NewAuthService(uRepo users.Repository, tRepo RefreshRepository, jS JWTServi
 	}
 }
 
-func (s *authService) Register(email, password, name, role string) error {
-
-	existedUser, _ := s.uRepo.FindByEmail(email)
-	if existedUser != nil {
-		return errors.New(UserExists)
+func (s *authService) Register(email, password, name, role string) (*AuthResponse, error) {
+	var formValiErr []panel.FormValidationErr
+	form := RegisterInput{
+		Email:     email,
+		Name:      name,
+		Role:      role,
+		Password:  password,
+		Validator: validator.Validator{},
 	}
-	password = strings.TrimSpace(password)
+
+	form.Validator.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "Email is not valid")
+	form.Validator.CheckField(validator.MaxChars(form.Password, 8), "password", "Password length more than 8 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.Validator.CheckField(validator.NotBlank(form.Name), "name", "Name cannot be blank")
+	form.Validator.CheckField(validator.PermittedValue(form.Role, "user"), "role", "Role can be user")
+
+	if !form.Validator.Valid() {
+		for key, value := range form.Validator.FieldErrors {
+			formValiErr = append(formValiErr, panel.FormValidationErr{
+				Name:    key,
+				Message: value,
+			})
+		}
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, errors.New("Invalid form")
+	}
+
+	existedUser, err := s.uRepo.FindByEmail(email)
+	if existedUser != nil {
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "exist",
+			Message: UserExists,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "password",
+			Message: LoginError,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
-	
+
 	username, _, _ := strings.Cut(email, "@")
 
-	newUser := &users.UserWithRole{
-		Email:    strings.TrimSpace(email),
-		Name:     strings.TrimSpace(name),
+	newUser := users.UserWithRole{
+		Email:    email,
+		Name:     name,
 		Username: username,
 		Password: string(hash),
 		Role:     role,
 	}
-	_, err = s.uRepo.Create(newUser)
+	_, err = s.uRepo.Create(&newUser)
 	if err != nil {
-		return err
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "form",
+			Message: SomethingWrong,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
-	return nil
+	return &AuthResponse{}, nil
 }
 
 func (s *authService) Login(email, password string) (*AuthResponse, error) {
-	existedUser, _ := s.uRepo.FindByEmail(email)
+	var formValiErr []panel.FormValidationErr
+	existedUser, err := s.uRepo.FindByEmail(email)
 	if existedUser == nil {
-		return nil, errors.New(LoginError)
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "email",
+			Message: LoginError,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
 	password = strings.TrimSpace(password)
-	err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(password))
 	if err != nil {
-		return nil, errors.New(WrongPassword)
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "password",
+			Message: WrongPassword,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
 	tokens, err := s.generateTokens(existedUser.Id, existedUser.Role)
 	if err != nil {
-		return nil, err
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "form",
+			Message: SomethingWrong,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
 	fId := uuid.NewString()
 	err = s.saveRefreshToken(tokens.RefreshHash, existedUser.Id, fId)
 	if err != nil {
-		return nil, err
+		formValiErr = append(formValiErr, panel.FormValidationErr{
+			Name:    "form",
+			Message: SomethingWrong,
+		})
+		return &AuthResponse{
+			FormValidationErr: formValiErr,
+		}, err
 	}
 	res := &AuthResponse{
-		UserId:      existedUser.Id,
-		Access:      tokens.Access,
-		Refresh:     tokens.Refresh,
-		RefreshHash: tokens.RefreshHash,
+		UserId:            existedUser.Id,
+		Access:            tokens.Access,
+		Refresh:           tokens.Refresh,
+		RefreshHash:       tokens.RefreshHash,
+		FormValidationErr: []panel.FormValidationErr{},
 	}
 	return res, nil
 }

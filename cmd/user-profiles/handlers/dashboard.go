@@ -23,14 +23,14 @@ import (
 type DashboardHandler struct {
 	UsersService users.UsersService
 	PostsService posts.PostService
-	Templates    panel.Templates
+	TCache       panel.Templates
 	Dashboard    panel.DS
 }
 
 type DashboardHandlerDeps struct {
 	UsersService users.UsersService
 	PostsService posts.PostService
-	Templates    panel.Templates
+	TCache       panel.Templates
 	Dashboard    panel.DS
 }
 
@@ -38,7 +38,7 @@ func NewDashboardHandler(router chi.Router, deps DashboardHandlerDeps) *Dashboar
 	return &DashboardHandler{
 		UsersService: deps.UsersService,
 		PostsService: deps.PostsService,
-		Templates:    deps.Templates,
+		TCache:       deps.TCache,
 		Dashboard:    deps.Dashboard,
 	}
 }
@@ -76,7 +76,7 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 
 	stats, err := handler.Dashboard.GetStats()
 	if err != nil {
-		handler.Templates.ServerError(w, err)
+		handler.TCache.ServerError(w, err)
 	}
 	data := panel.PageData{
 		RequestedUserId: uIdFromReq,
@@ -86,17 +86,7 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 		Stats:           stats,
 	}
 
-	err = handler.Templates.Render(w, "profile", data,
-		"././ui/pages/panel/profile.tmpl",
-		"././ui/parts/layout/panel/user.tmpl",
-		"././ui/parts/layout/panel/user-card.tmpl",
-		"././ui/parts/layout/panel/stats.tmpl",
-		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
-		"././ui/parts/layout/panel/modals/update-name-modal.tmpl",
-	)
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "profile.tmpl", data)
 }
 
 func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +135,7 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
-	pagination := handler.Templates.BuildPagination(page, totalPages, "/panel/users")
+	pagination := handler.TCache.BuildPagination(page, totalPages, "/panel/users")
 	roles, _ := handler.Dashboard.GetRoles()
 	data := panel.PageData{
 		UserCards:       cards,
@@ -155,21 +145,11 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 		Roles:           roles,
 		Filters: map[string]string{
 			"banned": banned,
-			"role": role,
+			"role":   role,
 		},
 		HasFilters: page > 1 || banned != "" || role != "",
 	}
-	err = handler.Templates.Render(w, "users", data,
-		"././ui/pages/panel/users.tmpl",
-		"././ui/parts/layout/panel/user-table.tmpl",
-		"././ui/parts/layout/panel/filters/user-filter.tmpl",
-		"././ui/parts/layout/panel/post-pagin.tmpl",
-		"././ui/parts/layout/panel/user-row.tmpl",
-		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
-	)
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "users.tmpl", data)
 }
 
 func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +201,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
-	pagination := handler.Templates.BuildPagination(page, totalPages, "/panel/posts")
+	pagination := handler.TCache.BuildPagination(page, totalPages, "/panel/posts")
 	data := panel.PageData{
 		PostCards:       cards,
 		Pagination:      pagination,
@@ -234,17 +214,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		},
 		HasFilters: page > 1 || approved != "" || username != "",
 	}
-	err = handler.Templates.Render(w, "posts", data,
-		"././ui/pages/panel/posts.tmpl",
-		"././ui/parts/layout/panel/post-table.tmpl",
-		"././ui/parts/layout/panel/filters/post-filter.tmpl",
-		"././ui/parts/layout/panel/post-pagin.tmpl",
-		"././ui/parts/layout/panel/post-row.tmpl",
-		"././ui/parts/layout/panel/modals/delete-modal.tmpl",
-	)
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "posts.tmpl", data)
 }
 
 func (handler *DashboardHandler) UpdateNameModal(w http.ResponseWriter, r *http.Request) {
@@ -266,14 +236,9 @@ func (handler *DashboardHandler) UpdateNameModal(w http.ResponseWriter, r *http.
 	data := panel.PageData{
 		UserCards: cards,
 	}
-	err = handler.Templates.RenderPartial(
-		w,
-		"update-name-modal",
-		data,
-		"././ui/parts/layout/panel/modals/update-name-modal.tmpl",
-	)
+	err = handler.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal.tmpl", data)
 	if err != nil {
-		handler.Templates.ServerError(w, err)
+		handler.TCache.ServerError(w, err)
 	}
 }
 
@@ -286,7 +251,7 @@ func (handler *DashboardHandler) UpdateName(w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("name")
 	res, err := handler.UsersService.ChangeName(uId, name)
 	if err != nil {
-		handler.Templates.ServerError(w, err)
+		handler.TCache.ServerError(w, err)
 	}
 	w.Header().Set("HX-Redirect", "/panel/profile/"+*res)
 }

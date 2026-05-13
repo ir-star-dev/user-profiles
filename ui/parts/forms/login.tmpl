@@ -1,17 +1,15 @@
 {{ define "form-login" }}
-
-
 <div class="row justify-content-center mt-4">
     <div class="col-md-6 col-lg-4">
-        <div id="result" class="my-3"></div>
-
         <form class="px-3" hx-post="/auth/login" hx-target="#result" hx-swap="innerHTML"> 
             <h1 class="h3 mb-3 fw-normal">Login</h1>
+
+            <div id="result" class="my-3"></div>
             <div class="mb-3">
-                <input hx-validate="true" type="email" class="form-control" name="email" required placeholder="Email">
+                <input type="email" class="form-control" name="email" required placeholder="Email">
             </div>
             <div class="mb-3">
-                <input hx-validate="true" type="password" name="password" class="form-control" required placeholder="Password">
+                <input type="password" name="password" class="form-control" required placeholder="Password" maxlength="8">
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success col-12">Login</button>

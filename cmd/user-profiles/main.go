@@ -51,25 +51,28 @@ func main() {
 	// Middlewares
 	mux.Use(middlewares.CORS, middlewares.RecoverPanic)
 
-	t := panel.NewTemplates()
+	tc, err := panel.NewTemplateCache()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
 		Config:      conf,
 		AuthService: authService,
 		JWTService:  jwtService,
-		Templates:   *t,
+		TCache:      *tc,
 	})
 
 	dashboard_handler := handlers.NewDashboardHandler(mux, handlers.DashboardHandlerDeps{
 		UsersService: userService,
 		PostsService: postService,
-		Templates:    *t,
+		TCache:       *tc,
 		Dashboard:    *dashboard,
 	})
 
 	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
 		PostService: postService,
-		Templates:   *t,
+		TCache:      *tc,
 	})
 	InitRoutes(mux, auth_handler, post_handler, dashboard_handler)
 

@@ -19,18 +19,18 @@ import (
 
 type PostHandler struct {
 	PostService posts.PostService
-	Templates   panel.Templates
+	TCache      panel.Templates
 }
 
 type PostHandlerDeps struct {
 	PostService posts.PostService
-	Templates   panel.Templates
+	TCache      panel.Templates
 }
 
 func NewPostHandler(router chi.Router, deps PostHandlerDeps) *PostHandler {
 	return &PostHandler{
 		PostService: deps.PostService,
-		Templates:   deps.Templates,
+		TCache:      deps.TCache,
 	}
 }
 
@@ -48,7 +48,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	limit := 9
 	posts, total, err := handler.PostService.GetOnPage(page, limit, nil, "")
 	if err != nil {
-		handler.Templates.ServerError(w, err)
+		handler.TCache.ServerError(w, err)
 		return
 	}
 
@@ -77,29 +77,13 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	isHTMX := r.Header.Get("HX-Request") == "true"
 
 	if page > 1 || isHTMX {
-		err = handler.Templates.RenderPartial(
-			w,
-			"posts-response",
-			data,
-			"././ui/parts/layout/posts-response.tmpl",
-			"././ui/parts/layout/posts-list.tmpl",
-			"././ui/parts/layout/post-card.tmpl",
-			"././ui/parts/layout/loadmore.tmpl",
-		)
+		err = handler.TCache.RenderPartial(w, "home.tmpl", "posts-response.tmpl", data)
 		if err != nil {
-			handler.Templates.ServerError(w, err)
+			handler.TCache.ServerError(w, err)
 		}
 		return
 	}
-	err = handler.Templates.Render(w, "home", data,
-		"././ui/pages/home.tmpl",
-		"././ui/parts/layout/posts-list.tmpl",
-		"././ui/parts/layout/post-card.tmpl",
-		"././ui/parts/layout/loadmore.tmpl",
-	)
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
@@ -125,10 +109,7 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 		CurrentUserId: currUserId,
 		PostCards:     postCards,
 	}
-	err = handler.Templates.Render(w, "post", data, "././ui/pages/post.tmpl")
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "post.tmpl", data)
 }
 
 func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +121,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 
 	posts, err := handler.PostService.FindByUsername(username)
 	if err != nil {
-		handler.Templates.ServerError(w, err)
+		handler.TCache.ServerError(w, err)
 	}
 	postCards := make([]panel.PostData, 0, len(posts))
 	for _, post := range posts {
@@ -153,14 +134,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	data := panel.PageData{
 		PostCards: postCards,
 	}
-	err = handler.Templates.Render(w, "user-posts", data,
-		"././ui/pages/user-posts.tmpl",
-		"././ui/parts/layout/posts-list.tmpl",
-		"././ui/parts/layout/post-card.tmpl",
-	)
-	if err != nil {
-		handler.Templates.ServerError(w, err)
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "user-posts.tmpl", data)
 }
 
 // func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {

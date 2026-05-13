@@ -3,15 +3,14 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"user-profiles/cmd/user-profiles/auth"
 	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/utils"
 	"user-profiles/configs"
 
-	"errors"
 	"user-profiles/internal/http/cookie"
-	"user-profiles/internal/http/req"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -20,14 +19,14 @@ type AuthHandlerDeps struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   panel.Templates
+	TCache      panel.Templates
 }
 
 type AuthHandler struct {
 	Config      *configs.Config
 	AuthService auth.AuthService
 	JWTService  auth.JWTService
-	Templates   panel.Templates
+	TCache      panel.Templates
 }
 
 func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
@@ -35,108 +34,53 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 		Config:      deps.Config,
 		AuthService: deps.AuthService,
 		JWTService:  deps.JWTService,
-		Templates:   deps.Templates,
+		TCache:      deps.TCache,
 	}
 }
 
 func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
 	data := panel.PageData{}
-	err := handler.Templates.Render(w, "login", data,
-		"././ui/pages/login.tmpl",
-		"././ui/parts/forms/login.tmpl",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "login.tmpl", data)
 }
 
 func (handler *AuthHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
 	data := panel.PageData{}
-	err := handler.Templates.Render(w, "signup", data,
-		"././ui/pages/signup.tmpl",
-		"././ui/parts/forms/signup.tmpl",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	handler.TCache.Render(w, r, http.StatusOK, "signup.tmpl", data)
 }
 
 func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	input := &auth.LoginInput{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-	}
-	res, err := handler.AuthService.Login(input.Email, input.Password)
-	if err != nil {
-		err = handler.Templates.RenderPartial(
-			w,
-			"form-submit-error",
-			auth.AuthViewError{
-				Message: err.Error(),
-			},
-			"././ui/parts/validation/errors.tmpl",
-			"./ui/parts/forms/error.tmpl",
-		)
+	email := strings.TrimSpace(r.FormValue("email"))
+	password := strings.TrimSpace(r.FormValue("password"))
 
+	data, err := handler.AuthService.Login(email, password)
+	if err != nil {
+		err = handler.TCache.RenderPartial(w, "login.tmpl", "form-submit-error", data)
 		if err != nil {
-			handler.Templates.ServerError(w, err)
+			handler.TCache.ServerError(w, err)
 		}
 		return
 	}
-	cookie.Set(res.Access, "__up_access_token", 5*time.Minute, w)
-	cookie.Set(res.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
+	cookie.Set(data.Access, "__up_access_token", 5*time.Minute, w)
+	cookie.Set(data.Refresh, "__up_refresh_token", 7*24*time.Hour, w)
 
-	w.Header().Set("HX-Redirect", "/panel/profile/"+strconv.Itoa(res.UserId))
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("HX-Redirect", "/panel/profile/"+strconv.Itoa(data.UserId))
 }
 
 func (handler *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
-	input := &auth.RegisterInput{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-		Name:     r.FormValue("name"),
-		Role:     r.FormValue("role"),
-	}
-	if err := req.IsValid(input); err != nil {
-		var ve req.ValidationErrors
-		if errors.As(err, &ve) {
-			err := handler.Templates.RenderPartial(
-				w,
-				"validation-error",
-				ve,
-				"././ui/parts/validation/errors.tmpl",
-			)
-			if err != nil {
-				handler.Templates.ServerError(w, err)
-			}
+	email := strings.TrimSpace(r.FormValue("email"))
+	password := strings.TrimSpace(r.FormValue("password"))
+	name := strings.TrimSpace(r.FormValue("name"))
+	role := strings.TrimSpace(r.FormValue("role"))
 
-			return
-		}
-	}
-
-	err := handler.AuthService.Register(
-		input.Email,
-		input.Password,
-		input.Name,
-		input.Role,
-	)
+	data, err := handler.AuthService.Register(email, password, name, role)
 	if err != nil {
-		err = handler.Templates.RenderPartial(
-			w,
-			"form-submit-error",
-			err.Error(),
-
-			"././ui/parts/forms/error.tmpl",
-		)
+		err := handler.TCache.RenderPartial(w, "signup.tmpl", "form-submit-error", data)
 		if err != nil {
-			handler.Templates.ServerError(w, err)
+			handler.TCache.ServerError(w, err)
 		}
 		return
 	}
 	w.Header().Set("HX-Redirect", "/auth/login")
-	w.WriteHeader(http.StatusOK)
 }
 
 func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
