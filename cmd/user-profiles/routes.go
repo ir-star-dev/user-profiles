@@ -32,6 +32,9 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/posts/user/{username}", ph.ViewUserPosts)
 
 	router.Route(("/panel"), func(router chi.Router) {
+		router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+			tc.PanelNotFound(w, r)
+		})
 		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 
 		router.Get("/posts", dh.Posts)

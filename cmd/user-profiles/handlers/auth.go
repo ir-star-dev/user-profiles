@@ -40,12 +40,12 @@ func NewAuthHandler(router chi.Router, deps AuthHandlerDeps) *AuthHandler {
 
 func (handler *AuthHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
 	data := panel.PageData{}
-	handler.TCache.Render(w, r, http.StatusOK, "login.tmpl", data)
+	handler.TCache.Render(w, r, http.StatusOK, "base", "login.tmpl", data)
 }
 
 func (handler *AuthHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
 	data := panel.PageData{}
-	handler.TCache.Render(w, r, http.StatusOK, "signup.tmpl", data)
+	handler.TCache.Render(w, r, http.StatusOK, "base", "signup.tmpl", data)
 }
 
 func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {

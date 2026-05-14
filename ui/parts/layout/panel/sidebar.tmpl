@@ -1,0 +1,29 @@
+{{ define "sidebar" }}
+<ul class="nav flex-column p-3">
+    <li class="nav-item">
+        <a class="nav-link text-white" href="/panel/post/create">
+            Add post
+        </a>
+    </li>
+    {{ if .CurrentUserRole }}
+    <li class="nav-item">
+        <a class="nav-link text-white" href="/panel/posts">
+            Posts
+        </a>
+    </li>
+    {{end}}
+    {{ if eq .CurrentUserRole "admin" }}
+        <li class="nav-item">
+            <a class="nav-link text-white" href="/panel/user/add">
+                Add user
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-white" href="/panel/users">
+                Users
+            </a>
+        </li>
+    {{end}}
+
+</ul>
+{{ end }}

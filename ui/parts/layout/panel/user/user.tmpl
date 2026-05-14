@@ -1,7 +1,8 @@
 {{ define "title" }} Profile {{ end }}
 
 {{ define "user"}}
-<section class="col-12 col-md-9 col-lg-12 p-4">
+<section class="col-12 p-4">
+
     {{if .UserCards}}
         {{$page := .}}
         {{range .UserCards}}
@@ -22,6 +23,5 @@
         </div>
         {{end}}
     {{end}}
-
-</section>
+    </section>
 {{end}}

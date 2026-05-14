@@ -80,7 +80,7 @@ func (handler *DashboardHandler) Profile(w http.ResponseWriter, r *http.Request)
 		Stats:           stats,
 	}
 
-	handler.TCache.Render(w, r, http.StatusOK, "profile.tmpl", data)
+	handler.TCache.RenderPanel(w, r, http.StatusOK, "profile.tmpl", data)
 }
 
 func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +143,7 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 		},
 		HasFilters: page > 1 || banned != "" || role != "",
 	}
-	handler.TCache.Render(w, r, http.StatusOK, "users.tmpl", data)
+	handler.TCache.RenderPanel(w, r, http.StatusOK, "users.tmpl", data)
 }
 
 func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +208,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		},
 		HasFilters: page > 1 || approved != "" || username != "",
 	}
-	handler.TCache.Render(w, r, http.StatusOK, "posts.tmpl", data)
+	handler.TCache.RenderPanel(w, r, http.StatusOK, "posts.tmpl", data)
 }
 
 func (handler *DashboardHandler) UpdateNameModal(w http.ResponseWriter, r *http.Request) {

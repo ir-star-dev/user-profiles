@@ -13,7 +13,7 @@
 
                 {{ range .Pagination.Pages }}
                 <li class="page-item">
-                    <a class="page-link"
+                    <a class="page-link {{if eq $.Pagination.Page .}}active{{end}}"
                         href="{{withQuery $.Pagination.Path $.Filters "page" .}}">
                         {{.}}
                     </a>

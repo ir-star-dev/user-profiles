@@ -69,7 +69,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	handler.TCache.Render(w, r, http.StatusOK, "home.tmpl", data)
+	handler.TCache.Render(w, r, http.StatusOK, "base", "home.tmpl", data)
 }
 
 func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 		CurrentUserId: currUserId,
 		PostCards:     postCards,
 	}
-	handler.TCache.Render(w, r, http.StatusOK, "post.tmpl", data)
+	handler.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
 }
 
 func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +125,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	data := panel.PageData{
 		PostCards: postCards,
 	}
-	handler.TCache.Render(w, r, http.StatusOK, "user-posts.tmpl", data)
+	handler.TCache.Render(w, r, http.StatusOK, "base", "user-posts.tmpl", data)
 }
 
 // func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {

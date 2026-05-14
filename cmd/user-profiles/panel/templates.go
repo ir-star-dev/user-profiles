@@ -40,6 +40,7 @@ func NewTemplateCache() (*Templates, error) {
 
 		patterns := []string{
 			"base.tmpl",
+			"panel-base.tmpl",
 			"pages/*.tmpl",
 			"pages/panel/*.tmpl",
 			"parts/*/*.tmpl",
@@ -60,7 +61,7 @@ func NewTemplateCache() (*Templates, error) {
 	}, nil
 }
 
-func (t *Templates) Render(w http.ResponseWriter, r *http.Request, status int, page string, data any) {
+func (t *Templates) Render(w http.ResponseWriter, r *http.Request, status int, layout string, page string, data any) {
 	ts, ok := t.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("The template %s does not exist", page)
@@ -69,13 +70,17 @@ func (t *Templates) Render(w http.ResponseWriter, r *http.Request, status int, p
 	}
 
 	buf := new(bytes.Buffer)
-	err := ts.ExecuteTemplate(buf, "base", data)
+	err := ts.ExecuteTemplate(buf, layout, data)
 	if err != nil {
 		t.ServerError(w, err)
 		return
 	}
 	w.WriteHeader(status)
 	buf.WriteTo(w)
+}
+
+func (t *Templates) RenderPanel(w http.ResponseWriter, r *http.Request, status int, page string, data any) {
+    t.Render(w, r, status, "panel-base", page, data)
 }
 
 func (t *Templates) RenderPartial(w http.ResponseWriter, page string, templateName string, data any) error {
@@ -98,7 +103,12 @@ func (t *Templates) ServerError(w http.ResponseWriter, err error) {
 
 func (t *Templates) NotFound(w http.ResponseWriter, r *http.Request) {
 	data := PageData{}
-	t.Render(w,	r, http.StatusNotFound,	"404.tmpl",	data)
+	t.Render(w,	r, http.StatusNotFound,	"base", "404.tmpl",	data)
+}
+
+func (t *Templates) PanelNotFound(w http.ResponseWriter, r *http.Request) {
+	data := PageData{}
+	t.Render(w,	r, http.StatusNotFound,	"panel-base", "404.tmpl",	data)
 }
 
 func (t *Templates) BuildPagination(currentPage, totalPages int, path string) Pagination {
