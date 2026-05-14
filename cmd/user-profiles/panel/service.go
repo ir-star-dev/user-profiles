@@ -1,8 +1,13 @@
 package panel
 
 import (
+	"errors"
+	"strings"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/internal/validator"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DS struct {
@@ -87,4 +92,66 @@ func (s *DS) GetRoles() ([]users.Roles, error) {
 		return nil, err
 	}
 	return roles, nil
+}
+
+func (s *DS) CreateUser(email, name, password, role string) ([]FormValidationErr, error) {
+	var formValiErr []FormValidationErr
+	form := CreateUserForm{
+		Email:     email,
+		Name:      name,
+		Role:      role,
+		Password:  password,
+		Validator: validator.Validator{},
+	}
+	form.Validator.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "Email is not valid")
+	form.Validator.CheckField(validator.MaxChars(form.Password, 8), "password", "Password length more than 8 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Password), "password", "Password cannot be blank")
+	form.Validator.CheckField(validator.NotBlank(form.Name), "name", "Name cannot be blank")
+	form.Validator.CheckField(validator.PermittedValue(form.Role, "user", "admin", "moderator"), "role", "Role can be user, admin or moderator")
+
+	if !form.Validator.Valid() {
+		for key, value := range form.Validator.FieldErrors {
+			formValiErr = append(formValiErr, FormValidationErr{
+				Name:    key,
+				Message: value,
+			})
+		}
+		return formValiErr, errors.New("Invalid form")
+	}
+
+	existedUser, err := s.uRepo.FindByEmail(email)
+	if existedUser != nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "exist",
+			Message: "User already exists",
+		})
+		return formValiErr, errors.New("User already exists")
+	}
+
+	username, _, _ := strings.Cut(email, "@")
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "password",
+			Message: "Password error",
+		})
+		return formValiErr, errors.New("Password error")
+	}
+	user := &users.UserWithRole{
+		Name:     name,
+		Username: username,
+		Email:    email,
+		Role:     role,
+		Password: string(hash),
+	}
+	_, err = s.uRepo.Create(user)
+	if err != nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "form",
+			Message: "Something went wrong. Try later, please!",
+		})
+		return formValiErr, err
+	}
+	return nil, nil
 }

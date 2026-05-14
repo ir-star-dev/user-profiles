@@ -92,7 +92,8 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 		FROM posts AS p
 		JOIN users AS u 
 		ON p.user_id = u.id
-		WHERE u.username = $1
+		WHERE u.username = $1 AND
+		p.approved = true
 		ORDER BY p.created_at DESC
 	`
 	p := []posts.PostWithUserName{}
@@ -204,4 +205,38 @@ func (repo *postRepository) Authors() ([]posts.Authors, error) {
 		return nil, err
 	}
 	return authors, nil
+}
+
+func (repo *postRepository) Review(uId int) error {
+	post := &posts.Post{
+		Id:       uId,
+		Approved: false,
+	}
+	query := `
+        UPDATE posts 
+        SET approved = :approved
+        WHERE id = :id
+    `
+	_, err := repo.db.NamedExec(query, post)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *postRepository) Publish(uId int) error {
+	post := &posts.Post{
+		Id:       uId,
+		Approved: true,
+	}
+	query := `
+        UPDATE posts 
+        SET approved = :approved
+        WHERE id = :id
+    `
+	_, err := repo.db.NamedExec(query, post)
+	if err != nil {
+		return err
+	}
+	return nil
 }

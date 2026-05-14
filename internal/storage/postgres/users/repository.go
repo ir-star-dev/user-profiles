@@ -185,7 +185,6 @@ func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role s
 		LIMIT $` + strconv.Itoa(len(args)-1) + `
 		OFFSET $` + strconv.Itoa(len(args))
 
-
 	users := []users.UserWithRole{}
 	err = repo.db.Select(&users, query, args...)
 	if err != nil {

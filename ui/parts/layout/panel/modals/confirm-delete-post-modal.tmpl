@@ -1,0 +1,43 @@
+{{ define "confirm-delete-post-modal" }}
+<div id="confirm-delete-user-modal-container">
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm deletion</h5>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    Are you sure you want to delete
+                    {{if .PostCards}}
+                        {{range .PostCards}}
+                            <strong>{{.Posts.Title}}</strong>?
+                        {{end}}
+                    {{end}}
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                    {{if .PostCards}}
+                        {{range .PostCards}}
+                            <button
+                                hx-delete="/panel/posts/post/{{.Posts.Id}}"
+                                hx-target="#post-{{.Posts.Id}}"
+                                hx-swap="outerHTML"
+                                class="btn btn-danger"
+                                data-bs-dismiss="modal">
+                                Delete
+                            </button>
+                        {{end}}
+                    {{end}}
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

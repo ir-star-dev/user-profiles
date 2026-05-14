@@ -5,6 +5,9 @@ type Repository interface {
 	Delete(pId int) error
 	Update(post *Post) (int64, error)
 
+	Review(pId int) error
+	Publish(pId int) error
+
 	FindById(pId int) (*PostWithUserName, error)
 	FindByUsername(username string) ([]PostWithUserName, error)
 
@@ -19,6 +22,9 @@ type PostService interface {
 	Create(post *Post) (*Post, error)
 	Delete(pId int) error
 	Update(post *Post) (int64, error)
+
+	Review(pId int) error
+	Publish(pId int) error
 
 	FindById(pId int) (*PostWithUserName, error)
 	FindByUsername(username string) ([]PostWithUserName, error)

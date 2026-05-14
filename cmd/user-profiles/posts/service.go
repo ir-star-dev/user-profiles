@@ -13,6 +13,10 @@ func (s *postService) Create(post *Post) (*Post, error) {
 }
 
 func (s *postService) Delete(pId int) error {
+	err := s.pRepo.Delete(pId)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -59,4 +63,20 @@ func (s *postService) PostsStatus() ([]PostsStatus, error) {
 		return nil, err
 	}
 	return posts, nil
+}
+
+func (s *postService) Review(pId int) error {
+	err := s.pRepo.Review(pId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *postService) Publish(pId int) error {
+	err := s.pRepo.Publish(pId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -32,7 +32,8 @@ func NewPostHandler(router chi.Router, deps PostHandlerDeps) *PostHandler {
 func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	page := panel.GetPageFromReq(r)
 	limit := 9
-	posts, total, err := handler.PostService.GetOnPage(page, limit, nil, "")
+	approved := true
+	posts, total, err := handler.PostService.GetOnPage(page, limit, &approved, "")
 	if err != nil {
 		handler.TCache.ServerError(w, err)
 		return
@@ -104,7 +105,7 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 		handler.TCache.NotFound(w, r)
 		return
 	}
-
+	currUId, _ := panel.GetUserId(r)
 	ps, err := handler.PostService.FindByUsername(username)
 	if errors.Is(err, posts.PostNotFound) {
 		handler.TCache.NotFound(w, r)
@@ -124,97 +125,10 @@ func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request
 	}
 	data := panel.PageData{
 		PostCards: postCards,
+		CurrentUserId: currUId,
 	}
 	handler.TCache.Render(w, r, http.StatusOK, "base", "user-posts.tmpl", data)
 }
-
-// func (handler *PostHandler) PostList(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) Delete(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) Publish(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) Review(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
 
 // func (handler *PostHandler) CreateForm(w http.ResponseWriter, r *http.Request) {
 // 	tmpl, err := view.LoadTemplate(

@@ -36,22 +36,28 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 			tc.PanelNotFound(w, r)
 		})
 		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
+		router.With(middlewares.RoleMiddleware("admin")).Get("/generate-password", dh.GeneratePassword)
 
 		router.Get("/posts", dh.Posts)
-		// router.Get("/post/create", ph.CreateForm)
-		// router.Get("/posts/post/{id}/edit", ph.EditForm)
 
-		// After creating, the post will have a review status.
-		//router.Post("/post/create", ph.Create)
-		// After editing, the post will have a review status.
-		//router.Patch("/posts/post/{id}/edit", ph.Edit)
+		// router.Get("/post/create", ph.CreatePostForm)
+		// router.Post("/post/create", ph.CreatePost)
 
-		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/review", ph.Review)
-		// router.With(middlewares.RoleMiddleware("admin", "editor")).Patch("/posts/post/{id}/publish", ph.Publish)
-		// router.With(middlewares.RoleMiddleware("admin", "editor")).Get("/posts/post/{id}/delete-confirm", ph.DeleteConfirm)
-		// router.With(middlewares.RoleMiddleware("admin", "editor")).Delete("/posts/post/{id}", ph.Delete)
+		// router.Get("/posts/post/{id}/edit", ph.EditPostForm)
+		// router.Patch("/posts/post/{id}/edit", ph.EditPost)
+
+		router.With(middlewares.RoleMiddleware("admin", "moderator")).Patch("/posts/post/{id}/review", dh.Review)
+		router.With(middlewares.RoleMiddleware("admin", "moderator")).Patch("/posts/post/{id}/publish", dh.Publish)
+
+		router.With(middlewares.RoleMiddleware("admin", "moderator")).Get("/posts/post/{id}/delete-confirm", dh.DeletePostConfirm)
+		router.With(middlewares.RoleMiddleware("admin", "moderator")).Delete("/posts/post/{id}", dh.DeletePost)
 
 		router.With(middlewares.RoleMiddleware("admin")).Get("/users", dh.Users)
+
+		
+		router.With(middlewares.RoleMiddleware("admin")).Get("/user/add", dh.CreateUserForm)
+		router.With(middlewares.RoleMiddleware("admin")).Post("/user/add", dh.CreateUser)
+
 
 		router.Route(("/profile"), func(router chi.Router) {
 			router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
@@ -60,10 +66,12 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 
 			router.With(middlewares.BanMiddleware).Get("/{id}/name", dh.UpdateNameModal)
 			router.With(middlewares.BanMiddleware).Patch("/{id}/name", dh.UpdateName)
+
 			router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", dh.Ban)
 			router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", dh.Unban)
-			router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", dh.DeleteConfirm)
-			router.With(middlewares.BanMiddleware).Delete("/{id}", dh.Delete)
+
+			router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", dh.DeleteUserConfirm)
+			router.With(middlewares.BanMiddleware).Delete("/{id}", dh.DeleteUser)
 		})
 	})
 }

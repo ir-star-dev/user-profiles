@@ -1,0 +1,11 @@
+{{ define "form-submit-success" }}
+
+{{if .UserCredentials}}
+    <div class="alert alert-success" role="alert">
+        <p>User successfully created! </p>
+        Email: {{.UserCredentials.Email}} <br>
+        Password: {{.UserCredentials.Password}}
+    </div>
+{{end}}
+
+{{end}}

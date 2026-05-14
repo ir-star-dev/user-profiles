@@ -3,6 +3,7 @@ package panel
 import (
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/internal/validator"
 )
 
 type PageData struct {
@@ -19,6 +20,7 @@ type PageData struct {
 	HasFilters        bool
 	Roles             []users.Roles
 	FormValidationErr []FormValidationErr
+	UserCredentials	  UserCredentials
 }
 
 type UserData struct {
@@ -64,4 +66,17 @@ type Loadmore struct {
 type FormValidationErr struct {
 	Name    string
 	Message string
+}
+
+type CreateUserForm struct {
+	Email     string              `json:"email"`
+	Password  string              `json:"password"`
+	Name      string              `json:"name"`
+	Role      string              `json:"role"`
+	Validator validator.Validator `json:"-"`
+}
+
+type UserCredentials struct {
+	Email    string
+	Password string
 }

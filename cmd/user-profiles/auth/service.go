@@ -71,7 +71,7 @@ func (s *authService) Register(email, password, name, role string) (*AuthRespons
 	if err != nil {
 		formValiErr = append(formValiErr, panel.FormValidationErr{
 			Name:    "password",
-			Message: LoginError,
+			Message: PassHash,
 		})
 		return &AuthResponse{
 			FormValidationErr: formValiErr,

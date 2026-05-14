@@ -2,47 +2,30 @@
 <tr id="user-{{ .Profiles.Id }}">
         <!-- NAME -->
         <td>
-            <div class="fw-semibold">
-                {{ .Profiles.Name }}
-            </div>
+            <div class="fw-semibold">{{ .Profiles.Name }}</div>
         </td>
-
         <!-- EMAIL -->
         <td>
-            <span class="text-muted">
-                {{ .Profiles.Email }}
-            </span>
+            <span class="text-muted">{{ .Profiles.Email }}</span>
         </td>
-
         <!-- STATUS -->
         <td>
             {{ if .Profiles.Banned }}
-                <span class="badge text-bg-danger">
-                    Banned
-                </span>
+                <span class="badge text-bg-danger">Banned</span>
             {{ else }}
-                <span class="badge text-bg-success">
-                    Active
-                </span>
+                <span class="badge text-bg-success">Active</span>
             {{ end }}
         </td>
-
         <!-- ROLE -->
         <td>
-            <span class="badge text-bg-secondary">
-                {{ .Profiles.Role }}
-            </span>
+            <span class="badge text-bg-secondary">{{ .Profiles.Role }}</span>
         </td>
-
         <!-- CREATED -->
-        <td>
-            {{ .Profiles.CreatedAt.Format "02 Jan 2006" }}
-        </td>
+        <td>{{ .Profiles.CreatedAt.Format "02 Jan 2006" }}</td>
 
         <!-- ACTIONS -->
         <td class="text-end">
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
-
                 <a
                     href="/panel/profile/{{ .Profiles.Id }}"
                     target="_blank"

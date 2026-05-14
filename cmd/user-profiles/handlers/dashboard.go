@@ -9,6 +9,7 @@ import (
 	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/cmd/user-profiles/utils"
 	"user-profiles/internal/http/cookie"
 
 	"github.com/go-chi/chi/v5"
@@ -324,7 +325,7 @@ func (handler *DashboardHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (handler *DashboardHandler) DeleteConfirm(w http.ResponseWriter, r *http.Request) {
+func (handler *DashboardHandler) DeleteUserConfirm(w http.ResponseWriter, r *http.Request) {
 	uId, err := panel.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -347,7 +348,7 @@ func (handler *DashboardHandler) DeleteConfirm(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (handler *DashboardHandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (handler *DashboardHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	currId, err := panel.GetUserId(r)
 	if err != nil {
 		w.Header().Set("HX-Redirect", "/auth/login")
@@ -364,7 +365,6 @@ func (handler *DashboardHandler) Delete(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		w.Header().Set("HX-Trigger", "userDeleted")
-		w.WriteHeader(http.StatusOK)
 		return
 	} else {
 		err = handler.UsersService.Delete(currId)
@@ -377,4 +377,169 @@ func (handler *DashboardHandler) Delete(w http.ResponseWriter, r *http.Request) 
 		w.Header().Set("HX-Redirect", "/auth/login")
 		return
 	}
+}
+
+func (handler *DashboardHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	reqUId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	currUId, err := panel.GetUserId(r)
+	if err != nil {
+		return
+	}
+	currUserRole, _ := handler.UsersService.Role(currUId)
+	pId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	err = handler.PostsService.Publish(pId)
+	if err != nil {
+		return
+	}
+	post, err := handler.PostsService.FindById(pId)
+	if err != nil {
+		return
+	}
+	data := panel.PostData{
+		Posts: *post,
+		Actions: panel.Actions{
+			CanDeletePost:  panel.CanDeletePost(currUserRole),
+			CanEditPost:    panel.CanEditPost(currUserRole, currUId, reqUId),
+			CanApprovePost: panel.CanApprovePost(currUserRole),
+		},
+	}
+	err = handler.TCache.RenderPartial(w, "posts.tmpl", "post-row", data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
+
+func (handler *DashboardHandler) Review(w http.ResponseWriter, r *http.Request) {
+	reqUId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	currUId, err := panel.GetUserId(r)
+	if err != nil {
+		return
+	}
+	currUserRole, _ := handler.UsersService.Role(currUId)
+	pId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	err = handler.PostsService.Review(pId)
+	if err != nil {
+		return
+	}
+	post, err := handler.PostsService.FindById(pId)
+	if err != nil {
+		return
+	}
+	data := panel.PostData{
+		Posts: *post,
+		Actions: panel.Actions{
+			CanDeletePost:  panel.CanDeletePost(currUserRole),
+			CanEditPost:    panel.CanEditPost(currUserRole, currUId, reqUId),
+			CanApprovePost: panel.CanApprovePost(currUserRole),
+		},
+	}
+	err = handler.TCache.RenderPartial(w, "posts.tmpl", "post-row", data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
+
+func (handler *DashboardHandler) DeletePostConfirm(w http.ResponseWriter, r *http.Request) {
+	pId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	post, err := handler.PostsService.FindById(pId)
+	if err != nil {
+		return
+	}
+	var cards []panel.PostData
+	cards = append(cards, panel.PostData{
+		Posts: *post,
+	})
+	data := panel.PageData{
+		PostCards: cards,
+	}
+	err = handler.TCache.RenderPartial(w, "posts.tmpl", "confirm-delete-post-modal", data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
+
+func (handler *DashboardHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	pId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	err = handler.PostsService.Delete(pId)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+	w.Header().Set("HX-Trigger", "postDeleted")
+}
+
+func (handler *DashboardHandler) CreateUserForm(w http.ResponseWriter, r *http.Request) {
+	uId, err := panel.GetUserId(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	currUserRole, _ := handler.UsersService.Role(uId)
+	data := panel.PageData{
+		CurrentUserId:   uId,
+		CurrentUserRole: currUserRole,
+	}
+	handler.TCache.RenderPanel(w, r, http.StatusOK, "create-user.tmpl", data)
+}
+
+func (handler *DashboardHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	uId, err := panel.GetUserId(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	currUserRole, _ := handler.UsersService.Role(uId)
+	data := panel.PageData{
+		CurrentUserId:     uId,
+		CurrentUserRole:   currUserRole,
+		FormValidationErr: []panel.FormValidationErr{},
+	}
+	email := strings.TrimSpace(r.FormValue("email"))
+	name := strings.TrimSpace(r.FormValue("name"))
+	role := strings.TrimSpace(r.FormValue("role"))
+	password := strings.TrimSpace(r.FormValue("password"))
+
+	validationErrs, err := handler.Dashboard.CreateUser(email, name, password, role)
+	if err != nil {
+		data.FormValidationErr = validationErrs
+		err := handler.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-error", data)
+		if err != nil {
+			handler.TCache.ServerError(w, err)
+		}
+		return
+	}
+	data.UserCredentials = panel.UserCredentials{
+		Email:    email,
+		Password: password,
+	}
+	err = handler.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-success", data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
+
+func (handler *DashboardHandler) GeneratePassword(w http.ResponseWriter, r *http.Request) {
+	password, err := utils.GeneratePassword(8)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+		return
+	}
+	w.Write([]byte(password))
 }

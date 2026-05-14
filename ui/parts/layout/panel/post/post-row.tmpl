@@ -2,52 +2,33 @@
 <tr id="post-{{.Posts.Id}}">
         <!-- NAME -->
         <td>
-            <div class="fw-semibold">
-                {{ .Posts.Title }}
-            </div>
+            <div class="fw-semibold">{{ .Posts.Title }}</div>
         </td>
-
         <!-- EMAIL -->
         <td>
-            <span class="text-muted">
-                {{ .Posts.Slug }}
-            </span>
+            <span class="text-muted">{{ .Posts.Slug }}</span>
         </td>
-
         <!-- CREATED -->
-        <td>
-            {{ .Posts.CreatedAt.Format "02 Jan 2006" }}
-        </td>
-
+        <td>{{ .Posts.CreatedAt.Format "02 Jan 2006" }}</td>
         <!-- UPDATED -->
-        <td>
-            {{ .Posts.UpdatedAt.Format "02 Jan 2006" }}
-        </td>
-
+        <td>{{ .Posts.UpdatedAt.Format "02 Jan 2006" }}</td>
         <!-- Author -->
         <td>
-            <span class="badge text-bg-secondary">
-                {{ .Posts.Username }}
-            </span>
+            <span class="badge text-bg-secondary">{{ .Posts.Username }}</span>
         </td>
 
         <!-- Status -->
         <td>
             {{ if .Posts.Approved }}
-                <span class="badge text-bg-success">
-                    Published
-                </span>
+                <span class="badge text-bg-success">Published</span>
             {{ else }}
-                <span class="badge text-bg-warning">
-                    Pending
-                </span>
+                <span class="badge text-bg-warning">Pending</span>
             {{ end }}
         </td>
 
         <!-- ACTIONS -->
         <td class="text-end">
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
-
                 <a
                     href="/posts/post/{{.Posts.Slug}}"
                     target="_blank"
@@ -84,17 +65,14 @@
 
                     {{if .Actions.CanDeletePost}}
                         <a  hx-get="/panel/posts/post/{{.Posts.Id}}/delete-confirm"
-                            hx-target="#modal-container"
+                            hx-target="#confirm-delete-user-modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">
                             Delete
                         </a>
                     {{end}}
-
                 {{ end }}
-
             </div>
         </td>
-
     </tr>
 {{end}}
