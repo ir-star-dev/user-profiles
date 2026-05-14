@@ -1,7 +1,9 @@
 {{define "user-posts"}}{{end}}
 
 {{ define "title" }} 
-    {{(index .PostCards 0).Posts.Username}} Posts
+    {{if .PostCards}}
+        {{(index .PostCards 0).Posts.Username}} Posts
+    {{end}}
 {{ end }}
 
 {{define "content"}}

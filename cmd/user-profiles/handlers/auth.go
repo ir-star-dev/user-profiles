@@ -103,5 +103,4 @@ func (handler *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie.Set("", "__up_refresh_token", -time.Hour, w)
 
 	w.Header().Set("HX-Redirect", "/auth/login")
-	w.WriteHeader(http.StatusOK)
 }

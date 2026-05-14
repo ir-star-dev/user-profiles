@@ -34,7 +34,7 @@
 
 <script>
   document.body.addEventListener("htmx:afterSwap", function (event) {
-      if (event.detail.target.id === "delete-modal-container") {
+      if (event.detail.target.id === "confirm-delete-user-modal-container") {
           const modalElement = document.getElementById("deleteModal");
 
           if (modalElement) {
@@ -42,7 +42,7 @@
               modal.show();
           }
       }
-      if (event.detail.target.id === "update-modal-container") {
+      if (event.detail.target.id === "update-name-modal-container") {
           const modalElement = document.getElementById("updateNameModal");
 
           if (modalElement) {

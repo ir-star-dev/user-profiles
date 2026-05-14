@@ -72,7 +72,7 @@
 
                     {{if .Actions.CanDeleteUser}}
                         <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
-                            hx-target="#delete-modal-container"
+                            hx-target="#confirm-delete-user-modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">
                             Delete

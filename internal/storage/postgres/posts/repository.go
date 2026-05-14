@@ -95,12 +95,15 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 		WHERE u.username = $1
 		ORDER BY p.created_at DESC
 	`
-	posts := []posts.PostWithUserName{}
-	err := repo.db.Select(&posts, query, username)
+	p := []posts.PostWithUserName{}
+	err := repo.db.Select(&p, query, username)
 	if err != nil {
 		return nil, err
 	}
-	return posts, nil
+	if len(p) == 0 {
+		return nil, posts.PostNotFound
+	}
+	return p, nil
 }
 
 func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, username string) ([]posts.PostWithUserName, int, error) {

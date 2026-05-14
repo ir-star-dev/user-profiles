@@ -1,7 +1,17 @@
 {{define "user-card"}}
-<div id="user-{{.Profiles.Id}}" class="col-12 col-lg-6 mb-3">
+<div class="col-12 col-lg-6 mb-3">
+    <div id="flash-message"></div>
+    <script>
+        document.body.addEventListener("userDeleted", function () {
+            document.getElementById("flash-message").innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    User successfully deleted
+                </div>
+            `;
+        });
+    </script>
     <div class="card shadow-sm border-0">
-        <div class="card-body">
+        <div id="user-{{.Profiles.Id}}" class="card-body">
             <!-- HEADER -->
             <div class="d-flex justify-content-between align-items-start mb-3">
             
@@ -25,7 +35,7 @@
             <div id="actions-btn-{{.Profiles.Id}}" class="d-flex gap-2">
                 <a
                     hx-get="/panel/profile/{{.Profiles.Id}}/name"
-                    hx-target="#update-modal-container"
+                    hx-target="#update-name-modal-container"
                     hx-swap="innerHTML"
                     class="btn btn-outline-primary btn-sm w-100">
                     Update name
@@ -50,7 +60,7 @@
                 {{end}}
                 {{if .Actions.CanDeleteUser}}
                 <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
-                    hx-target="#delete-modal-container"
+                    hx-target="#confirm-delete-user-modal-container"
                     hx-swap="innerHTML"
                     class="btn btn-outline-danger btn-sm w-100">
                     Delete

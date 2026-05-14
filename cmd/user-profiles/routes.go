@@ -2,13 +2,14 @@ package main
 
 import (
 	"net/http"
-	"user-profiles/cmd/user-profiles/middlewares"
 	"user-profiles/cmd/user-profiles/handlers"
+	"user-profiles/cmd/user-profiles/middlewares"
+	"user-profiles/cmd/user-profiles/panel"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler, dh *handlers.DashboardHandler) {
+func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHandler, dh *handlers.DashboardHandler, tc *panel.Templates) {
 	fs := http.FileServer(http.Dir("././ui/static"))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
@@ -20,6 +21,10 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 		router.Post("/login", ah.Login)
 
 		router.With(middlewares.StrictAuthMiddleware(ah.JWTService, ah.AuthService)).Post("/logout", ah.Logout)
+	})
+
+	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		tc.NotFound(w, r)
 	})
 
 	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/", ph.Home)
@@ -52,11 +57,10 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 
 			router.With(middlewares.BanMiddleware).Get("/{id}/name", dh.UpdateNameModal)
 			router.With(middlewares.BanMiddleware).Patch("/{id}/name", dh.UpdateName)
-			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", uh.Ban)
-			// router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", uh.Unban)
-
-			// router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", uh.DeleteConfirm)
-			// router.With(middlewares.BanMiddleware).Delete("/{id}", uh.Delete)
+			router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/ban", dh.Ban)
+			router.With(middlewares.RoleMiddleware("admin")).Patch("/{id}/unban", dh.Unban)
+			router.With(middlewares.BanMiddleware).Get("/{id}/delete-confirm", dh.DeleteConfirm)
+			router.With(middlewares.BanMiddleware).Delete("/{id}", dh.Delete)
 		})
 	})
 }

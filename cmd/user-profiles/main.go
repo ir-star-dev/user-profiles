@@ -56,25 +56,25 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	auth_handler := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
+	authH := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
 		Config:      conf,
 		AuthService: authService,
 		JWTService:  jwtService,
 		TCache:      *tc,
 	})
 
-	dashboard_handler := handlers.NewDashboardHandler(mux, handlers.DashboardHandlerDeps{
+	dashboardH := handlers.NewDashboardHandler(mux, handlers.DashboardHandlerDeps{
 		UsersService: userService,
 		PostsService: postService,
 		TCache:       *tc,
 		Dashboard:    *dashboard,
 	})
 
-	post_handler := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
+	postH := handlers.NewPostHandler(mux, handlers.PostHandlerDeps{
 		PostService: postService,
 		TCache:      *tc,
 	})
-	InitRoutes(mux, auth_handler, post_handler, dashboard_handler)
+	InitRoutes(mux, authH, postH, dashboardH, tc)
 
 	server := http.Server{
 		Addr:    ":8080",

@@ -1,15 +1,10 @@
 package handlers
 
 import (
-	//"bytes"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-
-	//"html/template"
-	//"time"
-
-	//"user-profiles/internal/http/cookie"
 
 	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/posts"
@@ -35,16 +30,7 @@ func NewPostHandler(router chi.Router, deps PostHandlerDeps) *PostHandler {
 }
 
 func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
-	pageFromReq := r.URL.Query().Get("page")
-	page := 1
-	if pageFromReq != "" {
-		if p, err := strconv.Atoi(pageFromReq); err == nil {
-			page = p
-		}
-	}
-	if page <= 0 {
-		page = 1
-	}
+	page := panel.GetPageFromReq(r)
 	limit := 9
 	posts, total, err := handler.PostService.GetOnPage(page, limit, nil, "")
 	if err != nil {
@@ -77,7 +63,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	isHTMX := r.Header.Get("HX-Request") == "true"
 
 	if page > 1 || isHTMX {
-		err = handler.TCache.RenderPartial(w, "home.tmpl", "posts-response.tmpl", data)
+		err = handler.TCache.RenderPartial(w, "home.tmpl", "posts-response", data)
 		if err != nil {
 			handler.TCache.ServerError(w, err)
 		}
@@ -92,12 +78,12 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 	idStr := parts[len(parts)-1]
 	pId, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.NotFound(w, r)
+		handler.TCache.NotFound(w, r)
 		return
 	}
 	post, err := handler.PostService.FindById(pId)
 	if err != nil {
-		http.NotFound(w, r)
+		handler.TCache.NotFound(w, r)
 		return
 	}
 	var postCards []panel.PostData
@@ -115,16 +101,21 @@ func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
 	if username == "" {
-		http.NotFound(w, r)
+		handler.TCache.NotFound(w, r)
 		return
 	}
 
-	posts, err := handler.PostService.FindByUsername(username)
-	if err != nil {
-		handler.TCache.ServerError(w, err)
+	ps, err := handler.PostService.FindByUsername(username)
+	if errors.Is(err, posts.PostNotFound) {
+		handler.TCache.NotFound(w, r)
+		return
 	}
-	postCards := make([]panel.PostData, 0, len(posts))
-	for _, post := range posts {
+	if err != nil {
+		handler.TCache.NotFound(w, r)
+		return
+	}
+	postCards := make([]panel.PostData, 0, len(ps))
+	for _, post := range ps {
 		cutedContent := panel.TruncateContent(post.Content, 367)
 		post.Content = cutedContent
 		postCards = append(postCards, panel.PostData{

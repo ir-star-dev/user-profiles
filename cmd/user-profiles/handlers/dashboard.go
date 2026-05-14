@@ -1,21 +1,15 @@
 package handlers
 
 import (
-	//"errors"
-	//"html/template"
 	"net/http"
 	"strconv"
-
-	// "strconv"
-	// "strings"
-	// "time"
-
-	// "html/template"
-	// "time"
+	"strings"
+	"time"
 
 	"user-profiles/cmd/user-profiles/panel"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/internal/http/cookie"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -236,7 +230,7 @@ func (handler *DashboardHandler) UpdateNameModal(w http.ResponseWriter, r *http.
 	data := panel.PageData{
 		UserCards: cards,
 	}
-	err = handler.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal.tmpl", data)
+	err = handler.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal", data)
 	if err != nil {
 		handler.TCache.ServerError(w, err)
 	}
@@ -248,7 +242,7 @@ func (handler *DashboardHandler) UpdateName(w http.ResponseWriter, r *http.Reque
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	name := r.FormValue("name")
+	name := strings.TrimSpace(r.FormValue("name"))
 	res, err := handler.UsersService.ChangeName(uId, name)
 	if err != nil {
 		handler.TCache.ServerError(w, err)
@@ -256,125 +250,131 @@ func (handler *DashboardHandler) UpdateName(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("HX-Redirect", "/panel/profile/"+*res)
 }
 
-// func (handler *UserHandler) DeleteConfirm(w http.ResponseWriter, r *http.Request) {
-// 	uId, err := getIdFromReq(r)
-// 	if err != nil {
-// 		return
-// 	}
-// 	tmpl, err := panel.LoadTemplate(
-// 		"././ui/templates/parts/layout/delete-modal.tmpl",
-// 	)
-// 	if err != nil {
-// 		return
-// 	}
-// 	profile, err := handler.UsersService.View(uId)
-// 	if err != nil {
-// 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-// 		return
-// 	}
-// 	var cards []panel.UserCardData
-// 	cards = append(cards, panel.UserCardData{
-// 		Profiles: *profile,
-// 	})
-// 	data := panel.PageData{
-// 		Cards: cards,
-// 	}
-// 	tmpl.ExecuteTemplate(w, "delete-modal", data)
-// }
+func (handler *DashboardHandler) Ban(w http.ResponseWriter, r *http.Request) {
+	reqId, currId, err := panel.SelfDeletionDetected(r)
+	if err != nil {
+		return
+	}
+	v := panel.GetFilterValue(r, "view")
+	if v == "" {
+		return
+	}
+	err = handler.UsersService.Ban(reqId)
+	if err != nil {
+		return
+	}
+	profile, err := handler.UsersService.Get(reqId)
+	if err != nil {
+		return
+	}
+	currRole, err := handler.UsersService.Role(currId)
+	if err != nil {
+		return
+	}
+	data := panel.UserData{
+		Profiles:        *profile,
+		CurrentUserId:   currId,
+		CurrentUserRole: currRole,
+		Actions: panel.Actions{
+			CanDeleteUser: panel.CanDeleteUser(currRole, currId, reqId),
+			CanBanUser:    panel.CanBanUser(currRole, currId, reqId),
+		},
+	}
+	page := "user-" + v
+	err = handler.TCache.RenderPartial(w, "users.tmpl", page, data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
 
-// func (handler *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
-// 	currId, err := getUserId(r)
-// 	if err != nil {
-// 		w.Header().Set("HX-Redirect", "/auth/login")
-// 		w.WriteHeader(http.StatusOK)
-// 		return
-// 	}
-// 	role, err := handler.UsersService.Role(currId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	if role == "admin" {
-// 		w.Header().Set("HX-Trigger", "userDeleted")
-// 		w.WriteHeader(http.StatusOK)
-// 		return
-// 	} else {
-// 		cookie.Set("", "__up_access_token", -time.Minute, w)
-// 		cookie.Set("", "__up_refresh_token", -time.Hour, w)
+func (handler *DashboardHandler) Unban(w http.ResponseWriter, r *http.Request) {
+	reqId, currId, err := panel.SelfDeletionDetected(r)
+	if err != nil {
+		return
+	}
+	v := panel.GetFilterValue(r, "view")
+	if v == "" {
+		return
+	}
+	err = handler.UsersService.Unban(reqId)
+	if err != nil {
+		return
+	}
+	profile, err := handler.UsersService.Get(reqId)
+	if err != nil {
+		return
+	}
+	currRole, err := handler.UsersService.Role(currId)
+	if err != nil {
+		return
+	}
+	data := panel.UserData{
+		Profiles:        *profile,
+		CurrentUserId:   currId,
+		CurrentUserRole: currRole,
+		Actions: panel.Actions{
+			CanDeleteUser: panel.CanDeleteUser(currRole, currId, reqId),
+			CanBanUser:    panel.CanBanUser(currRole, currId, reqId),
+		},
+	}
+	page := "user-" + v
+	err = handler.TCache.RenderPartial(w, "users.tmpl", page, data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
 
-// 		w.Header().Set("HX-Redirect", "/auth/login")
-// 		w.WriteHeader(http.StatusOK)
-// 		return
-// 	}
-// }
+func (handler *DashboardHandler) DeleteConfirm(w http.ResponseWriter, r *http.Request) {
+	uId, err := panel.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	profile, err := handler.UsersService.Get(uId)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	var cards []panel.UserData
+	cards = append(cards, panel.UserData{
+		Profiles: *profile,
+	})
+	data := panel.PageData{
+		UserCards: cards,
+	}
+	err = handler.TCache.RenderPartial(w, "users.tmpl", "confirm-delete-user-modal", data)
+	if err != nil {
+		handler.TCache.ServerError(w, err)
+	}
+}
 
-// func (handler *UserHandler) Ban(w http.ResponseWriter, r *http.Request) {
-// 	reqId, currId, err := selfDeletionDetected(r)
-// 	if err != nil {
-// 		return
-// 	}
-// 	v := r.URL.Query().Get("view")
-// 	if v == "" {
-// 		return
-// 	}
-// 	tmpl, err := panel.LoadTemplate(
-// 		"./ui/templates/parts/layout/user-" + v + ".tmpl",
-// 	)
-// 	if err != nil {
-// 		return
-// 	}
-// 	err = handler.UsersService.Ban(reqId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	user, err := handler.UsersService.View(reqId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	currRole, err := handler.UsersService.Role(currId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	data := panel.UserCardData{
-// 		Profiles:      *user,
-// 		CurrentUserId: currId,
-// 		CanDelete:     canDelete(currRole, currId, reqId),
-// 		CanBan:        canBan(currRole, currId, reqId),
-// 	}
-// 	tmpl.ExecuteTemplate(w, "user-"+v, data)
-// }
+func (handler *DashboardHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	currId, err := panel.GetUserId(r)
+	if err != nil {
+		w.Header().Set("HX-Redirect", "/auth/login")
+		return
+	}
+	role, _ := handler.UsersService.Role(currId)
+	if role == "admin" {
+		uId, err := panel.GetIdFromReq(r)
+		if err != nil {
+			return
+		}
+		err = handler.UsersService.Delete(uId)
+		if err != nil {
+			return
+		}
+		w.Header().Set("HX-Trigger", "userDeleted")
+		w.WriteHeader(http.StatusOK)
+		return
+	} else {
+		err = handler.UsersService.Delete(currId)
+		if err != nil {
+			return
+		}
+		cookie.Set("", "__up_access_token", -time.Minute, w)
+		cookie.Set("", "__up_refresh_token", -time.Hour, w)
 
-// func (handler *UserHandler) Unban(w http.ResponseWriter, r *http.Request) {
-// 	reqId, currId, err := selfDeletionDetected(r)
-// 	if err != nil {
-// 		return
-// 	}
-// 	v := r.URL.Query().Get("view")
-// 	if v == "" {
-// 		return
-// 	}
-// 	tmpl, err := panel.LoadTemplate(
-// 		"./ui/templates/parts/layout/user-" + v + ".tmpl",
-// 	)
-// 	if err != nil {
-// 		return
-// 	}
-// 	err = handler.UsersService.Unban(reqId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	user, err := handler.UsersService.View(reqId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	currRole, err := handler.UsersService.Role(currId)
-// 	if err != nil {
-// 		return
-// 	}
-// 	data := panel.UserCardData{
-// 		Profiles:      *user,
-// 		CurrentUserId: currId,
-// 		CanDelete:     canDelete(currRole, currId, reqId),
-// 		CanBan:        canBan(currRole, currId, reqId),
-// 	}
-// 	tmpl.ExecuteTemplate(w, "user-"+v, data)
-// }
+		w.Header().Set("HX-Redirect", "/auth/login")
+		return
+	}
+}
