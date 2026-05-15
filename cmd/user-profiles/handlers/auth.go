@@ -56,7 +56,7 @@ func (handler *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = handler.TCache.RenderPartial(w, "login.tmpl", "form-submit-error", data)
 		if err != nil {
-			handler.TCache.ServerError(w, err)
+			handler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
@@ -76,7 +76,7 @@ func (handler *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err := handler.TCache.RenderPartial(w, "signup.tmpl", "form-submit-error", data)
 		if err != nil {
-			handler.TCache.ServerError(w, err)
+			handler.TCache.ServerError(w, r, err)
 		}
 		return
 	}

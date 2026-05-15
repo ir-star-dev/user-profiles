@@ -1,0 +1,74 @@
+{{define "preview-post"}}{{end}}
+
+{{ define "title" }} 
+    {{range .PostCards}}
+        Preview: {{.Posts.Title}} 
+    {{end}}
+{{ end }}
+
+{{define "content"}}
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card shadow-sm border-0">
+                {{range .PostCards}}                
+                <div id="post-{{.Posts.Id}}" class="card-body p-4 p-md-5">
+                    <!-- Title -->
+                    <h1 class="mb-3">{{.Posts.Title}}</h1>
+                    <!-- Meta -->
+                    <div class="text-muted mb-4">
+                        Author:
+                        <a href="/posts/user/{{.Posts.Username}}"
+                           class="badge text-bg-success text-decoration-none">
+                            {{.Posts.Username}}
+                        </a>
+                        <span class="mx-2">•</span>
+                        Created:
+                        {{.Posts.CreatedAt.Format "02 Jan 2006 15:04"}}
+                        <span class="mx-2">•</span>
+                        Status:
+                        {{ if not .Posts.Approved }}
+                        <span class="badge text-bg-warning">Pending</span>
+                        {{end}}
+                    </div>
+
+                    <!-- Content -->
+                    <div class="post-content fs-5 lh-lg">
+                        {{.Posts.Content}}
+                    </div>
+                    <!-- Actions -->
+                    <div class="mt-5 d-flex gap-2">
+                        <a href="/panel/posts"
+                           class="btn btn-outline-secondary">
+                            Back to Posts
+                        </a>
+                        <a href="/panel/posts/post/{{.Posts.Id}}/edit"
+                           class="btn btn-outline-primary">
+                            Edit
+                        </a>
+                        {{ if .Posts.Approved }}
+                            <a
+                                hx-patch="/panel/posts/post/{{.Posts.Id}}/review?view=card"
+                                hx-target="#post-{{.Posts.Id}}"
+                                hx-swap="outerHTML"
+                                class="btn btn-warning">
+                                Review
+                            </a>
+                        {{ else }}
+                            <a
+                                hx-patch="/panel/posts/post/{{.Posts.Id}}/publish?view=card"
+                                hx-target="#post-{{.Posts.Id}}"
+                                hx-swap="outerHTML"
+                                class="btn btn-success">
+                                Publish
+                            </a>
+                        {{ end }}
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -3,6 +3,7 @@ package panel
 import (
 	"errors"
 	"strings"
+	"time"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
 	"user-profiles/internal/validator"
@@ -154,4 +155,106 @@ func (s *DS) CreateUser(email, name, password, role string) ([]FormValidationErr
 		return formValiErr, err
 	}
 	return nil, nil
+}
+
+func (s *DS) CreatePost(title, content, excerpt string, uId int) (*int, []FormValidationErr, error) {
+	var formValiErr []FormValidationErr
+	form := CreatePostForm{
+		Title:     title,
+		Content:   content,
+		Excerpt:   excerpt,
+		Validator: validator.Validator{},
+	}
+	form.Validator.CheckField(validator.MaxChars(form.Title, 99), "title", "Title length more than 99 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be blank")
+	form.Validator.CheckField(validator.MinChars(form.Excerpt, 100), "excerpt", "Excerpt length less than 100 characters")
+	form.Validator.CheckField(validator.MaxChars(form.Excerpt, 300), "excerpt", "Excerpt length more than 300 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Excerpt), "excerpt", "Excerpt cannot be blank")
+
+	if !form.Validator.Valid() {
+		for key, value := range form.Validator.FieldErrors {
+			formValiErr = append(formValiErr, FormValidationErr{
+				Name:    key,
+				Message: value,
+			})
+		}
+		return nil, formValiErr, errors.New("Invalid form")
+	}
+
+	existedUser, err := s.uRepo.FindById(uId)
+	if existedUser == nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "not exist",
+			Message: "User is not exists",
+		})
+		return nil, formValiErr, errors.New("User is not exists")
+	}
+	post := &posts.Post{
+		Title:   title,
+		Content: content,
+		Excerpt: excerpt,
+		UserId:  uId,
+	}
+	p, err := s.pRepo.Create(post)
+	if err != nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "form",
+			Message: "Something went wrong. Try later, please!",
+		})
+		return nil, formValiErr, errors.New("Something went wrong. Try later, please!")
+	}
+	return &p.Id, nil, nil
+}
+
+func (s *DS) PreviewPost(pId int) (*posts.PostWithUserName, error) {
+	post, err := s.pRepo.FindById(pId)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
+func (s *DS) EditPost(title, content, excerpt, createdAt string, pId int) (*int64, []FormValidationErr, error) {
+	var formValiErr []FormValidationErr
+	form := CreatePostForm{
+		Title:     title,
+		Content:   content,
+		Excerpt:   excerpt,
+		Validator: validator.Validator{},
+	}
+	form.Validator.CheckField(validator.MaxChars(form.Title, 99), "title", "Title length more than 99 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be blank")
+
+	if !form.Validator.Valid() {
+		for key, value := range form.Validator.FieldErrors {
+			formValiErr = append(formValiErr, FormValidationErr{
+				Name:    key,
+				Message: value,
+			})
+		}
+		return nil, formValiErr, errors.New("Invalid form")
+	}
+
+	t, err := time.Parse("2006-01-02 15:04:05.999999 -0700 MST", createdAt)
+	if err != nil {
+		t = time.Now()
+	}
+	post := &posts.UpdatePostRequest{
+		Id:        pId,
+		Title:     title,
+		Excerpt:   excerpt,
+		Content:   content,
+		Approved:  false,
+		CreatedAt: t,
+		UpdatedAt: time.Now(),
+	}
+	id, err := s.pRepo.Update(post)
+	if err != nil {
+		formValiErr = append(formValiErr, FormValidationErr{
+			Name:    "form",
+			Message: "Something went wrong. Try later, please!",
+		})
+		return nil, formValiErr, errors.New("Something went wrong. Try later, please!")
+	}
+	return &id, nil, nil
 }

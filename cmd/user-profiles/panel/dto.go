@@ -1,6 +1,7 @@
 package panel
 
 import (
+	"html/template"
 	"user-profiles/cmd/user-profiles/posts"
 	"user-profiles/cmd/user-profiles/users"
 	"user-profiles/internal/validator"
@@ -20,7 +21,9 @@ type PageData struct {
 	HasFilters        bool
 	Roles             []users.Roles
 	FormValidationErr []FormValidationErr
-	UserCredentials	  UserCredentials
+	UserCredentials   UserCredentials
+	PostCreated       PostCreated
+	PostUpdated       PostUpdated
 }
 
 type UserData struct {
@@ -76,7 +79,22 @@ type CreateUserForm struct {
 	Validator validator.Validator `json:"-"`
 }
 
+type CreatePostForm struct {
+	Title     string              `json:"title"`
+	Content   string              `json:"content"`
+	Excerpt   string              `json:"excerpt"`
+	Validator validator.Validator `json:"-"`
+}
+
 type UserCredentials struct {
 	Email    string
 	Password string
+}
+
+type PostCreated struct {
+	Message template.HTML
+}
+
+type PostUpdated struct {
+	Message template.HTML
 }

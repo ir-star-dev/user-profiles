@@ -24,7 +24,7 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 	})
 
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		tc.NotFound(w, r)
+		tc.NotFound(w, r, nil)
 	})
 
 	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/", ph.Home)
@@ -32,19 +32,21 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 	router.With(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService)).Get("/posts/user/{username}", ph.ViewUserPosts)
 
 	router.Route(("/panel"), func(router chi.Router) {
-		router.NotFound(func(w http.ResponseWriter, r *http.Request) {
-			tc.PanelNotFound(w, r)
-		})
+		// router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		// 	tc.PanelNotFound(w, r)
+		// })
 		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))
 		router.With(middlewares.RoleMiddleware("admin")).Get("/generate-password", dh.GeneratePassword)
 
 		router.Get("/posts", dh.Posts)
 
-		// router.Get("/post/create", ph.CreatePostForm)
-		// router.Post("/post/create", ph.CreatePost)
+		router.Get("/post/create", dh.CreatePostForm)
+		router.Post("/post/create", dh.CreatePost)
 
-		// router.Get("/posts/post/{id}/edit", ph.EditPostForm)
-		// router.Patch("/posts/post/{id}/edit", ph.EditPost)
+		router.Get("/posts/post/{id}/preview", dh.PreviewPost)
+
+		router.Get("/posts/post/{id}/edit", dh.EditPostForm)
+		router.Patch("/posts/post/{id}/edit", dh.EditPost)
 
 		router.With(middlewares.RoleMiddleware("admin", "moderator")).Patch("/posts/post/{id}/review", dh.Review)
 		router.With(middlewares.RoleMiddleware("admin", "moderator")).Patch("/posts/post/{id}/publish", dh.Publish)
@@ -54,10 +56,8 @@ func InitRoutes(router chi.Router, ah *handlers.AuthHandler, ph *handlers.PostHa
 
 		router.With(middlewares.RoleMiddleware("admin")).Get("/users", dh.Users)
 
-		
 		router.With(middlewares.RoleMiddleware("admin")).Get("/user/add", dh.CreateUserForm)
 		router.With(middlewares.RoleMiddleware("admin")).Post("/user/add", dh.CreateUser)
-
 
 		router.Route(("/profile"), func(router chi.Router) {
 			router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AuthService))

@@ -6,6 +6,7 @@ import (
 	"user-profiles/cmd/user-profiles/posts"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/gosimple/slug"
 )
 
 type postRepository struct {
@@ -17,19 +18,19 @@ func NewPostRepository(db *sqlx.DB) posts.Repository {
 }
 
 func (repo *postRepository) Create(post *posts.Post) (*posts.Post, error) {
-	query := `
-        INSERT INTO posts (title, content, created_at, updated_at, approved, user_id)
-		SELECT
-			:title,
-			:content,
-			:created_at,
-			:updated_at,
-			:approved,
-			u.id
-		FROM users AS u
-		WHERE u.id = :user_id
-    `
-	_, err := repo.db.NamedExec(query, post)
+	var id int
+	query := `INSERT INTO posts (title, content, excerpt, user_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	err := repo.db.Get(&id, query, post.Title, post.Content, post.Excerpt, post.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	pSlug := slug.Make(post.Title) + "-" + strconv.Itoa(id)
+
+	_, err = repo.db.Exec(`UPDATE posts SET slug = $1 WHERE id = $2`, pSlug, id)
 	if err != nil {
 		return nil, err
 	}
@@ -45,25 +46,22 @@ func (repo *postRepository) Delete(pId int) error {
 	return nil
 }
 
-func (repo *postRepository) Update(post *posts.Post) (int64, error) {
+func (repo *postRepository) Update(post *posts.UpdatePostRequest) (int64, error) {
 	query := `
         UPDATE posts 
         SET title = :title, 
-			content = :content, 
+			content = :content,
+			excerpt = :excerpt, 
 			created_at = :created_at, 
 			updated_at = :updated_at, 
-			approved = :approved,
+			approved = :approved
         WHERE id = :id
     `
-	r, err := repo.db.NamedExec(query, post)
+	_, err := repo.db.NamedExec(query, post)
 	if err != nil {
 		return 0, err
 	}
-	id, err := r.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return int64(post.Id), nil
 }
 
 func (repo *postRepository) FindById(pId int) (*posts.PostWithUserName, error) {

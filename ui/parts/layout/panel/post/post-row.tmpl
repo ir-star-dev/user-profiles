@@ -29,12 +29,23 @@
         <!-- ACTIONS -->
         <td class="text-end">
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
+                {{ if .Posts.Approved }}
                 <a
                     href="/posts/post/{{.Posts.Slug}}"
                     target="_blank"
                     class="btn btn-sm btn-outline-primary">
                     View
                 </a>
+                {{else}}
+                {{ if .Actions.CanApprovePost }}
+                <a
+                    href="/panel/posts/post/{{.Posts.Id}}/preview"
+                    target="_blank"
+                    class="btn btn-sm btn-outline-secondary">
+                    Preview
+                </a>
+                {{end}}
+                {{end}}
 
                 {{if .Actions.CanEditPost}}
                     <a href="/panel/posts/post/{{.Posts.Id}}/edit"
@@ -47,7 +58,7 @@
 
                     {{ if .Posts.Approved }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Id}}/review"
+                            hx-patch="/panel/posts/post/{{.Posts.Id}}/review?view=row"
                             hx-target="#post-{{.Posts.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
@@ -55,7 +66,7 @@
                         </a>
                     {{ else }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Id}}/publish"
+                            hx-patch="/panel/posts/post/{{.Posts.Id}}/publish?view=row"
                             hx-target="#post-{{.Posts.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">

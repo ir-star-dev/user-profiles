@@ -25,19 +25,17 @@ func SeedPosts(db *sqlx.DB, role string, count int) error {
 
 	for i := 1; i <= count; i++ {
 		title := "What is Lorem Ipsum?"
-		content := "Lorem Ipsum is simply dummy text of the printing and typesetting industry.\n" +
-			"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.\n" +
-			"It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. \n" +
-			"It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
+		excerpt := "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book."
+		content := "<h2>What is Lorem Ipsum?</h2><p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. </p><p>Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. </p><h3>What is Lorem Ipsum?</h3><p>It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. </p><p>It was popularised in the <strong>1960s with the release of Letraset sheets</strong> containing Lorem Ipsum passages, and more recently with desktop publishing software like <em>Aldus PageMaker</em> including versions of Lorem Ipsum.</p>"
 
 		userID := userIDs[0]
 
 		var id int
-		q := `INSERT INTO posts (title, content, user_id)
-			VALUES ($1, $2, $3)
+		q := `INSERT INTO posts (title, content, excerpt, user_id)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id
 		`
-		err := db.Get(&id, q, title, content, userID)
+		err := db.Get(&id, q, title, content, excerpt, userID)
 		if err != nil {
 			return err
 		}

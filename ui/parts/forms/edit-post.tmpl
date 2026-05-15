@@ -1,34 +1,33 @@
-{{ define "form-create-post" }}
+{{ define "form-edit-post" }}
 
 <div class="row justify-content-center mt-4">
     <div class="col-md-8 col-lg-8">
+        {{if .PostCards}}
+        {{range .PostCards}}
         <form class="px-3" 
-            hx-post="/panel/post/create" 
+            hx-patch="/panel/posts/post/{{.Posts.Id}}/edit" 
             hx-target="#result" 
             hx-swap="innerHTML"
-            hx-on::after-request="
-                if(event.detail.xhr.responseText.includes('alert-success')) {
-                    this.reset()
-                    quill.root.innerHTML = ''
-                }
-            "
             >
 
-            <h1 class="h3 mb-3 fw-normal">Create post</h1>
+            <h1 class="h3 mb-3 fw-normal">Edit post</h1>
             <div id="result" class="my-3"></div>
 
             <div class="mb-3">
-                <input type="text" class="form-control" name="title" required placeholder="Title" minlength="3" maxlength="99">
+                <input type="hidden" class="form-control" value="{{.Posts.CreatedAt}}" name="created_at">
+                <input type="text" class="form-control" value="{{.Posts.Title}}" name="title" required placeholder="Title" minlength="3" maxlength="99">
             </div>
             <div class="mb-3">
-                <textarea name="excerpt" required minlength="100" maxlength="300"></textarea>
+                <textarea name="excerpt" required minlength="100" maxlength="300">
+                    {{.Posts.Excerpt}}
+                </textarea>
             </div>
             <div class="mb-3">
                 <textarea name="content" id="content" style="display:none;"></textarea>
-                <div id="editor"></div>
+                <div id="editor">{{.Posts.Content}}</div>
             </div>
             <div class="mb-3">
-                <button type="submit" class="btn btn-success col-12">Create</button>
+                <button type="submit" class="btn btn-success col-12">Save</button>
             </div>
             <script>
                 document.body.addEventListener('htmx:configRequest', function (e) {
@@ -38,6 +37,8 @@
                 });
             </script>
         </form>
+        {{end}}
+        {{end}}
     </div>
 
 </div>

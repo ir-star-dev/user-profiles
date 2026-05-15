@@ -1,4 +1,4 @@
-{{define "post-card"}}
+{{define "posts-card"}}
     {{with .Posts}}
         <div class="col-12 col-md-4 d-flex">
             <div class="card post-card w-100">
@@ -16,7 +16,7 @@
                         Published:
                         {{.CreatedAt.Format "02 Jan 2006 15:04"}}
                     </div>
-                    <div class="post-text flex-grow-1">{{.Content}}</div>
+                    <div class="post-text flex-grow-1">{{.Excerpt}}</div>
                     <a href="/posts/post/{{.Slug}}" class="btn btn-primary btn-post mt-3">Read</a>
                 </div>
             </div>

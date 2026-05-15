@@ -40,6 +40,10 @@ func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 	return slices.Contains(permittedValues, value)
 }
 
+func MinChars(value string, n int) bool {
+	return len(value) >= n
+}
+
 func MaxChars(value string, n int) bool {
 	return len(value) <= n
 }

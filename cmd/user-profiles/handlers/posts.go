@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	approved := true
 	posts, total, err := handler.PostService.GetOnPage(page, limit, &approved, "")
 	if err != nil {
-		handler.TCache.ServerError(w, err)
+		handler.TCache.ServerError(w, r, err)
 		return
 	}
 
@@ -43,8 +44,8 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	postCards := make([]panel.PostData, 0, len(posts))
 	for _, post := range posts {
-		cutedContent := panel.TruncateContent(post.Content, 367)
-		post.Content = cutedContent
+		cutedContent := panel.TruncateContent(string(post.Content), 367)
+		post.Content = template.HTML(cutedContent)
 		postCards = append(postCards, panel.PostData{
 			Posts: post,
 		})
@@ -66,7 +67,7 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 	if page > 1 || isHTMX {
 		err = handler.TCache.RenderPartial(w, "home.tmpl", "posts-response", data)
 		if err != nil {
-			handler.TCache.ServerError(w, err)
+			handler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
@@ -74,146 +75,58 @@ func (handler *PostHandler) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *PostHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
+	currUserId, _ := panel.GetUserId(r)
+	data := panel.PageData{
+		CurrentUserId: currUserId,
+	}
 	slug := r.PathValue("slug")
 	parts := strings.Split(slug, "-")
 	idStr := parts[len(parts)-1]
 	pId, err := strconv.Atoi(idStr)
 	if err != nil {
-		handler.TCache.NotFound(w, r)
+		handler.TCache.NotFound(w, r, data)
 		return
 	}
 	post, err := handler.PostService.FindById(pId)
 	if err != nil {
-		handler.TCache.NotFound(w, r)
+		handler.TCache.NotFound(w, r, data)
 		return
 	}
 	var postCards []panel.PostData
 	postCards = append(postCards, panel.PostData{
 		Posts: *post,
 	})
-	currUserId, _ := panel.GetUserId(r)
-	data := panel.PageData{
-		CurrentUserId: currUserId,
-		PostCards:     postCards,
-	}
+	data.PostCards = postCards
 	handler.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
 }
 
 func (handler *PostHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
+	currUId, _ := panel.GetUserId(r)
+	data := panel.PageData{
+		CurrentUserId: currUId,
+	}
 	username := r.PathValue("username")
 	if username == "" {
-		handler.TCache.NotFound(w, r)
+		handler.TCache.NotFound(w, r, data)
 		return
 	}
-	currUId, _ := panel.GetUserId(r)
 	ps, err := handler.PostService.FindByUsername(username)
 	if errors.Is(err, posts.PostNotFound) {
-		handler.TCache.NotFound(w, r)
+		handler.TCache.NotFound(w, r, data)
 		return
 	}
 	if err != nil {
-		handler.TCache.NotFound(w, r)
+		handler.TCache.NotFound(w, r, data)
 		return
 	}
 	postCards := make([]panel.PostData, 0, len(ps))
 	for _, post := range ps {
-		cutedContent := panel.TruncateContent(post.Content, 367)
-		post.Content = cutedContent
+		cutedContent := panel.TruncateContent(string(post.Content), 367)
+		post.Content = template.HTML(cutedContent)
 		postCards = append(postCards, panel.PostData{
 			Posts: post,
 		})
 	}
-	data := panel.PageData{
-		PostCards: postCards,
-		CurrentUserId: currUId,
-	}
+	data.PostCards = postCards
 	handler.TCache.Render(w, r, http.StatusOK, "base", "user-posts.tmpl", data)
 }
-
-// func (handler *PostHandler) CreateForm(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) EditForm(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }
-
-// func (handler *PostHandler) Edit(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, err := view.LoadTemplate(
-// 		"././ui/templates/base.tmpl",
-// 		"././ui/templates/parts/layout/nav.tmpl",
-// 		"././ui/templates/pages/index.tmpl",
-// 		"././ui/templates/parts/layout/posts.tmpl",
-// 	)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	data := view.PageData{}
-// 	var buf bytes.Buffer
-
-// 	err = tmpl.ExecuteTemplate(&buf, "base", data)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Write(buf.Bytes())
-// }

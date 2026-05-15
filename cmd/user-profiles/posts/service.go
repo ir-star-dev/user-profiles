@@ -8,9 +8,9 @@ func NewPostService(pRepo Repository) PostService {
 	return &postService{pRepo: pRepo}
 }
 
-func (s *postService) Create(post *Post) (*Post, error) {
-	return post, nil
-}
+// func (s *postService) Create(post *Post) (*Post, error) {
+// 	return post, nil
+// }
 
 func (s *postService) Delete(pId int) error {
 	err := s.pRepo.Delete(pId)
@@ -20,9 +20,13 @@ func (s *postService) Delete(pId int) error {
 	return nil
 }
 
-func (s *postService) Update(post *Post) (int64, error) {
-	return 0, nil
-}
+// func (s *postService) Update(post *UpdatePostRequest) (int64, error) {
+// 	err := s.pRepo.Delete(pId)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
 func (s *postService) FindById(pId int) (*PostWithUserName, error) {
 	posts, err := s.pRepo.FindById(pId)

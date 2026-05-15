@@ -1,11 +1,15 @@
 package posts
 
-import "time"
+import (
+	"html/template"
+	"time"
+)
 
 type Post struct {
 	Id        int       `db:"id"`
 	Title     string    `db:"title"`
 	Content   string    `db:"content"`
+	Excerpt   string    `db:"excerpt"`
 	Slug      string    `db:"slug"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -14,15 +18,16 @@ type Post struct {
 }
 
 type PostWithUserName struct {
-	Id        int       `db:"id"`
-	Title     string    `db:"title"`
-	Content   string    `db:"content"`
-	Slug      string    `db:"slug"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-	Approved  bool      `db:"approved"`
-	Username  string    `db:"username"`
-	UserId    int       `db:"user_id"`
+	Id        int           `db:"id"`
+	Title     string        `db:"title"`
+	Content   template.HTML `db:"content"`
+	Excerpt   string    `db:"excerpt"`
+	Slug      string        `db:"slug"`
+	CreatedAt time.Time     `db:"created_at"`
+	UpdatedAt time.Time     `db:"updated_at"`
+	Approved  bool          `db:"approved"`
+	Username  string        `db:"username"`
+	UserId    int           `db:"user_id"`
 }
 
 type Authors struct {
@@ -30,6 +35,16 @@ type Authors struct {
 }
 
 type PostsStatus struct {
-	Published int    `db:"published"`
-	Pending   int    `db:"pending"`
+	Published int `db:"published"`
+	Pending   int `db:"pending"`
+}
+
+type UpdatePostRequest struct {
+	Id        int       `db:"id"`
+	Title     string    `db:"title"`
+	Content   string    `db:"content"`
+	Excerpt   string    `db:"excerpt"`
+	Approved  bool      `db:"approved"`
+	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at"`
 }

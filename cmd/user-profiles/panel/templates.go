@@ -13,6 +13,8 @@ import (
 	"strings"
 	"user-profiles/cmd/user-profiles/utils"
 	"user-profiles/ui"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 type Templates struct {
@@ -65,14 +67,14 @@ func (t *Templates) Render(w http.ResponseWriter, r *http.Request, status int, l
 	ts, ok := t.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("The template %s does not exist", page)
-		t.ServerError(w, err)
+		t.ServerError(w, r, err)
 		return
 	}
 
 	buf := new(bytes.Buffer)
 	err := ts.ExecuteTemplate(buf, layout, data)
 	if err != nil {
-		t.ServerError(w, err)
+		t.ServerError(w, r, err)
 		return
 	}
 	w.WriteHeader(status)
@@ -97,12 +99,12 @@ func (t *Templates) RenderPartial(w http.ResponseWriter, page string, templateNa
 	return err
 }
 
-func (t *Templates) ServerError(w http.ResponseWriter, err error) {
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+func (t *Templates) ServerError(w http.ResponseWriter, r *http.Request, err error) {
+	data := PageData{}
+	t.Render(w,	r, http.StatusNotFound,	"base", "500.tmpl", data)
 }
 
-func (t *Templates) NotFound(w http.ResponseWriter, r *http.Request) {
-	data := PageData{}
+func (t *Templates) NotFound(w http.ResponseWriter, r *http.Request, data any) {
 	t.Render(w,	r, http.StatusNotFound,	"base", "404.tmpl",	data)
 }
 
@@ -172,6 +174,14 @@ func TruncateContent(s string, limit int) string {
 		return string(r[:limit]) + "..."
 	}
 	return s
+}
+
+func SanitizeContent(html string) string {
+	var policy = bluemonday.UGCPolicy()
+	policy.AllowAttrs("href").OnElements("a")
+	policy.RequireNoFollowOnLinks(true)
+	
+	return policy.Sanitize(html)
 }
 
 func GetIdFromReq(r *http.Request) (int, error) {

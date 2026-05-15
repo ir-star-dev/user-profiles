@@ -3,7 +3,7 @@ package posts
 type Repository interface {
 	Create(post *Post) (*Post, error)
 	Delete(pId int) error
-	Update(post *Post) (int64, error)
+	Update(post *UpdatePostRequest) (int64, error)
 
 	Review(pId int) error
 	Publish(pId int) error
@@ -19,9 +19,9 @@ type Repository interface {
 }
 
 type PostService interface {
-	Create(post *Post) (*Post, error)
+	//Create(post *Post) (*Post, error)
 	Delete(pId int) error
-	Update(post *Post) (int64, error)
+	//Update(post *UpdatePostRequest) (int64, error)
 
 	Review(pId int) error
 	Publish(pId int) error
