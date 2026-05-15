@@ -111,7 +111,7 @@ func (handler *DashboardHandler) Users(w http.ResponseWriter, r *http.Request) {
 
 	profiles, res, err := handler.UsersService.GetOnPage(page, 10, bn, role)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handler.TCache.ServerError(w, r, err)
 		return
 	}
 	var cards []panel.UserData
@@ -173,7 +173,7 @@ func (handler *DashboardHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	}
 	posts, res, err := handler.PostsService.GetOnPage(page, 10, ap, username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handler.TCache.ServerError(w, r, err)
 		return
 	}
 

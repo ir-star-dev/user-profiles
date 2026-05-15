@@ -101,6 +101,8 @@ func (t *Templates) RenderPartial(w http.ResponseWriter, page string, templateNa
 
 func (t *Templates) ServerError(w http.ResponseWriter, r *http.Request, err error) {
 	data := PageData{}
+	uId, _ := GetUserId(r)
+	data.CurrentUserId = uId
 	t.Render(w,	r, http.StatusNotFound,	"base", "500.tmpl", data)
 }
 
@@ -148,6 +150,22 @@ func (t *Templates) BuildPagination(currentPage, totalPages int, path string) Pa
 	}
 
 	return p
+}
+
+func (t *Templates) RecoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		defer func() {
+			if err := recover(); err != nil {
+
+				w.Header().Set("Connection", "close")
+
+				t.ServerError(w, r, fmt.Errorf("%v", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func WithQuery(base string, params map[string]string, key string, value any) string {

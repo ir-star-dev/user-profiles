@@ -45,16 +45,18 @@ func main() {
 	userService := users.NewUsersService(userRepo)
 	postService := posts.NewPostService(postRepo)
 
-	// Mux
-	mux := chi.NewRouter()
-
-	// Middlewares
-	mux.Use(middlewares.CORS, middlewares.RecoverPanic)
-
 	tc, err := panel.NewTemplateCache()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	// Mux
+	mux := chi.NewRouter()
+
+	// Middlewares
+	mux.Use(middlewares.CORS, tc.RecoverPanic)
+
+	
 
 	authH := handlers.NewAuthHandler(mux, handlers.AuthHandlerDeps{
 		Config:      conf,
