@@ -115,6 +115,25 @@ func (t *Templates) PanelNotFound(w http.ResponseWriter, r *http.Request) {
 	t.Render(w,	r, http.StatusNotFound,	"panel-base", "404.tmpl",	data)
 }
 
+func (t *Templates) Forbidden(w http.ResponseWriter, r *http.Request) {
+	ts, ok := t.templateCache["403.tmpl"]
+	if !ok {
+		http.Error(w, "Template not found", http.StatusInternalServerError)
+		return
+	}
+
+	buf := new(bytes.Buffer)
+
+	err := ts.ExecuteTemplate(buf, "403", nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusForbidden)
+	buf.WriteTo(w)
+}
+
 func (t *Templates) BuildPagination(currentPage, totalPages int, path string) Pagination {
 	p := Pagination{
 		Path:       path,

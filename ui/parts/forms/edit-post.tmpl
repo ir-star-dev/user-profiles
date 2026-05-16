@@ -18,9 +18,7 @@
                 <input type="text" class="form-control" value="{{.Posts.Title}}" name="title" required placeholder="Title" minlength="3" maxlength="99">
             </div>
             <div class="mb-3">
-                <textarea name="excerpt" required minlength="100" maxlength="300">
-                    {{.Posts.Excerpt}}
-                </textarea>
+                <textarea rows="5" name="excerpt" class="form-control" placeholder="Excerpt" required minlength="100" maxlength="300">{{.Posts.Excerpt}}</textarea>
             </div>
             <div class="mb-3">
                 <textarea name="content" id="content" style="display:none;"></textarea>

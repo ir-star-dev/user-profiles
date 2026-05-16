@@ -27,7 +27,11 @@
                         Published:
                         {{.Posts.CreatedAt.Format "02 Jan 2006 15:04"}}
                     </div>
-
+                    <!-- Excerpt -->
+                    <div class="post-content fs-5 lh-lg">
+                        {{.Posts.Excerpt}}
+                    </div>
+                    <hr>
                     <!-- Content -->
                     <div class="post-content fs-5 lh-lg">
                         {{.Posts.Content}}

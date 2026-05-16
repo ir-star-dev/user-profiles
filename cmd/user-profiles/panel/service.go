@@ -170,6 +170,7 @@ func (s *DS) CreatePost(title, content, excerpt string, uId int) (*int, []FormVa
 	form.Validator.CheckField(validator.MinChars(form.Excerpt, 100), "excerpt", "Excerpt length less than 100 characters")
 	form.Validator.CheckField(validator.MaxChars(form.Excerpt, 300), "excerpt", "Excerpt length more than 300 characters")
 	form.Validator.CheckField(validator.NotBlank(form.Excerpt), "excerpt", "Excerpt cannot be blank")
+	form.Validator.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be blank")
 
 	if !form.Validator.Valid() {
 		for key, value := range form.Validator.FieldErrors {
@@ -224,6 +225,10 @@ func (s *DS) EditPost(title, content, excerpt, createdAt string, pId int) (*int6
 	}
 	form.Validator.CheckField(validator.MaxChars(form.Title, 99), "title", "Title length more than 99 characters")
 	form.Validator.CheckField(validator.NotBlank(form.Title), "title", "Title cannot be blank")
+	form.Validator.CheckField(validator.MinChars(form.Excerpt, 100), "excerpt", "Excerpt length less than 100 characters")
+	form.Validator.CheckField(validator.MaxChars(form.Excerpt, 300), "excerpt", "Excerpt length more than 300 characters")
+	form.Validator.CheckField(validator.NotBlank(form.Excerpt), "excerpt", "Excerpt cannot be blank")
+	form.Validator.CheckField(validator.NotBlank(form.Content), "content", "Content cannot be blank")
 
 	if !form.Validator.Valid() {
 		for key, value := range form.Validator.FieldErrors {

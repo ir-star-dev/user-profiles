@@ -1,12 +1,10 @@
 {{ define "sidebar" }}
 <ul class="nav flex-column p-3">
-    {{ if .CurrentUserRole }}
     <li class="nav-item">
         <a class="nav-link text-white" href="/panel/posts">
             Posts
         </a>
     </li>
-    {{end}}
     <li class="nav-item">
         <a class="nav-link text-white" href="/panel/post/create">
             Add post

@@ -691,7 +691,7 @@ func (handler *DashboardHandler) EditPost(w http.ResponseWriter, r *http.Request
 		return
 	}
 	data.PostUpdated = panel.PostUpdated{
-		Message: template.HTML("<p>Post updated and waiting for moderation!</p>"),
+		Message: template.HTML("Post updated and waiting for moderation!"),
 	}
 	err = handler.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-success", data)
 	if err != nil {
