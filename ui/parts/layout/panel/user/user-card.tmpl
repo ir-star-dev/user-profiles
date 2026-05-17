@@ -1,5 +1,5 @@
 {{define "user-card"}}
-<div class="col-12 col-lg-6 mb-3">
+<div class="col-12 col-lg-5 mb-3">
     <div id="flash-message"></div>
     <script>
         document.body.addEventListener("userDeleted", function () {
@@ -10,7 +10,7 @@
             `;
         });
     </script>
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-6">
         <div id="user-{{.Profiles.Id}}" class="card-body">
             <!-- HEADER -->
             <div class="d-flex justify-content-between align-items-start mb-3">
@@ -69,6 +69,8 @@
             </div>
         </div>
     </div>
+    {{template "created-posts" .CreatedPosts}}
+    
 </div>
 
 {{end}}

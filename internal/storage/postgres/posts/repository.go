@@ -3,10 +3,11 @@ package posts_postgres
 import (
 	"strconv"
 	"strings"
-	"user-profiles/cmd/user-profiles/posts"
+	"user-profiles/internal/models"
+	"user-profiles/internal/posts"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/gosimple/slug"
+	"github.com/jmoiron/sqlx"
 )
 
 type postRepository struct {
@@ -17,7 +18,7 @@ func NewPostRepository(db *sqlx.DB) posts.Repository {
 	return &postRepository{db: db}
 }
 
-func (repo *postRepository) Create(post *posts.Post) (*posts.Post, error) {
+func (repo *postRepository) Create(post *models.Post) (*models.Post, error) {
 	var id int
 	query := `INSERT INTO posts (title, content, excerpt, user_id)
 		VALUES ($1, $2, $3, $4)
@@ -46,7 +47,7 @@ func (repo *postRepository) Delete(pId int) error {
 	return nil
 }
 
-func (repo *postRepository) Update(post *posts.UpdatePostRequest) (int64, error) {
+func (repo *postRepository) Update(post *models.UpdatePostRequest) (int64, error) {
 	query := `
         UPDATE posts 
         SET title = :title, 
@@ -64,8 +65,8 @@ func (repo *postRepository) Update(post *posts.UpdatePostRequest) (int64, error)
 	return int64(post.Id), nil
 }
 
-func (repo *postRepository) FindById(pId int) (*posts.PostWithUserName, error) {
-	var posts posts.PostWithUserName
+func (repo *postRepository) FindById(pId int) (*models.PostWithUserName, error) {
+	var posts models.PostWithUserName
 	query := `
 		SELECT 
 			p.*,
@@ -82,7 +83,7 @@ func (repo *postRepository) FindById(pId int) (*posts.PostWithUserName, error) {
 	return &posts, nil
 }
 
-func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUserName, error) {
+func (repo *postRepository) FindByUsername(username string) ([]models.PostWithUserName, error) {
 	query := `
 		SELECT 
 			p.*,
@@ -94,7 +95,7 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 		p.approved = true
 		ORDER BY p.created_at DESC
 	`
-	p := []posts.PostWithUserName{}
+	p := []models.PostWithUserName{}
 	err := repo.db.Select(&p, query, username)
 	if err != nil {
 		return nil, err
@@ -105,7 +106,7 @@ func (repo *postRepository) FindByUsername(username string) ([]posts.PostWithUse
 	return p, nil
 }
 
-func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, username string) ([]posts.PostWithUserName, int, error) {
+func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, username string) ([]models.PostWithUserName, int, error) {
 	offset := (page - 1) * limit
 
 	args := []any{}
@@ -157,7 +158,7 @@ func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, usern
 		LIMIT $` + strconv.Itoa(len(args)-1) + `
 		OFFSET $` + strconv.Itoa(len(args))
 
-	posts := []posts.PostWithUserName{}
+	posts := []models.PostWithUserName{}
 
 	err = repo.db.Select(&posts, query, args...)
 	if err != nil {
@@ -167,23 +168,13 @@ func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, usern
 	return posts, totalCount, nil
 }
 
-func (repo *postRepository) GetAll() ([]posts.Post, error) {
-	query := `SELECT * FROM posts`
-	var posts []posts.Post
-	err := repo.db.Select(&posts, query)
-	if err != nil {
-		return nil, err
-	}
-	return posts, nil
-}
-
-func (repo *postRepository) PostsStatus() ([]posts.PostsStatus, error) {
+func (repo *postRepository) PostsStatus() ([]models.PostsStatus, error) {
 	query := `SELECT
 			COUNT(id) FILTER (WHERE approved = false) AS pending,
 			COUNT(id) FILTER (WHERE approved = true) AS published
 		FROM posts
 	`
-	var pStats []posts.PostsStatus
+	var pStats []models.PostsStatus
 	err := repo.db.Select(&pStats, query)
 	if err != nil {
 		return nil, err
@@ -191,13 +182,13 @@ func (repo *postRepository) PostsStatus() ([]posts.PostsStatus, error) {
 	return pStats, nil
 }
 
-func (repo *postRepository) Authors() ([]posts.Authors, error) {
+func (repo *postRepository) Authors() ([]models.Authors, error) {
 	query := `SELECT u.username
 		FROM posts AS p
 		JOIN users AS u ON p.user_id = u.id
 		GROUP BY u.username
 	`
-	var authors []posts.Authors
+	var authors []models.Authors
 	err := repo.db.Select(&authors, query)
 	if err != nil {
 		return nil, err
@@ -206,7 +197,7 @@ func (repo *postRepository) Authors() ([]posts.Authors, error) {
 }
 
 func (repo *postRepository) Review(uId int) error {
-	post := &posts.Post{
+	post := &models.Post{
 		Id:       uId,
 		Approved: false,
 	}
@@ -223,7 +214,7 @@ func (repo *postRepository) Review(uId int) error {
 }
 
 func (repo *postRepository) Publish(uId int) error {
-	post := &posts.Post{
+	post := &models.Post{
 		Id:       uId,
 		Approved: true,
 	}
@@ -237,4 +228,24 @@ func (repo *postRepository) Publish(uId int) error {
 		return err
 	}
 	return nil
+}
+
+func (repo *postRepository) GetMyPostList(uId int) ([]models.PostRows, error) {
+	var posts []models.PostRows
+	query := `
+		SELECT 
+			p.id,
+			p.slug,
+			p.title,
+			p.approved
+		FROM posts AS p
+		JOIN users AS u 
+		ON p.user_id = u.id 
+		WHERE u.id = $1
+	`
+	err := repo.db.Select(&posts, query, uId)
+	if err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

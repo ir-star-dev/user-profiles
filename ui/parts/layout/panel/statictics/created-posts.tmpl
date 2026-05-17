@@ -1,0 +1,60 @@
+{{define "created-posts"}}
+<div class="card shadow-sm border-0 mt-3 mb-3">
+    <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+            <h5 class="card-title mb-4">My posts</h5>
+            <!-- POSTS -->
+            <div>
+                <div class="table-responsive" style="height: 200px;">
+                    <table class="table table-hover align-middle mb-0">
+                        {{ if .}}
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Title</th>
+                                <th scope="col" class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        {{end}}
+                        <tbody>
+                            {{if .}}
+                            {{range .}}
+                            <tr>
+                                <td>
+                                    {{if .Approved}}
+                                    <a href="/posts/post/{{.Slug}}" target="_blank">
+                                    {{.Title}}
+                                    </a>
+                                    {{else}}
+                                    <a href="/panel/posts/post/{{.Id}}/preview" target="_blank">
+                                    {{.Title}}
+                                    </a>
+                                    {{end}}
+                                </td>
+                                <td class="text-center">
+                                    {{ if .Approved }}
+                                    <span class="badge bg-success">
+                                        Published
+                                    </span>
+                                    {{else}}
+                                    <span class="badge bg-warning">
+                                        Pending
+                                    </span>
+                                    {{end}}
+                                </td>
+                            </tr>
+                            {{end}}
+                            {{else}}
+                            <tr>
+                                <td colspan="2" class="text-center py-4 text-muted">
+                                    You have not created any posts yet.
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

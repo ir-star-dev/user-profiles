@@ -1,0 +1,36 @@
+{{define "logins"}}
+<div class="card shadow-sm border-0 mt-3 mb-3">
+    <div class="card shadow-sm border-0 h-200">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Last logins</h5>
+            <!-- POSTS -->
+            <div>
+                <div class="table-responsive" style="height: 200px;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Ip</th>
+                                <th scope="col">UserAgent</th>
+                                <th scope="col">Device</th>
+                                <th scope="col">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .}}
+                            <tr>
+                                <td>{{.Username}}</td>
+                                <td>{{.Ip}}</td>
+                                <td>{{.UserAgent}}</td>
+                                <td>{{.Device}}</td>
+                                <td>{{.LoginAt.Format "02 Jan 2006 15:04"}}</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -18,6 +18,7 @@ var ignoreDirs = map[string]bool{
 	"postgres-data": true,
 	"migrate":       true,
 	"seeds":         true,
+	"ui":			 true,
 }
 
 var ignoreExt = map[string]bool{
@@ -30,6 +31,7 @@ var ignoreExt = map[string]bool{
 	".editorconfig": true,
 	".env.example":  true,
 	".example":      true,
+	".tmpl": 		 true,
 }
 
 var output strings.Builder

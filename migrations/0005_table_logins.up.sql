@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS logins (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    device VARCHAR(100),
+    ip TEXT NOT NULL,
+    user_agent TEXT NOT NULL
+);

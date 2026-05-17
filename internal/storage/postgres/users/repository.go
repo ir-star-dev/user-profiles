@@ -3,7 +3,8 @@ package users_postgres
 import (
 	"strconv"
 	"strings"
-	"user-profiles/cmd/user-profiles/users"
+	"user-profiles/internal/models"
+	"user-profiles/internal/users"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -16,7 +17,7 @@ func NewUsersRepository(db *sqlx.DB) users.Repository {
 	return &usersRepository{db: db}
 }
 
-func (repo *usersRepository) Create(user *users.UserWithRole) (*users.UserWithRole, error) {
+func (repo *usersRepository) Create(user *models.UserWithRole) (*models.UserWithRole, error) {
 	query := `
         INSERT INTO users (name, email, username, password, role_id)
 		SELECT 
@@ -35,7 +36,7 @@ func (repo *usersRepository) Create(user *users.UserWithRole) (*users.UserWithRo
 	return user, nil
 }
 
-func (repo *usersRepository) FindById(uId int) (*users.UserWithRole, error) {
+func (repo *usersRepository) FindById(uId int) (*models.UserWithRole, error) {
 	query := `
 		SELECT 
 			u.id,
@@ -48,7 +49,7 @@ func (repo *usersRepository) FindById(uId int) (*users.UserWithRole, error) {
 		JOIN roles AS r ON r.id = u.role_id
 		WHERE u.id = $1
 	`
-	var user users.UserWithRole
+	var user models.UserWithRole
 	err := repo.db.Get(&user, query, uId)
 	if err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (repo *usersRepository) FindRoleByUserId(uId int) (string, error) {
 	return role, nil
 }
 
-func (repo *usersRepository) FindByEmail(email string) (*users.UserWithRole, error) {
+func (repo *usersRepository) FindByEmail(email string) (*models.UserWithRole, error) {
 	query := `
 		SELECT 
 			u.id,
@@ -83,7 +84,7 @@ func (repo *usersRepository) FindByEmail(email string) (*users.UserWithRole, err
 		JOIN roles AS r ON r.id = u.role_id
 		WHERE u.email = $1
 	`
-	var user users.UserWithRole
+	var user models.UserWithRole
 	err := repo.db.Get(&user, query, email)
 	if err != nil {
 		return nil, err
@@ -115,7 +116,7 @@ func (repo *usersRepository) Delete(uId int) error {
 }
 
 func (repo *usersRepository) UpdateName(userName string, uId int) (*int, error) {
-	user := &users.UserWithRole{
+	user := &models.UserWithRole{
 		Id:   uId,
 		Name: userName,
 	}
@@ -131,7 +132,7 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*int, error) 
 	return &uId, nil
 }
 
-func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role string) ([]users.UserWithRole, int, error) {
+func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role string) ([]models.UserWithRole, int, error) {
 	offset := (page - 1) * limit
 
 	args := []any{}
@@ -185,7 +186,7 @@ func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role s
 		LIMIT $` + strconv.Itoa(len(args)-1) + `
 		OFFSET $` + strconv.Itoa(len(args))
 
-	users := []users.UserWithRole{}
+	users := []models.UserWithRole{}
 	err = repo.db.Select(&users, query, args...)
 	if err != nil {
 		return nil, 0, err
@@ -193,9 +194,9 @@ func (repo *usersRepository) GetOnPage(page int, limit int, banned *bool, role s
 	return users, totalCount, nil
 }
 
-func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
+func (repo *usersRepository) GetAll() ([]models.UserWithRole, error) {
 	query := `SELECT * FROM users`
-	var users []users.UserWithRole
+	var users []models.UserWithRole
 	err := repo.db.Select(&users, query)
 	if err != nil {
 		return nil, err
@@ -204,7 +205,7 @@ func (repo *usersRepository) GetAll() ([]users.UserWithRole, error) {
 }
 
 func (repo *usersRepository) Ban(uId int) error {
-	user := &users.User{
+	user := &models.User{
 		Id:     uId,
 		Banned: true,
 	}
@@ -221,7 +222,7 @@ func (repo *usersRepository) Ban(uId int) error {
 }
 
 func (repo *usersRepository) Unban(uId int) error {
-	user := &users.User{
+	user := &models.User{
 		Id:     uId,
 		Banned: false,
 	}
@@ -237,7 +238,7 @@ func (repo *usersRepository) Unban(uId int) error {
 	return nil
 }
 
-func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
+func (repo *usersRepository) CountRoles() ([]models.StatUsers, error) {
 	query := `SELECT 
 			r.role,
 			COUNT(u.id) AS count,
@@ -246,7 +247,7 @@ func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
 		JOIN roles AS r 
 			ON u.role_id = r.id
 		GROUP BY r.role`
-	var stats []users.StatUsers
+	var stats []models.StatUsers
 	err := repo.db.Select(&stats, query)
 	if err != nil {
 		return nil, err
@@ -254,8 +255,8 @@ func (repo *usersRepository) CountRoles() ([]users.StatUsers, error) {
 	return stats, nil
 }
 
-func (repo *usersRepository) Roles() ([]users.Roles, error) {
-	var roles []users.Roles
+func (repo *usersRepository) Roles() ([]models.Roles, error) {
+	var roles []models.Roles
 	query := `SELECT * FROM roles ORDER BY role`
 	err := repo.db.Select(&roles, query)
 	if err != nil {

@@ -10,6 +10,11 @@ type Validator struct {
 	FieldErrors map[string]string
 }
 
+type FormValidationErr struct {
+	Name    string
+	Message string
+}
+
 var EmailRX = regexp.MustCompile(
 	`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@` +
 		`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?` +

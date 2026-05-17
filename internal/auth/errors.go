@@ -1,0 +1,16 @@
+package auth
+
+const (
+	UserExists     = "User already exists"
+	PassHash       = "Password error"
+	LoginError     = "Wrong email"
+	WrongPassword  = "Wrong password"
+	Unauthorized   = "Unauthorized"
+	SomethingWrong = "Something went wrong. Try later, please!"
+	EmailNotValid  = "Email is not valid"
+	LongPass       = "Password length more than 8 characters"
+	EmptyPass      = "Password cannot be blank"
+	EmptyName      = "Name cannot be blank"
+	WrongRole      = "Role can be user"
+	InvalidForm    = "Invalid form"
+)
