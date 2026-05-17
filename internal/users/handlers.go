@@ -7,7 +7,6 @@ import (
 	"time"
 	"user-profiles/internal/http/request"
 	"user-profiles/internal/models"
-	"user-profiles/internal/permissions"
 	"user-profiles/internal/templates"
 	"user-profiles/internal/utils"
 	"user-profiles/internal/validator"
@@ -65,8 +64,8 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 		cards = append(cards, models.UserData{
 			Profiles: profile,
 			Actions: models.Actions{
-				CanDeleteUser: permissions.CanDeleteUser(currRole, currUserId, profile.Id),
-				CanBanUser:    permissions.CanBanUser(currRole, currUserId, profile.Id),
+				CanDeleteUser: CanDeleteUser(currRole, currUserId, profile.Id),
+				CanBanUser:    CanBanUser(currRole, currUserId, profile.Id),
 			},
 		})
 	}
@@ -141,7 +140,7 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, _, err = permissions.SelfDeletionDetected(reqId, currId)
+	_, _, err = SelfDeletionDetected(reqId, currId)
 	if err != nil {
 		return
 	}
@@ -165,8 +164,8 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Profiles = *profile
 	data.Actions = models.Actions{
-		CanDeleteUser: permissions.CanDeleteUser(currRole, currId, reqId),
-		CanBanUser:    permissions.CanBanUser(currRole, currId, reqId),
+		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
+		CanBanUser:    CanBanUser(currRole, currId, reqId),
 	}
 	page := "user-" + v
 	err = h.TCache.RenderPartial(w, "users.tmpl", page, data)
@@ -185,7 +184,7 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, _, err = permissions.SelfDeletionDetected(reqId, currId)
+	_, _, err = SelfDeletionDetected(reqId, currId)
 	if err != nil {
 		return
 	}
@@ -209,8 +208,8 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Profiles = *profile
 	data.Actions = models.Actions{
-		CanDeleteUser: permissions.CanDeleteUser(currRole, currId, reqId),
-		CanBanUser:    permissions.CanBanUser(currRole, currId, reqId),
+		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
+		CanBanUser:    CanBanUser(currRole, currId, reqId),
 	}
 
 	page := "user-" + v

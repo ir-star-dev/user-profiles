@@ -1,4 +1,4 @@
-package permissions
+package posts
 
 func CanDeletePost(currentRole string) bool {
 	if currentRole == "admin" || currentRole == "moderator" {

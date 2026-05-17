@@ -5,7 +5,6 @@ import (
 
 	"user-profiles/internal/http/request"
 	"user-profiles/internal/models"
-	"user-profiles/internal/permissions"
 	"user-profiles/internal/posts"
 	"user-profiles/internal/templates"
 	"user-profiles/internal/users"
@@ -72,8 +71,8 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
 		Actions: models.Actions{
-			CanDeleteUser: permissions.CanDeleteUser(currUserRole, currUserId, profile.Id),
-			CanBanUser:    permissions.CanBanUser(currUserRole, currUserId, profile.Id),
+			CanDeleteUser: users.CanDeleteUser(currUserRole, currUserId, profile.Id),
+			CanBanUser:    users.CanBanUser(currUserRole, currUserId, profile.Id),
 		},
 		CreatedPosts: uPosts,
 	})

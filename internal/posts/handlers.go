@@ -8,7 +8,6 @@ import (
 
 	"user-profiles/internal/http/request"
 	"user-profiles/internal/models"
-	"user-profiles/internal/permissions"
 	"user-profiles/internal/sanitizer"
 	"user-profiles/internal/templates"
 	"user-profiles/internal/utils"
@@ -159,9 +158,9 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		cards = append(cards, models.PostData{
 			Posts: post,
 			Actions: models.Actions{
-				CanDeletePost:  permissions.CanDeletePost(currRole),
-				CanApprovePost: permissions.CanApprovePost(currRole),
-				CanEditPost:    permissions.CanEditPost(currRole, currUserId, post.UserId),
+				CanDeletePost:  CanDeletePost(currRole),
+				CanApprovePost: CanApprovePost(currRole),
+				CanEditPost:    CanEditPost(currRole, currUserId, post.UserId),
 			},
 		})
 	}
@@ -215,9 +214,9 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	data := models.PostData{
 		Posts: *post,
 		Actions: models.Actions{
-			CanDeletePost:  permissions.CanDeletePost(currUserRole),
-			CanEditPost:    permissions.CanEditPost(currUserRole, currUId, reqUId),
-			CanApprovePost: permissions.CanApprovePost(currUserRole),
+			CanDeletePost:  CanDeletePost(currUserRole),
+			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
+			CanApprovePost: CanApprovePost(currUserRole),
 		},
 	}
 	page := "post-" + v
@@ -256,9 +255,9 @@ func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
 	data := models.PostData{
 		Posts: *post,
 		Actions: models.Actions{
-			CanDeletePost:  permissions.CanDeletePost(currUserRole),
-			CanEditPost:    permissions.CanEditPost(currUserRole, currUId, reqUId),
-			CanApprovePost: permissions.CanApprovePost(currUserRole),
+			CanDeletePost:  CanDeletePost(currUserRole),
+			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
+			CanApprovePost: CanApprovePost(currUserRole),
 		},
 	}
 	page := "post-" + v
