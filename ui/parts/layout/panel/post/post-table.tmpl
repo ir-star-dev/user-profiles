@@ -1,5 +1,4 @@
 {{ define "post-table" }}
-<section class="col-12 p-4">
     <!-- PAGE HEADER -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
         <div>
@@ -12,6 +11,7 @@
             {{template "post-filter" .}}
         </div>
     </div>
+    
     <!-- FLASH MESSAGE -->
     <div id="flash-message" class="mb-3"></div>
 
@@ -26,7 +26,12 @@
     </script>
 
     {{ if .PostCards }}
-
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            Pages: {{ .Page }} of {{ .Pages }}
+        </div>
+        <div>Total: {{ .TotalPosts }}</div>
+    </div>
     <!-- TABLE CARD -->
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -37,6 +42,7 @@
 
                     <thead class="table-light">
                         <tr>
+                            <th>#</th>
                             <th>Title</th>
                             <th>Slug</th>
                             <th>CreatedAt</th>
@@ -49,8 +55,8 @@
 
                     <tbody>
 
-                        {{ range .PostCards }}
-                            {{template "post-row" . }}
+                        {{ range $i, $post := .PostCards }}
+                            {{template "post-row" $post }}
                         {{ end }}
 
                     </tbody>
@@ -68,5 +74,4 @@
     </div>
 
     {{ end }}
-    </section>
 {{end}}

@@ -1,5 +1,5 @@
 {{define "stats"}} 
-<div class="col-12 col-lg-7 mb-3">
+<div class="col-12 col-lg-4 mb-3">
     <div class="card shadow-sm border-0">
         <div class="card-body">
 
@@ -12,19 +12,23 @@
                     <div class="row g-3">
                         {{if .Stats.UserStats}}
                             {{range .Stats.UserStats}}
-                                <div class="col-3">
+                                <div class="col-6">
                                     <div class="p-3 bg-light rounded-3 text-center h-100">
                                         <div class="fw-bold fs-4">{{.Count}}</div>
-                                        <div class="small text-muted">{{.Role}}</div>
+                                        <div class="small text-muted">
+                                            <a class="text-muted text-decoration-none" target="_blank" href="/panel/users?role={{.Role}}">{{.Role}}</a>
+                                        </div>
                                     </div>
                                 </div>
                             {{end}}
                         {{end}}
 
-                        <div class="col-3">
+                        <div class="col-6">
                             <div class="p-3 bg-danger-subtle rounded-3 text-center h-100">
                                 <div class="fw-bold fs-4 text-danger">{{.Stats.Banned}}</div>
-                                <div class="small text-muted">Banned</div>
+                                <div class="small text-muted">
+                                    <a class="text-muted text-decoration-none" target="_blank" href="/panel/users?banned=true">Banned</a>
+                                </div>
                             </div>
                         </div>
 
@@ -43,7 +47,9 @@
                             <div class="col-6">
                                 <div class="p-3 bg-success-subtle rounded-3 text-center h-100">
                                     <div class="fw-bold fs-4 text-success">{{.Published}}</div>
-                                    <div class="small text-muted">Published</div>
+                                    <div class="small text-muted">
+                                        <a class="text-muted text-decoration-none" target="_blank" href="/panel/posts?approved=true">Published</a>
+                                    </div>
                                 </div>
                             </div>
                         
@@ -51,7 +57,7 @@
                             <div class="col-6">
                                 <div class="p-3 bg-warning-subtle rounded-3 text-center h-100">
                                     <div class="fw-bold fs-4 text-warning">{{.Pending}}</div>
-                                    <div class="small text-muted">Pending</div>
+                                    <a class="text-muted text-decoration-none" target="_blank" href="/panel/posts?approved=false">Pending</a>
                                 </div>
                             </div>
                         {{end}}
@@ -61,10 +67,6 @@
 
         </div>
     </div>
-
-    {{if eq .CurrentUserRole "admin"}}
-        {{template "logins" .Logins}}
-    {{end}}
 </div>
 
 {{end}}

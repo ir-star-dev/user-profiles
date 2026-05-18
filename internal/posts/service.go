@@ -93,8 +93,14 @@ func (s *postService) FindByUsername(username string) ([]models.PostWithUserName
 	return posts, nil
 }
 
-func (s *postService) GetOnPage(page int, limit int, approved *bool, username string) ([]models.PostWithUserName, int, error) {
-	posts, total, err := s.pRepo.GetOnPage(page, limit, approved, username)
+func (s *postService) GetOnPage(page int, limit int, approved *bool, username string, search string) ([]models.PostWithUserName, int, error) {
+	if len(search) < 2 {
+		search = ""
+	}
+	if len(search) > 100 {
+		search = search[:100]
+	}
+	posts, total, err := s.pRepo.GetOnPage(page, limit, approved, username, search)
 	if err != nil {
 		return nil, 0, err
 	}

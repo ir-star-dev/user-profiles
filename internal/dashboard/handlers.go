@@ -10,6 +10,7 @@ import (
 	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 )
 
 type DHandler struct {
@@ -42,7 +43,7 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	currUserRole, _ := h.UService.Role(currUserId)
-	
+
 	uIdFromReq, err := request.GetIdFromReq(r)
 	if err != nil {
 		h.TCache.PanelNotFound(w, r)
@@ -52,6 +53,7 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		RequestedUserId: uIdFromReq,
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 
 	profile, err := h.UService.Get(uIdFromReq)
@@ -64,20 +66,40 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		uPosts = make([]models.PostRows, 0)
 	}
+	groupedP := GroupPosts(uPosts)
 
 	var cards []models.UserData
 	cards = append(cards, models.UserData{
-		Profiles:        *profile,
+		Profiles: models.UserViewTable{
+			User:  *profile,
+		},
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currUserRole,
 		Actions: models.Actions{
 			CanDeleteUser: users.CanDeleteUser(currUserRole, currUserId, profile.Id),
 			CanBanUser:    users.CanBanUser(currUserRole, currUserId, profile.Id),
 		},
-		CreatedPosts: uPosts,
+		CreatedPosts: groupedP,
 	})
 
 	data.UserCards = cards
+
+	h.TCache.RenderPanel(w, r, http.StatusOK, "profile.tmpl", data)
+}
+
+func (h *DHandler) Statistics(w http.ResponseWriter, r *http.Request) {
+	currUserId, err := request.GetUserId(r)
+	if err != nil {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return
+	}
+	currUserRole, _ := h.UService.Role(currUserId)
+
+	data := models.PageData{
+		CurrentUserId:   currUserId,
+		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
+	}
 
 	stats, err := h.DService.GetStats()
 	if err != nil {
@@ -90,6 +112,18 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		logins = []models.LoginsResponse{}
 	}
 	data.Logins = logins
+	h.TCache.RenderPanel(w, r, http.StatusOK, "dashboard.tmpl", data)
+}
 
-	h.TCache.RenderPanel(w, r, http.StatusOK, "profile.tmpl", data)
+func GroupPosts(posts []models.PostRows) models.GroupedPosts {
+	var grouped models.GroupedPosts
+
+	for _, post := range posts {
+		if post.Approved {
+			grouped.Published = append(grouped.Published, post)
+		} else {
+			grouped.Pending = append(grouped.Pending, post)
+		}
+	}
+	return grouped
 }

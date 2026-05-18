@@ -1,5 +1,5 @@
 {{define "user-card"}}
-<div class="col-12 col-lg-5 mb-3">
+<div id="user-{{.Profiles.User.Id}}" class="col-12 col-lg-5 mb-3">
     <div id="flash-message"></div>
     <script>
         document.body.addEventListener("userDeleted", function () {
@@ -11,30 +11,30 @@
         });
     </script>
     <div class="card shadow-sm border-0 mb-6">
-        <div id="user-{{.Profiles.Id}}" class="card-body">
+        <div class="card-body">
             <!-- HEADER -->
             <div class="d-flex justify-content-between align-items-start mb-3">
             
             <div>
-                <h5 class="card-title mb-1">{{.Profiles.Name}}</h5>
-                <div class="text-muted small">{{.Profiles.Email}}</div>
+                <h5 class="card-title mb-1">{{.Profiles.User.Name}}</h5>
+                <div class="text-muted small">{{.Profiles.User.Email}}</div>
             </div>
 
             <!-- BANNED STATUS -->
-            <div id="div-badge-{{.Profiles.Id}}" style="text-align: end;">
-                <span class="badge text-bg-{{if .Profiles.Banned}}danger{{else}}success{{end}}" >
-                    {{if .Profiles.Banned}} Banned  {{else}} Active {{end}}
+            <div id="div-badge-{{.Profiles.User.Id}}" style="text-align: end;">
+                <span class="badge text-bg-{{if .Profiles.User.Banned}}danger{{else}}success{{end}}" >
+                    {{if .Profiles.User.Banned}} Banned  {{else}} Active {{end}}
                 </span>
-                <div class="text-muted small">Created At: {{.Profiles.CreatedAt.Format "02 Jan 2006"}}</div>
+                <div class="text-muted small">Created At: {{.Profiles.User.CreatedAt.Format "02 Jan 2006"}}</div>
             </div>
 
             </div>
 
             <hr>
             <!-- ACTIONS -->
-            <div id="actions-btn-{{.Profiles.Id}}" class="d-flex gap-2">
+            <div id="actions-btn-{{.Profiles.User.Id}}" class="d-flex gap-2">
                 <a
-                    hx-get="/panel/profile/{{.Profiles.Id}}/name"
+                    hx-get="/panel/profile/{{.Profiles.User.Id}}/name"
                     hx-target="#update-name-modal-container"
                     hx-swap="innerHTML"
                     class="btn btn-outline-primary btn-sm w-100">
@@ -42,16 +42,16 @@
                 </a>
 
                 {{if .Actions.CanBanUser}}
-                    {{if .Profiles.Banned}}
-                        <a  hx-patch="/panel/profile/{{.Profiles.Id}}/unban?view=card"
-                            hx-target="#user-{{.Profiles.Id}}"
+                    {{if .Profiles.User.Banned}}
+                        <a  hx-patch="/panel/profile/{{.Profiles.User.Id}}/unban?view=card"
+                            hx-target="#user-{{.Profiles.User.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-outline-secondary btn-sm w-100">
                             Unban
                         </a>
                     {{else}}
-                        <a  hx-patch="/panel/profile/{{.Profiles.Id}}/ban?view=card"
-                            hx-target="#user-{{.Profiles.Id}}"
+                        <a  hx-patch="/panel/profile/{{.Profiles.User.Id}}/ban?view=card"
+                            hx-target="#user-{{.Profiles.User.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-outline-secondary btn-sm w-100">
                             Ban
@@ -59,7 +59,7 @@
                     {{end}}
                 {{end}}
                 {{if .Actions.CanDeleteUser}}
-                <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
+                <a  hx-get="/panel/profile/{{.Profiles.User.Id}}/delete-confirm"
                     hx-target="#confirm-delete-user-modal-container"
                     hx-swap="innerHTML"
                     class="btn btn-outline-danger btn-sm w-100">
@@ -69,7 +69,7 @@
             </div>
         </div>
     </div>
-    {{template "created-posts" .CreatedPosts}}
+    
     
 </div>
 

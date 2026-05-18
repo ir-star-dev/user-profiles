@@ -13,6 +13,7 @@ import (
 	"user-profiles/internal/utils"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 )
 
 type PHandler struct {
@@ -33,10 +34,11 @@ func NewPostHandler(router chi.Router, deps PHandlerDeps) *PHandler {
 }
 
 func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
+	currUserRole, _ := request.GetUserRole(r.Context())
 	page := request.GetPageFromReq(r)
 	limit := 9
 	approved := true
-	posts, total, err := h.PService.GetOnPage(page, limit, &approved, "")
+	posts, total, err := h.PService.GetOnPage(page, limit, &approved, "", "")
 	if err != nil {
 		h.TCache.ServerError(w, r, err)
 		return
@@ -45,12 +47,15 @@ func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
 	postCards := make([]models.PostData, 0, len(posts))
 	for _, post := range posts {
 		postCards = append(postCards, models.PostData{
-			Posts: post,
+			Posts: models.PostViewTable{
+				Post: post,
+			},
 		})
 	}
 	currUserId, _ := request.GetUserId(r)
 	data := models.PageData{
 		CurrentUserId: currUserId,
+		CurrentUserRole: currUserRole,
 		PostCards:     postCards,
 		Loadmore: models.Loadmore{
 			Page:    page,
@@ -58,6 +63,7 @@ func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
 			HasMore: hasMore,
 			Total:   total,
 		},
+		CSRFToken: csrf.Token(r),
 	}
 	isHTMX := r.Header.Get("HX-Request") == "true"
 	if page > 1 || isHTMX {
@@ -74,6 +80,7 @@ func (h *PHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 	currUserId, _ := request.GetUserId(r)
 	data := models.PageData{
 		CurrentUserId: currUserId,
+		CSRFToken:     csrf.Token(r),
 	}
 	slug := r.PathValue("slug")
 	pId, err := utils.GetPostIdFromSlug(slug)
@@ -88,7 +95,9 @@ func (h *PHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 	}
 	var postCards []models.PostData
 	postCards = append(postCards, models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
 	})
 	data.PostCards = postCards
 	h.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
@@ -98,6 +107,7 @@ func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 	currUId, _ := request.GetUserId(r)
 	data := models.PageData{
 		CurrentUserId: currUId,
+		CSRFToken:     csrf.Token(r),
 	}
 	username := r.PathValue("username")
 	if username == "" {
@@ -116,7 +126,9 @@ func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 	postCards := make([]models.PostData, 0, len(ps))
 	for _, post := range ps {
 		postCards = append(postCards, models.PostData{
-			Posts: post,
+			Posts: models.PostViewTable{
+				Post: post,
+			},
 		})
 	}
 	data.PostCards = postCards
@@ -127,6 +139,7 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	page := request.GetPageFromReq(r)
 	approved := request.GetFilterValue(r, "approved")
 	username := request.GetFilterValue(r, "username")
+	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
 
 	currUserId, err := request.GetUserId(r)
 	if err != nil {
@@ -137,6 +150,7 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	var ap *bool
 	if approved != "" {
@@ -146,17 +160,26 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		}
 		ap = &v
 	}
-	posts, res, err := h.PService.GetOnPage(page, 10, ap, username)
+	posts, totalPosts, err := h.PService.GetOnPage(page, 10, ap, username, search)
 	if err != nil {
 		h.TCache.ServerError(w, r, err)
 		return
 	}
 	authors, _ := h.PService.Authors()
 
+	totalPages := (totalPosts + 10 - 1) / 10
+	pages := []int{}
+	for i := 1; i <= totalPages; i++ {
+		pages = append(pages, i)
+	}
+
 	var cards []models.PostData
-	for _, post := range posts {
+	for i, post := range posts {
 		cards = append(cards, models.PostData{
-			Posts: post,
+			Posts: models.PostViewTable{
+				Post:  post,
+				Index: ((page - 1) * 10) + i + 1,
+			},
 			Actions: models.Actions{
 				CanDeletePost:  CanDeletePost(currRole),
 				CanApprovePost: CanApprovePost(currRole),
@@ -165,12 +188,6 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	totalPages := (res + 10 - 1) / 10
-
-	pages := []int{}
-	for i := 1; i <= totalPages; i++ {
-		pages = append(pages, i)
-	}
 	pagination := h.TCache.BuildPagination(page, totalPages, "/panel/posts")
 	data.Pagination = pagination
 	data.PostCards = cards
@@ -178,9 +195,18 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	data.Filters = map[string]string{
 		"approved": approved,
 		"username": username,
+		"search":   search,
 	}
-	data.HasFilters = page > 1 || approved != "" || username != ""
+	data.HasFilters = page > 1 || approved != "" || username != "" || search != ""
 
+	data.TotalPosts = totalPosts
+	data.Page = page
+	data.Pages = len(pages)
+
+	if r.Header.Get("HX-Request") == "true" {
+		h.TCache.RenderPartial(w, "posts.tmpl", "post-table", data)
+		return
+	}
 	h.TCache.RenderPanel(w, r, http.StatusOK, "posts.tmpl", data)
 }
 
@@ -212,7 +238,9 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
 		Actions: models.Actions{
 			CanDeletePost:  CanDeletePost(currUserRole),
 			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
@@ -253,7 +281,9 @@ func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
 		Actions: models.Actions{
 			CanDeletePost:  CanDeletePost(currUserRole),
 			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
@@ -278,10 +308,13 @@ func (h *PHandler) DeletePostConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	var cards []models.PostData
 	cards = append(cards, models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
 	})
 	data := models.PageData{
 		PostCards: cards,
+		CSRFToken: csrf.Token(r),
 	}
 	err = h.TCache.RenderPartial(w, "posts.tmpl", "confirm-delete-post-modal", data)
 	if err != nil {
@@ -311,6 +344,7 @@ func (h *PHandler) CreatePostForm(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	h.TCache.RenderPanel(w, r, http.StatusOK, "create-post.tmpl", data)
 }
@@ -325,6 +359,7 @@ func (h *PHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	title := strings.TrimSpace(r.FormValue("title"))
 	excerpt := sanitizer.SanitizeContent(strings.TrimSpace(r.FormValue("excerpt")))
@@ -358,6 +393,7 @@ func (h *PHandler) PreviewPost(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
@@ -371,7 +407,12 @@ func (h *PHandler) PreviewPost(w http.ResponseWriter, r *http.Request) {
 	}
 	var postCards []models.PostData
 	postCards = append(postCards, models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
+		Actions: models.Actions{
+			CanApprovePost: CanApprovePost(currUserRole),
+		},
 	})
 	data.PostCards = postCards
 	h.TCache.RenderPanel(w, r, http.StatusOK, "preview-post.tmpl", data)
@@ -387,6 +428,7 @@ func (h *PHandler) EditPostForm(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
@@ -400,7 +442,9 @@ func (h *PHandler) EditPostForm(w http.ResponseWriter, r *http.Request) {
 	}
 	var postCard []models.PostData
 	postCard = append(postCard, models.PostData{
-		Posts: *post,
+		Posts: models.PostViewTable{
+			Post: *post,
+		},
 	})
 	data.PostCards = postCard
 	h.TCache.RenderPanel(w, r, http.StatusOK, "edit-post.tmpl", data)
@@ -416,13 +460,14 @@ func (h *PHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
 		h.TCache.PanelNotFound(w, r)
 		return
 	}
-	
+
 	title := strings.TrimSpace(r.FormValue("title"))
 	content := sanitizer.SanitizeContent(strings.TrimSpace(r.FormValue("content")))
 	excerpt := sanitizer.SanitizeContent(strings.TrimSpace(r.FormValue("excerpt")))

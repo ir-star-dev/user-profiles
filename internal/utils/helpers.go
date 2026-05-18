@@ -53,3 +53,7 @@ func GetPostIdFromSlug(slug string) (*int, error) {
 	}
 	return &pId, nil
 }
+
+func Increment(a, b int) int {
+	return a + b
+}

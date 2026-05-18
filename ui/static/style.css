@@ -45,3 +45,7 @@
 #editor {
     height: 400px;
 }
+
+a, button {
+    cursor: pointer !important;
+}

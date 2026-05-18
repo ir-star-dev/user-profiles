@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log"
 	"net/http"
 	"path/filepath"
 	"user-profiles/internal/models"
@@ -18,6 +19,7 @@ type Templates struct {
 
 var functions = template.FuncMap{
 	"withQuery": utils.WithQuery,
+	"add":       utils.Increment,
 }
 
 func NewTemplateCache() (*Templates, error) {
@@ -108,6 +110,7 @@ func (t *Templates) RenderSpecialTemplate(w http.ResponseWriter, page, name stri
 }
 
 func (t *Templates) ServerError(w http.ResponseWriter, r *http.Request, err error) {
+	log.Println(err)
 	err, buf := t.RenderSpecialTemplate(w, "500.tmpl", "500")
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

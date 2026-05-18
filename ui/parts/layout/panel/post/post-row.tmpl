@@ -1,25 +1,29 @@
 {{define "post-row"}}
-<tr id="post-{{.Posts.Id}}">
+<tr id="post-{{.Posts.Post.Id}}">
+        <!-- INDEX -->
+        <td>
+            <div class="fw-semibold">{{ .Posts.Index }}</div>
+        </td>
         <!-- NAME -->
         <td>
-            <div class="fw-semibold">{{ .Posts.Title }}</div>
+            <div class="fw-semibold">{{ .Posts.Post.Title }}</div>
         </td>
         <!-- EMAIL -->
         <td>
-            <span class="text-muted">{{ .Posts.Slug }}</span>
+            <span class="text-muted">{{ .Posts.Post.Slug }}</span>
         </td>
         <!-- CREATED -->
-        <td>{{ .Posts.CreatedAt.Format "02 Jan 2006" }}</td>
+        <td>{{ .Posts.Post.CreatedAt.Format "02 Jan 2006" }}</td>
         <!-- UPDATED -->
-        <td>{{ .Posts.UpdatedAt.Format "02 Jan 2006" }}</td>
+        <td>{{ .Posts.Post.UpdatedAt.Format "02 Jan 2006" }}</td>
         <!-- Author -->
         <td>
-            <span class="badge text-bg-secondary">{{ .Posts.Username }}</span>
+            <span class="badge text-bg-secondary">{{ .Posts.Post.Username }}</span>
         </td>
 
         <!-- Status -->
         <td>
-            {{ if .Posts.Approved }}
+            {{ if .Posts.Post.Approved }}
                 <span class="badge text-bg-success">Published</span>
             {{ else }}
                 <span class="badge text-bg-warning">Pending</span>
@@ -29,26 +33,26 @@
         <!-- ACTIONS -->
         <td class="text-end">
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
-                {{ if .Posts.Approved }}
+                {{ if .Posts.Post.Approved }}
                 <a
-                    href="/posts/post/{{.Posts.Slug}}"
+                    href="/posts/post/{{.Posts.Post.Slug}}"
                     target="_blank"
                     class="btn btn-sm btn-outline-primary">
                     View
                 </a>
                 {{else}}
-                {{ if .Actions.CanApprovePost }}
-                <a
-                    href="/panel/posts/post/{{.Posts.Id}}/preview"
-                    target="_blank"
-                    class="btn btn-sm btn-outline-secondary">
-                    Preview
-                </a>
-                {{end}}
+                    {{ if .Actions.CanApprovePost }}
+                    <a
+                        href="/panel/posts/post/{{.Posts.Post.Id}}/preview"
+                        target="_blank"
+                        class="btn btn-sm btn-outline-secondary">
+                        Preview
+                    </a>
+                    {{end}}
                 {{end}}
 
                 {{if .Actions.CanEditPost}}
-                    <a href="/panel/posts/post/{{.Posts.Id}}/edit"
+                    <a href="/panel/posts/post/{{.Posts.Post.Id}}/edit"
                         class="btn btn-sm btn-outline-danger">
                         Edit
                     </a>
@@ -56,18 +60,18 @@
 
                 {{ if .Actions.CanApprovePost }}
 
-                    {{ if .Posts.Approved }}
+                    {{ if .Posts.Post.Approved }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Id}}/review?view=row"
-                            hx-target="#post-{{.Posts.Id}}"
+                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/review?view=row"
+                            hx-target="#post-{{.Posts.Post.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
                             Review
                         </a>
                     {{ else }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Id}}/publish?view=row"
-                            hx-target="#post-{{.Posts.Id}}"
+                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/publish?view=row"
+                            hx-target="#post-{{.Posts.Post.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
                             Publish
@@ -75,7 +79,7 @@
                     {{ end }}
 
                     {{if .Actions.CanDeletePost}}
-                        <a  hx-get="/panel/posts/post/{{.Posts.Id}}/delete-confirm"
+                        <a  hx-get="/panel/posts/post/{{.Posts.Post.Id}}/delete-confirm"
                             hx-target="#confirm-delete-user-modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">

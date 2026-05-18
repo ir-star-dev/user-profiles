@@ -15,7 +15,7 @@ type Repository interface {
 	FindRoleByUserId(uId int) (string, error)
 	FindBanStatus(uId int) (*bool, error)
 
-	GetOnPage(page int, limit int, banned *bool, role string) ([]models.UserWithRole, int, error)
+	GetOnPage(page, limit int, banned *bool, role, search string) ([]models.UserWithRole, int, error)
 	CountRoles() ([]models.StatUsers, error)
 	Roles() ([]models.Roles, error)
 
@@ -28,7 +28,7 @@ type UsersService interface {
 	Get(uId int) (*models.UserWithRole, error)
 	ChangeName(uId int, name string) ([]validator.FormValidationErr, *string, error)
 	Delete(uId int) error
-	GetOnPage(page int, limit int, banned *bool, role string) ([]models.UserWithRole, int, error)
+	GetOnPage(page, limit int, banned *bool, role, search string) ([]models.UserWithRole, int, error)
 	Role(uId int) (string, error)
 
 	Ban(uId int) error

@@ -22,19 +22,34 @@ type PageData struct {
 	PostCreated       PostCreated
 	PostUpdated       PostUpdated
 	Logins            []LoginsResponse
+	CSRFToken         string
+	TotalPosts        int
+	TotalUsers        int
+	Page              int
+	Pages             int
 }
 
 type UserData struct {
-	Profiles        UserWithRole
+	Profiles        UserViewTable
 	CurrentUserId   int
 	CurrentUserRole string
 	Actions         Actions
-	CreatedPosts    []PostRows
+	CreatedPosts    GroupedPosts
 }
 
 type PostData struct {
-	Posts   PostWithUserName
+	Posts   PostViewTable
 	Actions Actions
+}
+
+type PostViewTable struct {
+	Post  PostWithUserName
+	Index int
+}
+
+type UserViewTable struct {
+	User  UserWithRole
+	Index int
 }
 
 type Actions struct {
@@ -82,4 +97,9 @@ type Stats struct {
 	UserStats []StatUsers
 	Banned    int
 	PostStats []PostsStatus
+}
+
+type GroupedPosts struct {
+	Published []PostRows
+	Pending   []PostRows
 }

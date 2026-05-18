@@ -12,6 +12,7 @@ import (
 	"user-profiles/internal/validator"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 )
 
 type UHandler struct {
@@ -35,6 +36,7 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 	page := request.GetPageFromReq(r)
 	role := request.GetFilterValue(r, "role")
 	banned := request.GetFilterValue(r, "banned")
+	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
 
 	currUserId, err := request.GetUserId(r)
 	if err != nil {
@@ -53,16 +55,20 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   currUserId,
 		CurrentUserRole: currRole,
+		CSRFToken:       csrf.Token(r),
 	}
-	profiles, res, err := h.UService.GetOnPage(page, 10, bn, role)
+	profiles, totalUsers, err := h.UService.GetOnPage(page, 10, bn, role, search)
 	if err != nil {
 		h.TCache.ServerError(w, r, err)
 		return
 	}
 	var cards []models.UserData
-	for _, profile := range profiles {
+	for i, profile := range profiles {
 		cards = append(cards, models.UserData{
-			Profiles: profile,
+			Profiles: models.UserViewTable{
+				User:  profile,
+				Index: ((page - 1) * 10) + i + 1,
+			},
 			Actions: models.Actions{
 				CanDeleteUser: CanDeleteUser(currRole, currUserId, profile.Id),
 				CanBanUser:    CanBanUser(currRole, currUserId, profile.Id),
@@ -70,7 +76,7 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	totalPages := (res + 10 - 1) / 10
+	totalPages := (totalUsers + 10 - 1) / 10
 
 	pages := []int{}
 	for i := 1; i <= totalPages; i++ {
@@ -85,8 +91,18 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 	data.Filters = map[string]string{
 		"banned": banned,
 		"role":   role,
+		"search": search,
 	}
-	data.HasFilters = page > 1 || banned != "" || role != ""
+	data.TotalUsers = totalUsers
+	data.Page = page
+	data.Pages = len(pages)
+
+	data.HasFilters = page > 1 || banned != "" || role != "" || search != ""
+
+	if r.Header.Get("HX-Request") == "true" {
+		h.TCache.RenderPartial(w, "users.tmpl", "user-table", data)
+		return
+	}
 
 	h.TCache.RenderPanel(w, r, http.StatusOK, "users.tmpl", data)
 }
@@ -105,10 +121,13 @@ func (h *UHandler) UpdateNameModal(w http.ResponseWriter, r *http.Request) {
 
 	var cards []models.UserData
 	cards = append(cards, models.UserData{
-		Profiles: *profile,
+		Profiles: models.UserViewTable{
+			User:  *profile,
+		},
 	})
 	data := models.PageData{
 		UserCards: cards,
+		CSRFToken: csrf.Token(r),
 	}
 	err = h.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal", data)
 	if err != nil {
@@ -162,7 +181,9 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/panel/users", http.StatusSeeOther)
 		return
 	}
-	data.Profiles = *profile
+	data.Profiles = models.UserViewTable{
+		User: *profile,
+	}
 	data.Actions = models.Actions{
 		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
 		CanBanUser:    CanBanUser(currRole, currId, reqId),
@@ -206,7 +227,9 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/panel/users", http.StatusSeeOther)
 		return
 	}
-	data.Profiles = *profile
+	data.Profiles = models.UserViewTable{
+		User: *profile,
+	}
 	data.Actions = models.Actions{
 		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
 		CanBanUser:    CanBanUser(currRole, currId, reqId),
@@ -231,10 +254,13 @@ func (h *UHandler) DeleteUserConfirm(w http.ResponseWriter, r *http.Request) {
 	}
 	var cards []models.UserData
 	cards = append(cards, models.UserData{
-		Profiles: *profile,
+		Profiles: models.UserViewTable{
+			User: *profile,
+		},
 	})
 	data := models.PageData{
 		UserCards: cards,
+		CSRFToken: csrf.Token(r),
 	}
 	err = h.TCache.RenderPartial(w, "users.tmpl", "confirm-delete-user-modal", data)
 	if err != nil {
@@ -283,6 +309,7 @@ func (h *UHandler) CreateUserForm(w http.ResponseWriter, r *http.Request) {
 	data := models.PageData{
 		CurrentUserId:   uId,
 		CurrentUserRole: currUserRole,
+		CSRFToken:       csrf.Token(r),
 	}
 	h.TCache.RenderPanel(w, r, http.StatusOK, "create-user.tmpl", data)
 }
@@ -298,6 +325,7 @@ func (h *UHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		CurrentUserId:     uId,
 		CurrentUserRole:   currUserRole,
 		FormValidationErr: []validator.FormValidationErr{},
+		CSRFToken:         csrf.Token(r),
 	}
 	email := strings.TrimSpace(r.FormValue("email"))
 	name := strings.TrimSpace(r.FormValue("name"))

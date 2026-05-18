@@ -2,7 +2,7 @@
 
 {{ define "title" }} 
     {{range .PostCards}}
-        Preview: {{.Posts.Title}} 
+        Preview: {{.Posts.Post.Title}} 
     {{end}}
 {{ end }}
 
@@ -13,34 +13,34 @@
         <div class="col-12 col-lg-10">
             <div class="card shadow-sm border-0">
                 {{range .PostCards}}                
-                <div id="post-{{.Posts.Id}}" class="card-body p-4 p-md-5">
+                <div id="post-{{.Posts.Post.Id}}" class="card-body p-4 p-md-5">
                     <!-- Title -->
-                    <h1 class="mb-3">{{.Posts.Title}}</h1>
+                    <h1 class="mb-3">{{.Posts.Post.Title}}</h1>
                     <!-- Meta -->
                     <div class="text-muted mb-4">
                         Author:
-                        <a href="/posts/user/{{.Posts.Username}}"
+                        <a href="/posts/user/{{.Posts.Post.Username}}"
                            class="badge text-bg-success text-decoration-none">
-                            {{.Posts.Username}}
+                            {{.Posts.Post.Username}}
                         </a>
                         <span class="mx-2">•</span>
                         Created:
-                        {{.Posts.CreatedAt.Format "02 Jan 2006 15:04"}}
+                        {{.Posts.Post.CreatedAt.Format "02 Jan 2006 15:04"}}
                         <span class="mx-2">•</span>
                         Status:
-                        {{ if not .Posts.Approved }}
+                        {{ if not .Posts.Post.Approved }}
                         <span class="badge text-bg-warning">Pending</span>
                         {{end}}
                     </div>
 
                     <!-- Excerpt -->
                     <div class="post-content fs-5 lh-lg">
-                        {{.Posts.Excerpt}}
+                        {{.Posts.Post.Excerpt}}
                     </div>
                     <hr>
                     <!-- Content -->
                     <div class="post-content fs-5 lh-lg">
-                        {{.Posts.Content}}
+                        {{.Posts.Post.Content}}
                     </div>
                     <!-- Actions -->
                     <div class="mt-5 d-flex gap-2">
@@ -48,27 +48,31 @@
                            class="btn btn-outline-secondary">
                             Back to Posts
                         </a>
-                        <a href="/panel/posts/post/{{.Posts.Id}}/edit"
+                        <a href="/panel/posts/post/{{.Posts.Post.Id}}/edit"
                            class="btn btn-outline-primary">
                             Edit
                         </a>
-                        {{ if .Posts.Approved }}
-                            <a
-                                hx-patch="/panel/posts/post/{{.Posts.Id}}/review?view=card"
-                                hx-target="#post-{{.Posts.Id}}"
-                                hx-swap="outerHTML"
-                                class="btn btn-warning">
-                                Review
-                            </a>
-                        {{ else }}
-                            <a
-                                hx-patch="/panel/posts/post/{{.Posts.Id}}/publish?view=card"
-                                hx-target="#post-{{.Posts.Id}}"
-                                hx-swap="outerHTML"
-                                class="btn btn-success">
-                                Publish
-                            </a>
-                        {{ end }}
+                        {{ if .Actions.CanApprovePost }}
+                            {{ if .Posts.Post.Approved }}
+                                <a
+                                    hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/review?view=card"
+                                    hx-target="#post-{{.Posts.Post.Id}}"
+                                    hx-swap="outerHTML"
+                                    class="btn btn-warning">
+                                    Review
+                                </a>
+                            {{ else }}
+                                
+                                <a
+                                    hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/publish?view=card"
+                                    hx-target="#post-{{.Posts.Post.Id}}"
+                                    hx-swap="outerHTML"
+                                    class="btn btn-success">
+                                    Publish
+                                </a>
+                                
+                            {{ end }}
+                        {{end}}
                     </div>
                 </div>
                 {{end}}

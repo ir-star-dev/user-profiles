@@ -1,7 +1,9 @@
 {{ define "title" }}Users{{ end }}
 
 {{ define "content" }}
+<section id="users-table" class="col-12 p-4">
   {{template "user-table" . }}
+</section>
   {{template "confirm-delete-user-modal" .}}
 {{ end }}
 

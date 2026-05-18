@@ -5,7 +5,7 @@
         {{if .PostCards}}
         {{range .PostCards}}
         <form class="px-3" 
-            hx-patch="/panel/posts/post/{{.Posts.Id}}/edit" 
+            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/edit" 
             hx-target="#result" 
             hx-swap="innerHTML"
             >
@@ -14,15 +14,15 @@
             <div id="result" class="my-3"></div>
 
             <div class="mb-3">
-                <input type="hidden" class="form-control" value="{{.Posts.CreatedAt}}" name="created_at">
-                <input type="text" class="form-control" value="{{.Posts.Title}}" name="title" required placeholder="Title" minlength="3" maxlength="99">
+                <input type="hidden" class="form-control" value="{{.Posts.Post.CreatedAt}}" name="created_at">
+                <input type="text" class="form-control" value="{{.Posts.Post.Title}}" name="title" required placeholder="Title" minlength="3" maxlength="99">
             </div>
             <div class="mb-3">
-                <textarea rows="5" name="excerpt" class="form-control" placeholder="Excerpt" required minlength="100" maxlength="300">{{.Posts.Excerpt}}</textarea>
+                <textarea rows="5" name="excerpt" class="form-control" placeholder="Excerpt" required minlength="100" maxlength="300">{{.Posts.Post.Excerpt}}</textarea>
             </div>
             <div class="mb-3">
                 <textarea name="content" id="content" style="display:none;"></textarea>
-                <div id="editor">{{.Posts.Content}}</div>
+                <div id="editor">{{.Posts.Post.Content}}</div>
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success col-12">Save</button>

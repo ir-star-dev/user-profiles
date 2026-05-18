@@ -9,18 +9,17 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
                 <div>
                     <h1 class="h3 mb-1">
-                        {{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.Name}} Profile{{end}}
+                        {{if eq $page.RequestedUserId $page.CurrentUserId}}My Profile{{else}}{{.Profiles.User.Name}} Profile{{end}}
                     </h1>
                     <p class="text-muted mb-0">
-                        View profile and statistics
+                        View profile and created posts status
                     </p>
                 </div>
             </div>
             <div class="row">
                 {{template "user-card" .}}
-                {{template "stats" $page}}
+                {{template "created-posts" .CreatedPosts}}
             </div>
-        </div>
         {{end}}
     {{end}}
     </section>

@@ -14,11 +14,11 @@
                     </div>
 
                     <form
-                        hx-patch="/panel/profile/{{.Profiles.Id}}/name"
+                        hx-patch="/panel/profile/{{.Profiles.User.Id}}/name"
                         hx-target="body"
                         hx-swap="innerHTML">
                         <div class="modal-body">
-                            <input type="text" name="name" value="{{.Profiles.Name}}" class="form-control" required minlength="3">
+                            <input type="text" name="name" value="{{.Profiles.User.Name}}" class="form-control" required minlength="3">
                         </div>
 
                         <div class="modal-footer">

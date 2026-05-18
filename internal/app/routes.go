@@ -44,6 +44,9 @@ func InitRoutes(router chi.Router, ah *auth.AHandler, ph *posts.PHandler, dh *da
 	router.Route(("/panel"), func(router chi.Router) {
 		router.Use(middlewares.SoftAuthMiddleware(ah.JWTService, ah.AService))
 
+		// Dashboard
+		router.With(middlewares.RoleMiddleware(tc, "admin")).Get("/dashboard", dh.Statistics)
+
 		// Posts
 		router.Get("/posts", ph.Posts)
 		router.Get("/posts/post/{id}/preview", ph.PreviewPost)

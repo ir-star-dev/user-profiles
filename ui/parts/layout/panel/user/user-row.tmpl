@@ -1,16 +1,20 @@
 {{define "user-row"}}
-<tr id="user-{{ .Profiles.Id }}">
+<tr id="user-{{ .Profiles.User.Id }}">
+        <!-- INDEX -->
+        <td>
+            <div class="fw-semibold">{{ .Profiles.Index }}</div>
+        </td>
         <!-- NAME -->
         <td>
-            <div class="fw-semibold">{{ .Profiles.Name }}</div>
+            <div class="fw-semibold">{{ .Profiles.User.Name }}</div>
         </td>
         <!-- EMAIL -->
         <td>
-            <span class="text-muted">{{ .Profiles.Email }}</span>
+            <span class="text-muted">{{ .Profiles.User.Email }}</span>
         </td>
         <!-- STATUS -->
         <td>
-            {{ if .Profiles.Banned }}
+            {{ if .Profiles.User.Banned }}
                 <span class="badge text-bg-danger">Banned</span>
             {{ else }}
                 <span class="badge text-bg-success">Active</span>
@@ -18,16 +22,16 @@
         </td>
         <!-- ROLE -->
         <td>
-            <span class="badge text-bg-secondary">{{ .Profiles.Role }}</span>
+            <span class="badge text-bg-secondary">{{ .Profiles.User.Role }}</span>
         </td>
         <!-- CREATED -->
-        <td>{{ .Profiles.CreatedAt.Format "02 Jan 2006" }}</td>
+        <td>{{ .Profiles.User.CreatedAt.Format "02 Jan 2006" }}</td>
 
         <!-- ACTIONS -->
         <td class="text-end">
             <div class="d-flex flex-column flex-lg-row gap-2 justify-content-end">
                 <a
-                    href="/panel/profile/{{ .Profiles.Id }}"
+                    href="/panel/profile/{{ .Profiles.User.Id }}"
                     target="_blank"
                     class="btn btn-sm btn-outline-primary">
                     View
@@ -35,18 +39,18 @@
 
                 {{ if .Actions.CanBanUser }}
 
-                    {{ if .Profiles.Banned }}
+                    {{ if .Profiles.User.Banned }}
                         <a
-                            hx-patch="/panel/profile/{{ .Profiles.Id }}/unban?view=row"
-                            hx-target="#user-{{ .Profiles.Id }}"
+                            hx-patch="/panel/profile/{{ .Profiles.User.Id }}/unban?view=row"
+                            hx-target="#user-{{ .Profiles.User.Id }}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
                             Unban
                         </a>
                     {{ else }}
                         <a
-                            hx-patch="/panel/profile/{{ .Profiles.Id }}/ban?view=row"
-                            hx-target="#user-{{ .Profiles.Id }}"
+                            hx-patch="/panel/profile/{{ .Profiles.User.Id }}/ban?view=row"
+                            hx-target="#user-{{ .Profiles.User.Id }}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
                             Ban
@@ -54,7 +58,7 @@
                     {{ end }}
 
                     {{if .Actions.CanDeleteUser}}
-                        <a  hx-get="/panel/profile/{{.Profiles.Id}}/delete-confirm"
+                        <a  hx-get="/panel/profile/{{.Profiles.User.Id}}/delete-confirm"
                             hx-target="#confirm-delete-user-modal-container"
                             hx-swap="innerHTML"
                             class="btn btn-sm btn-outline-danger">

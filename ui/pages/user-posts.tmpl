@@ -2,7 +2,7 @@
 
 {{ define "title" }} 
     {{if .PostCards}}
-        {{(index .PostCards 0).Posts.Username}} Posts
+        {{(index .PostCards 0).Posts.Post.Username}} Posts
     {{end}}
 {{ end }}
 

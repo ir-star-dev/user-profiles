@@ -106,11 +106,17 @@ func (repo *postRepository) FindByUsername(username string) ([]models.PostWithUs
 	return p, nil
 }
 
-func (repo *postRepository) GetOnPage(page int, limit int, approved *bool, username string) ([]models.PostWithUserName, int, error) {
+func (repo *postRepository) GetOnPage(page, limit int, approved *bool, username, search string) ([]models.PostWithUserName, int, error) {
 	offset := (page - 1) * limit
 
 	args := []any{}
 	conditions := []string{}
+
+	// search
+	if search != "" {
+		args = append(args, "%"+search+"%")
+		conditions = append(conditions, "(p.title ILIKE $"+strconv.Itoa(len(args))+" OR u.username ILIKE $"+strconv.Itoa(len(args))+" )")
+	}
 
 	// approved
 	if approved != nil {
@@ -242,6 +248,7 @@ func (repo *postRepository) GetMyPostList(uId int) ([]models.PostRows, error) {
 		JOIN users AS u 
 		ON p.user_id = u.id 
 		WHERE u.id = $1
+		ORDER BY p.created_at DESC, p.updated_at DESC
 	`
 	err := repo.db.Select(&posts, query, uId)
 	if err != nil {

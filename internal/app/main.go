@@ -56,7 +56,11 @@ func Run() error {
 	// Mux
 	mux := chi.NewRouter()
 	// Middlewares
-	mux.Use(middlewares.CORS, tc.RecoverPanic)
+	mux.Use(
+		tc.RecoverPanic,
+		//middlewares.CORS,
+		middlewares.CSRF(false),
+	)
 
 	dH := dashboard.NewDashboardHandler(mux, dashboard.DHandlerDeps{
 		UService: uS,

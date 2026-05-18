@@ -13,7 +13,7 @@
                     Are you sure you want to delete
                     {{if .UserCards}}
                         {{range .UserCards}}
-                            <strong>{{.Profiles.Name}}</strong>?
+                            <strong>{{.Profiles.User.Name}}</strong>?
                         {{end}}
                     {{end}}
                 </div>
@@ -24,8 +24,8 @@
                     {{if .UserCards}}
                         {{range .UserCards}}
                             <button
-                                hx-delete="/panel/profile/{{.Profiles.Id}}"
-                                hx-target="#user-{{.Profiles.Id}}"
+                                hx-delete="/panel/profile/{{.Profiles.User.Id}}"
+                                hx-target="#user-{{.Profiles.User.Id}}"
                                 hx-swap="outerHTML"
                                 class="btn btn-danger"
                                 data-bs-dismiss="modal">

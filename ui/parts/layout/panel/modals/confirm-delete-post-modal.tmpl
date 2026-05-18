@@ -13,7 +13,7 @@
                     Are you sure you want to delete
                     {{if .PostCards}}
                         {{range .PostCards}}
-                            <strong>{{.Posts.Title}}</strong>?
+                            <strong>{{.Posts.Post.Title}}</strong>?
                         {{end}}
                     {{end}}
                 </div>
@@ -24,8 +24,8 @@
                     {{if .PostCards}}
                         {{range .PostCards}}
                             <button
-                                hx-delete="/panel/posts/post/{{.Posts.Id}}"
-                                hx-target="#post-{{.Posts.Id}}"
+                                hx-delete="/panel/posts/post/{{.Posts.Post.Id}}"
+                                hx-target="#post-{{.Posts.Post.Id}}"
                                 hx-swap="outerHTML"
                                 class="btn btn-danger"
                                 data-bs-dismiss="modal">

@@ -12,6 +12,7 @@ import (
 	"user-profiles/internal/utils"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 )
 
 type AHandlerDeps struct {
@@ -38,12 +39,16 @@ func NewAuthHandler(router chi.Router, deps AHandlerDeps) *AHandler {
 }
 
 func (h *AHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
-	data := models.PageData{}
+	data := models.PageData{
+		CSRFToken: csrf.Token(r),
+	}
 	h.TCache.Render(w, r, http.StatusOK, "base", "login.tmpl", data)
 }
 
 func (h *AHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
-	data := models.PageData{}
+	data := models.PageData{
+		CSRFToken: csrf.Token(r),
+	}
 	h.TCache.Render(w, r, http.StatusOK, "base", "signup.tmpl", data)
 }
 
@@ -53,8 +58,9 @@ func (h *AHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	data, formValidErr, err := h.AService.Login(email, password)
 	if err != nil {
-		data := models.PageData {
+		data := models.PageData{
 			FormValidationErr: formValidErr,
+			CSRFToken: csrf.Token(r),
 		}
 		err = h.TCache.RenderPartial(w, "login.tmpl", "form-submit-error", data)
 		if err != nil {
@@ -82,8 +88,9 @@ func (h *AHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	formValidErr, err := h.AService.Register(email, password, name, role)
 	if err != nil {
-		data := models.PageData {
+		data := models.PageData{
 			FormValidationErr: formValidErr,
+			CSRFToken: csrf.Token(r),
 		}
 		err := h.TCache.RenderPartial(w, "signup.tmpl", "form-submit-error", data)
 		if err != nil {

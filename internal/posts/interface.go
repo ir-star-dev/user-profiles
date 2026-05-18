@@ -16,7 +16,7 @@ type Repository interface {
 	FindById(pId int) (*models.PostWithUserName, error)
 	FindByUsername(username string) ([]models.PostWithUserName, error)
 
-	GetOnPage(page int, limit int, approved *bool, username string) ([]models.PostWithUserName, int, error)
+	GetOnPage(page int, limit int, approved *bool, username string, search string) ([]models.PostWithUserName, int, error)
 	PostsStatus() ([]models.PostsStatus, error)
 
 	Authors() ([]models.Authors, error)
@@ -34,7 +34,7 @@ type PostService interface {
 	FindById(pId int) (*models.PostWithUserName, error)
 	FindByUsername(username string) ([]models.PostWithUserName, error)
 
-	GetOnPage(page int, limit int, approved *bool, username string) ([]models.PostWithUserName, int, error)
+	GetOnPage(page int, limit int, approved *bool, username string, search string) ([]models.PostWithUserName, int, error)
 	PostsStatus() ([]models.PostsStatus, error)
 
 	Authors() ([]models.Authors, error)

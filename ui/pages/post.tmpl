@@ -2,7 +2,7 @@
 
 {{ define "title" }} 
     {{range .PostCards}}
-        {{.Posts.Title}} 
+        {{.Posts.Post.Title}} 
     {{end}}
 {{ end }}
 
@@ -15,26 +15,26 @@
                 {{range .PostCards}}                
                 <div class="card-body p-4 p-md-5">
                     <!-- Title -->
-                    <h1 class="mb-3">{{.Posts.Title}}</h1>
+                    <h1 class="mb-3">{{.Posts.Post.Title}}</h1>
                     <!-- Meta -->
                     <div class="text-muted mb-4">
                         Author:
-                        <a href="/posts/user/{{.Posts.Username}}"
+                        <a href="/posts/user/{{.Posts.Post.Username}}"
                            class="badge text-bg-success text-decoration-none">
-                            {{.Posts.Username}}
+                            {{.Posts.Post.Username}}
                         </a>
                         <span class="mx-2">•</span>
                         Published:
-                        {{.Posts.CreatedAt.Format "02 Jan 2006 15:04"}}
+                        {{.Posts.Post.CreatedAt.Format "02 Jan 2006 15:04"}}
                     </div>
                     <!-- Excerpt -->
                     <div class="post-content fs-5 lh-lg">
-                        {{.Posts.Excerpt}}
+                        {{.Posts.Post.Excerpt}}
                     </div>
                     <hr>
                     <!-- Content -->
                     <div class="post-content fs-5 lh-lg">
-                        {{.Posts.Content}}
+                        {{.Posts.Post.Content}}
                     </div>
                     <!-- Actions -->
                     <div class="mt-5 d-flex gap-2">
