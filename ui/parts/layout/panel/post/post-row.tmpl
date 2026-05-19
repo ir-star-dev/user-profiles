@@ -62,7 +62,7 @@
 
                     {{ if .Posts.Post.Approved }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/review?view=row"
+                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/review?view=row&index={{.Posts.Index}}"
                             hx-target="#post-{{.Posts.Post.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">
@@ -70,7 +70,7 @@
                         </a>
                     {{ else }}
                         <a
-                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/publish?view=row"
+                            hx-patch="/panel/posts/post/{{.Posts.Post.Id}}/publish?view=row&index={{.Posts.Index}}"
                             hx-target="#post-{{.Posts.Post.Id}}"
                             hx-swap="outerHTML"
                             class="btn btn-sm btn-outline-secondary">

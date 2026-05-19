@@ -1,8 +1,9 @@
 package app
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"user-profiles/configs"
 	"user-profiles/internal/auth"
 	"user-profiles/internal/dashboard"
@@ -16,20 +17,26 @@ import (
 	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lmittmann/tint"
 )
 
 func Run() error {
+	logger := slog.New(
+		tint.NewHandler(os.Stdout, &tint.Options{
+			Level: slog.LevelDebug,
+		}),
+	)
 	// Config
 	conf, err := configs.Load()
 	if err != nil {
-		log.Println("Failed to load config: %w", err)
+		logger.Error("Failed to load config")
 		return err
 	}
 
 	// DB
 	dbConn, err := db.Connect(conf)
 	if err != nil {
-		log.Println("Failed to connect db: %w", err)
+		logger.Error("Failed to connect db")
 		return err
 	}
 	defer dbConn.Close()
@@ -50,15 +57,17 @@ func Run() error {
 
 	tc, err := templates.NewTemplateCache()
 	if err != nil {
-		log.Println(err.Error())
+		logger.Warn(err.Error())
 		return err
 	}
+
 	// Mux
 	mux := chi.NewRouter()
 	// Middlewares
 	mux.Use(
+		middlewares.Logger(logger),
 		tc.RecoverPanic,
-		//middlewares.CORS,
+		middlewares.CORS,
 		middlewares.CSRF(false),
 	)
 
@@ -90,10 +99,10 @@ func Run() error {
 		Handler: mux,
 	}
 
-	log.Println("Server is listening on port 8080")
+	logger.Info("Server is listening on port 8080")
 	err = server.ListenAndServe()
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	return nil

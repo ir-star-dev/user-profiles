@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path/filepath"
+	"runtime"
 	"user-profiles/internal/models"
 	"user-profiles/internal/utils"
 	"user-profiles/ui"
+
+	"github.com/lmittmann/tint"
 )
 
 type Templates struct {
@@ -110,7 +114,18 @@ func (t *Templates) RenderSpecialTemplate(w http.ResponseWriter, page, name stri
 }
 
 func (t *Templates) ServerError(w http.ResponseWriter, r *http.Request, err error) {
-	log.Println(err)
+	logger := slog.New(
+		tint.NewHandler(os.Stdout, &tint.Options{
+			Level: slog.LevelDebug,
+		}),
+	)
+	_, file, line, _ := runtime.Caller(0)
+
+	logger.Error("500 Error",
+		slog.String("file", file),
+		slog.Int("line", line),
+		slog.Any("error", err),
+	)
 	err, buf := t.RenderSpecialTemplate(w, "500.tmpl", "500")
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

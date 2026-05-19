@@ -22,6 +22,7 @@ require (
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
+	github.com/lmittmann/tint v1.1.3 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/net v0.51.0 // indirect
 )

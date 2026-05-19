@@ -150,6 +150,7 @@ func (h *UHandler) UpdateName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
 	currId, err := request.GetUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
@@ -183,6 +184,7 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Profiles = models.UserViewTable{
 		User: *profile,
+		Index: index,
 	}
 	data.Actions = models.Actions{
 		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
@@ -196,6 +198,7 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
 	currId, err := request.GetUserId(r)
 	if err != nil {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
@@ -229,6 +232,7 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	}
 	data.Profiles = models.UserViewTable{
 		User: *profile,
+		Index: index,
 	}
 	data.Actions = models.Actions{
 		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),

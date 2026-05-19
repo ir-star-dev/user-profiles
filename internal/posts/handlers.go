@@ -211,6 +211,7 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
 	reqUId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -240,6 +241,7 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	data := models.PostData{
 		Posts: models.PostViewTable{
 			Post: *post,
+			Index: index,
 		},
 		Actions: models.Actions{
 			CanDeletePost:  CanDeletePost(currUserRole),
@@ -255,6 +257,7 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
 	reqUId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -283,6 +286,7 @@ func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
 	data := models.PostData{
 		Posts: models.PostViewTable{
 			Post: *post,
+			Index: index,
 		},
 		Actions: models.Actions{
 			CanDeletePost:  CanDeletePost(currUserRole),
