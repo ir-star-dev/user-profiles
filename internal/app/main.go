@@ -72,24 +72,32 @@ func Run() error {
 	)
 
 	dH := dashboard.NewDashboardHandler(mux, dashboard.DHandlerDeps{
-		UService: uS,
-		PService: pS,
-		TCache:   *tc,
-		DService: *dS,
+		UService:    uS,
+		PService:    pS,
+		DService:    *dS,
+		BaseHandler: &templates.BaseHandler{
+			TCache: tc,
+		},
 	})
 	aH := auth.NewAuthHandler(mux, auth.AHandlerDeps{
 		Config:     conf,
 		AService:   aS,
 		JWTService: jwtService,
-		TCache:     *tc,
+		BaseHandler: &templates.BaseHandler{
+			TCache: tc,
+		},
 	})
 	pH := posts.NewPostHandler(mux, posts.PHandlerDeps{
 		PService: pS,
-		TCache:   *tc,
+		BaseHandler: &templates.BaseHandler{
+			TCache: tc,
+		},
 	})
 	uH := users.NewUserHandler(mux, users.UHandlerDeps{
 		UService: uS,
-		TCache:   *tc,
+		BaseHandler: &templates.BaseHandler{
+			TCache: tc,
+		},
 	})
 
 	InitRoutes(mux, aH, pH, dH, uH, tc)

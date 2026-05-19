@@ -1,5 +1,3 @@
-{{define "user-posts"}}{{end}}
-
 {{ define "title" }} 
     {{if .PostCards}}
         {{(index .PostCards 0).Posts.Post.Username}} Posts
@@ -7,14 +5,15 @@
 {{ end }}
 
 {{define "content"}}
-    <div class="container py-4">
-        <!-- Actions -->
-        <div class="mb-2 d-flex gap-2 justify-content-center">
-            <a href="/" class="btn btn-outline-secondary">Back</a>
+<section class="col-12 p-4">
+    
+    <div id="posts-table" class="container py-4">
+        <div>
+            {{template "user-posts-search" . }}
         </div>
-        <!-- ROW 2 -->
         <div id="posts-container" class="row g-3">
             {{template "posts-list" .}}
         </div>
     </div>
+</section>
 {{end}}

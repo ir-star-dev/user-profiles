@@ -1,5 +1,11 @@
 {{define "posts-list"}}
-    {{range .PostCards}}
-        {{template "posts-card" .}}
+    {{if .PostCards}}
+        {{range .PostCards}}
+            {{template "posts-card" .}}
+        {{end}}
+    {{else}}
+    <div class="col-12 col-md-4 d-flex">
+        Posts not found.
+    </div>
     {{end}}
 {{end}}

@@ -10,55 +10,49 @@ import (
 	"user-profiles/internal/users"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/csrf"
 )
 
 type DHandler struct {
 	UService users.UsersService
 	PService posts.PostService
-	TCache   templates.Templates
+	*templates.BaseHandler
 	DService DS
 }
 
 type DHandlerDeps struct {
 	UService users.UsersService
 	PService posts.PostService
-	TCache   templates.Templates
+	*templates.BaseHandler
 	DService DS
 }
 
 func NewDashboardHandler(router chi.Router, deps DHandlerDeps) *DHandler {
 	return &DHandler{
-		UService: deps.UService,
-		PService: deps.PService,
-		TCache:   deps.TCache,
-		DService: deps.DService,
+		UService:    deps.UService,
+		PService:    deps.PService,
+		BaseHandler: deps.BaseHandler,
+		DService:    deps.DService,
 	}
 }
 
 func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	currUserId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := h.UService.Role(currUserId)
-
 	uIdFromReq, err := request.GetIdFromReq(r)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
-	data := models.PageData{
+	data := models.ProfileData{
 		RequestedUserId: uIdFromReq,
-		CurrentUserId:   currUserId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+		BasePageData:    base,
 	}
-
 	profile, err := h.UService.Get(uIdFromReq)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 
@@ -66,39 +60,35 @@ func (h *DHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		uPosts = make([]models.PostRows, 0)
 	}
-	groupedP := GroupPosts(uPosts)
+	groupedP := groupedPosts(uPosts)
 
 	var cards []models.UserData
 	cards = append(cards, models.UserData{
 		Profiles: models.UserViewTable{
-			User:  *profile,
+			User: *profile,
 		},
-		CurrentUserId:   currUserId,
-		CurrentUserRole: currUserRole,
+		CurrentUserId:   base.CurrentUserId,
+		CurrentUserRole: base.CurrentUserRole,
 		Actions: models.Actions{
-			CanDeleteUser: users.CanDeleteUser(currUserRole, currUserId, profile.Id),
-			CanBanUser:    users.CanBanUser(currUserRole, currUserId, profile.Id),
+			CanDeleteUser: users.CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, profile.Id),
+			CanBanUser:    users.CanBanUser(base.CurrentUserRole, base.CurrentUserId, profile.Id),
 		},
 		CreatedPosts: groupedP,
 	})
 
 	data.UserCards = cards
 
-	h.TCache.RenderPanel(w, r, http.StatusOK, "profile.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "profile.tmpl", data)
 }
 
 func (h *DHandler) Statistics(w http.ResponseWriter, r *http.Request) {
-	currUserId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := h.UService.Role(currUserId)
-
-	data := models.PageData{
-		CurrentUserId:   currUserId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.StaticticsData{
+		BasePageData: base,
 	}
 
 	stats, err := h.DService.GetStats()
@@ -112,10 +102,10 @@ func (h *DHandler) Statistics(w http.ResponseWriter, r *http.Request) {
 		logins = []models.LoginsResponse{}
 	}
 	data.Logins = logins
-	h.TCache.RenderPanel(w, r, http.StatusOK, "dashboard.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "dashboard.tmpl", data)
 }
 
-func GroupPosts(posts []models.PostRows) models.GroupedPosts {
+func groupedPosts(posts []models.PostRows) models.GroupedPosts {
 	var grouped models.GroupedPosts
 
 	for _, post := range posts {

@@ -1,0 +1,43 @@
+{{define "home-search"}}
+<div class="d-flex flex-row gap-2 mb-3">
+    <div>
+        <select
+            name="sort"
+            class="form-select"
+            style="width: 110px;"
+            hx-get="/"
+            hx-target="#posts-table"
+            hx-trigger="change"
+            hx-push-url="true"
+            hx-include="[name='search'], [name='sort']"
+        >
+            <option value="newest"
+                {{if eq .Filters.sort "newest"}}selected{{end}}>
+                Newest
+            </option>
+
+            <option value="oldest"
+                {{if eq .Filters.sort "oldest"}}selected{{end}}>
+                Oldest
+            </option>
+        </select>
+    </div>
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{.Filters.search}}"
+            hx-get="/"
+            hx-target="#posts-table"
+            hx-trigger="keyup changed delay:500ms"
+            hx-push-url="true"
+            hx-include="[name='sort']"
+        />
+        
+    </div>
+    <div>
+        {{if .HasFilters}}
+            <a href="/" style="max-height: 37px;">
+                <i class="bi bi-arrow-repeat" style="font-size: 25px;"></i>
+            </a>
+        {{end}}
+    </div>
+</div>
+{{end}}

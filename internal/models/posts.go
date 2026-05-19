@@ -56,3 +56,10 @@ type PostRows struct {
 	Approved bool   `db:"approved"`
 	Username string `db:"username"`
 }
+
+type PostFilters struct {
+    Approved *bool
+    Username string
+    Search   string
+    Sort     string
+}

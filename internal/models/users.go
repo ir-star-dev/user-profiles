@@ -34,3 +34,9 @@ type Roles struct {
 	Id   int    `db:"id"`
 	Role string `db:"role"`
 }
+
+type UserFilters struct {
+	Banned *bool
+	Role   string
+	Search string
+}

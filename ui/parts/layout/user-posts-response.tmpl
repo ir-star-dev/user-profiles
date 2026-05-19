@@ -1,0 +1,10 @@
+{{define "user-posts-response"}}
+
+<div>
+    {{template "user-posts-search" . }}
+    <div id="posts-container" class="row g-3">
+        {{template "posts-list" .}}
+    </div>
+</div>
+
+{{end}}

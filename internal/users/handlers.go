@@ -12,23 +12,22 @@ import (
 	"user-profiles/internal/validator"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/csrf"
 )
 
 type UHandler struct {
 	UService UsersService
-	TCache   templates.Templates
+	*templates.BaseHandler
 }
 
 type UHandlerDeps struct {
 	UService UsersService
-	TCache   templates.Templates
+	*templates.BaseHandler
 }
 
 func NewUserHandler(router chi.Router, deps UHandlerDeps) *UHandler {
 	return &UHandler{
-		UService: deps.UService,
-		TCache:   deps.TCache,
+		UService:    deps.UService,
+		BaseHandler: deps.BaseHandler,
 	}
 }
 
@@ -38,12 +37,12 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 	banned := request.GetFilterValue(r, "banned")
 	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
 
-	currUserId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currRole, _ := h.UService.Role(currUserId)
 	var bn *bool
 	if banned != "" {
 		v, err := strconv.ParseBool(banned)
@@ -52,14 +51,17 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 		}
 		bn = &v
 	}
-	data := models.PageData{
-		CurrentUserId:   currUserId,
-		CurrentUserRole: currRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.UsersDashboardData{
+		BasePageData: base,
 	}
-	profiles, totalUsers, err := h.UService.GetOnPage(page, 10, bn, role, search)
+	filters := models.UserFilters{
+		Role:   role,
+		Search: search,
+		Banned: bn,
+	}
+	profiles, totalUsers, err := h.UService.GetOnPage(page, 10, filters)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
 	var cards []models.UserData
@@ -70,19 +72,18 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 				Index: ((page - 1) * 10) + i + 1,
 			},
 			Actions: models.Actions{
-				CanDeleteUser: CanDeleteUser(currRole, currUserId, profile.Id),
-				CanBanUser:    CanBanUser(currRole, currUserId, profile.Id),
+				CanDeleteUser: CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, profile.Id),
+				CanBanUser:    CanBanUser(base.CurrentUserRole, base.CurrentUserId, profile.Id),
 			},
 		})
 	}
-
+	
 	totalPages := (totalUsers + 10 - 1) / 10
-
 	pages := []int{}
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
-	pagination := h.TCache.BuildPagination(page, totalPages, "/panel/users")
+	pagination := h.BaseHandler.TCache.BuildPagination(page, totalPages, "/panel/users")
 	roles, _ := h.UService.GetRoles()
 
 	data.UserCards = cards
@@ -100,38 +101,38 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 	data.HasFilters = page > 1 || banned != "" || role != "" || search != ""
 
 	if r.Header.Get("HX-Request") == "true" {
-		h.TCache.RenderPartial(w, "users.tmpl", "user-table", data)
+		h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", "user-table", data)
 		return
 	}
-
-	h.TCache.RenderPanel(w, r, http.StatusOK, "users.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "users.tmpl", data)
 }
 
 func (h *UHandler) UpdateNameModal(w http.ResponseWriter, r *http.Request) {
+	base := h.NewBasePageData(r)
 	uId, err := request.GetIdFromReq(r)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 	profile, err := h.UService.Get(uId)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 
 	var cards []models.UserData
 	cards = append(cards, models.UserData{
 		Profiles: models.UserViewTable{
-			User:  *profile,
+			User: *profile,
 		},
 	})
-	data := models.PageData{
-		UserCards: cards,
-		CSRFToken: csrf.Token(r),
+	data := models.UpdateNameModalData{
+		UserCards:    cards,
+		BasePageData: base,
 	}
-	err = h.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "profile.tmpl", "update-name-modal", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
@@ -144,15 +145,15 @@ func (h *UHandler) UpdateName(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.FormValue("name"))
 	_, res, err := h.UService.ChangeName(uId, name)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 	w.Header().Set("HX-Redirect", "/panel/profile/"+*res)
 }
 
 func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	currId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
@@ -160,18 +161,16 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, _, err = SelfDeletionDetected(reqId, currId)
+	_, _, err = SelfDeletionDetected(reqId, base.CurrentUserId)
 	if err != nil {
 		return
 	}
-	currRole, _ := h.UService.Role(currId)
 	v := request.GetFilterValue(r, "view")
 	if v == "" {
 		return
 	}
 	data := models.UserData{
-		CurrentUserId:   currId,
-		CurrentUserRole: currRole,
+		BasePageData: base,
 	}
 	err = h.UService.Ban(reqId)
 	if err != nil {
@@ -183,24 +182,24 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data.Profiles = models.UserViewTable{
-		User: *profile,
+		User:  *profile,
 		Index: index,
 	}
 	data.Actions = models.Actions{
-		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
-		CanBanUser:    CanBanUser(currRole, currId, reqId),
+		CanDeleteUser: CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, reqId),
+		CanBanUser:    CanBanUser(base.CurrentUserRole, base.CurrentUserId, reqId),
 	}
 	page := "user-" + v
-	err = h.TCache.RenderPartial(w, "users.tmpl", page, data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", page, data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	currId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
@@ -208,18 +207,16 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	_, _, err = SelfDeletionDetected(reqId, currId)
+	_, _, err = SelfDeletionDetected(reqId, base.CurrentUserId)
 	if err != nil {
 		return
 	}
-	currRole, _ := h.UService.Role(currId)
 	v := request.GetFilterValue(r, "view")
 	if v == "" {
 		return
 	}
 	data := models.UserData{
-		CurrentUserId:   currId,
-		CurrentUserRole: currRole,
+		BasePageData: base,
 	}
 	err = h.UService.Unban(reqId)
 	if err != nil {
@@ -231,29 +228,30 @@ func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data.Profiles = models.UserViewTable{
-		User: *profile,
+		User:  *profile,
 		Index: index,
 	}
 	data.Actions = models.Actions{
-		CanDeleteUser: CanDeleteUser(currRole, currId, reqId),
-		CanBanUser:    CanBanUser(currRole, currId, reqId),
+		CanDeleteUser: CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, reqId),
+		CanBanUser:    CanBanUser(base.CurrentUserRole, base.CurrentUserId, reqId),
 	}
 
 	page := "user-" + v
-	err = h.TCache.RenderPartial(w, "users.tmpl", page, data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", page, data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *UHandler) DeleteUserConfirm(w http.ResponseWriter, r *http.Request) {
+	base := h.NewBasePageData(r)
 	uId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
 	}
 	profile, err := h.UService.Get(uId)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 	var cards []models.UserData
@@ -262,24 +260,23 @@ func (h *UHandler) DeleteUserConfirm(w http.ResponseWriter, r *http.Request) {
 			User: *profile,
 		},
 	})
-	data := models.PageData{
-		UserCards: cards,
-		CSRFToken: csrf.Token(r),
+	data := models.UserDeleteData{
+		UserCards:    cards,
+		BasePageData: base,
 	}
-	err = h.TCache.RenderPartial(w, "users.tmpl", "confirm-delete-user-modal", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", "confirm-delete-user-modal", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *UHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	currId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		w.Header().Set("HX-Redirect", "/auth/login")
 		return
 	}
-	role, _ := h.UService.Role(currId)
-	if role == "admin" {
+	if base.CurrentUserRole == "admin" {
 		uId, err := request.GetIdFromReq(r)
 		if err != nil {
 			return
@@ -291,7 +288,7 @@ func (h *UHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HX-Trigger", "userDeleted")
 		return
 	} else {
-		err = h.UService.Delete(currId)
+		err := h.UService.Delete(base.CurrentUserId)
 		if err != nil {
 			return
 		}
@@ -304,32 +301,26 @@ func (h *UHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UHandler) CreateUserForm(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := h.UService.Role(uId)
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.CreateUserFormData{
+		BasePageData: base,
 	}
-	h.TCache.RenderPanel(w, r, http.StatusOK, "create-user.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "create-user.tmpl", data)
 }
 
 func (h *UHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := h.UService.Role(uId)
-	data := models.PageData{
-		CurrentUserId:     uId,
-		CurrentUserRole:   currUserRole,
+	data := models.CreateUserFormData{
+		BasePageData:      base,
 		FormValidationErr: []validator.FormValidationErr{},
-		CSRFToken:         csrf.Token(r),
 	}
 	email := strings.TrimSpace(r.FormValue("email"))
 	name := strings.TrimSpace(r.FormValue("name"))
@@ -339,9 +330,9 @@ func (h *UHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	validationErrs, err := h.UService.CreateUser(email, name, password, role)
 	if err != nil {
 		data.FormValidationErr = validationErrs
-		err := h.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-error", data)
+		err := h.BaseHandler.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-error", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
@@ -349,16 +340,16 @@ func (h *UHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Email:    email,
 		Password: password,
 	}
-	err = h.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-success", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-success", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *UHandler) GeneratePassword(w http.ResponseWriter, r *http.Request) {
 	password, err := utils.GeneratePassword(8)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
 	w.Write([]byte(password))

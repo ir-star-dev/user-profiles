@@ -132,27 +132,27 @@ func (repo *usersRepository) UpdateName(userName string, uId int) (*int, error) 
 	return &uId, nil
 }
 
-func (repo *usersRepository) GetOnPage(page, limit int, banned *bool, role, search string) ([]models.UserWithRole, int, error) {
+func (repo *usersRepository) GetOnPage(page, limit int, filter models.UserFilters) ([]models.UserWithRole, int, error) {
 	offset := (page - 1) * limit
 
 	args := []any{}
 	conditions := []string{}
 
 	// search
-	if search != "" {
-		args = append(args, "%"+search+"%")
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
 		conditions = append(conditions, "(u.name ILIKE $"+strconv.Itoa(len(args))+" OR u.username ILIKE $"+strconv.Itoa(len(args))+" )")
 	}
 
 	// approved
-	if banned != nil {
-		args = append(args, *banned)
+	if filter.Banned != nil {
+		args = append(args, *filter.Banned)
 		conditions = append(conditions, "u.banned = $"+strconv.Itoa(len(args)))
 	}
 
 	// username
-	if role != "" {
-		args = append(args, role)
+	if filter.Role != "" {
+		args = append(args, filter.Role)
 		conditions = append(conditions, "r.role = $"+strconv.Itoa(len(args)))
 	}
 

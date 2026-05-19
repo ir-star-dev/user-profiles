@@ -1,8 +1,7 @@
-{{define "posts-response"}}
+{{define "posts-loadmore"}}
 
-<div>
-    {{template "home-search" . }}
-    <div id="posts-container" class="row g-3">
+<div id="posts-table">
+    <div id="posts-container" hx-swap-oob="beforeend" class="row g-3">
         {{template "posts-list" .}}
     </div>
 
@@ -10,5 +9,4 @@
         {{template "loadmore" .}}
     </div>
 </div>
-
 {{end}}

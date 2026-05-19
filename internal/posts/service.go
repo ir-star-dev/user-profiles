@@ -84,23 +84,14 @@ func (s *postService) FindById(pId int) (*models.PostWithUserName, error) {
 	return posts, nil
 }
 
-func (s *postService) FindByUsername(username string) ([]models.PostWithUserName, error) {
-	var posts []models.PostWithUserName
-	posts, err := s.pRepo.FindByUsername(username)
-	if err != nil {
-		return nil, err
+func (s *postService) GetOnPage(page int, limit int, filter models.PostFilters) ([]models.PostWithUserName, int, error) {
+	if len(filter.Search) < 2 {
+		filter.Search = ""
 	}
-	return posts, nil
-}
-
-func (s *postService) GetOnPage(page int, limit int, approved *bool, username string, search string) ([]models.PostWithUserName, int, error) {
-	if len(search) < 2 {
-		search = ""
+	if len(filter.Search) > 100 {
+		filter.Search = filter.Search[:100]
 	}
-	if len(search) > 100 {
-		search = search[:100]
-	}
-	posts, total, err := s.pRepo.GetOnPage(page, limit, approved, username, search)
+	posts, total, err := s.pRepo.GetOnPage(page, limit, filter)
 	if err != nil {
 		return nil, 0, err
 	}

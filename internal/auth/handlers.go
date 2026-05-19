@@ -12,21 +12,20 @@ import (
 	"user-profiles/internal/utils"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/csrf"
 )
 
 type AHandlerDeps struct {
 	Config     *configs.Config
 	AService   AuthService
 	JWTService JWTService
-	TCache     templates.Templates
+	*templates.BaseHandler
 }
 
 type AHandler struct {
 	Config     *configs.Config
 	AService   AuthService
 	JWTService JWTService
-	TCache     templates.Templates
+	*templates.BaseHandler
 }
 
 func NewAuthHandler(router chi.Router, deps AHandlerDeps) *AHandler {
@@ -34,37 +33,33 @@ func NewAuthHandler(router chi.Router, deps AHandlerDeps) *AHandler {
 		Config:     deps.Config,
 		AService:   deps.AService,
 		JWTService: deps.JWTService,
-		TCache:     deps.TCache,
+		BaseHandler: deps.BaseHandler,
 	}
 }
 
 func (h *AHandler) LoginForm(w http.ResponseWriter, r *http.Request) {
-	data := models.PageData{
-		CSRFToken: csrf.Token(r),
-	}
-	h.TCache.Render(w, r, http.StatusOK, "base", "login.tmpl", data)
+	data := h.NewBasePageData(r)
+	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "login.tmpl", data)
 }
 
 func (h *AHandler) SignupForm(w http.ResponseWriter, r *http.Request) {
-	data := models.PageData{
-		CSRFToken: csrf.Token(r),
-	}
-	h.TCache.Render(w, r, http.StatusOK, "base", "signup.tmpl", data)
+	data := h.NewBasePageData(r)
+	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "signup.tmpl", data)
 }
 
 func (h *AHandler) Login(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	password := strings.TrimSpace(r.FormValue("password"))
-
+	base := h.NewBasePageData(r)
 	data, formValidErr, err := h.AService.Login(email, password)
 	if err != nil {
-		data := models.PageData{
+		data := models.AuthData{
 			FormValidationErr: formValidErr,
-			CSRFToken: csrf.Token(r),
+			BasePageData: base,
 		}
-		err = h.TCache.RenderPartial(w, "login.tmpl", "form-submit-error", data)
+		err = h.BaseHandler.TCache.RenderPartial(w, "login.tmpl", "form-submit-error", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
@@ -85,16 +80,16 @@ func (h *AHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	password := strings.TrimSpace(r.FormValue("password"))
 	name := strings.TrimSpace(r.FormValue("name"))
 	role := "user"
-
+	base := h.NewBasePageData(r)
 	formValidErr, err := h.AService.Register(email, password, name, role)
 	if err != nil {
-		data := models.PageData{
+		data := models.AuthData{
 			FormValidationErr: formValidErr,
-			CSRFToken: csrf.Token(r),
+			BasePageData: base,
 		}
-		err := h.TCache.RenderPartial(w, "signup.tmpl", "form-submit-error", data)
+		err := h.BaseHandler.TCache.RenderPartial(w, "signup.tmpl", "form-submit-error", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	} else {

@@ -116,14 +116,14 @@ func (s *usersService) Delete(uId int) error {
 	return nil
 }
 
-func (s *usersService) GetOnPage(page, limit int, banned *bool, role, search string) ([]models.UserWithRole, int, error) {
-	if len(search) < 2 {
-		search = ""
+func (s *usersService) GetOnPage(page, limit int, filter models.UserFilters) ([]models.UserWithRole, int, error) {
+	if len(filter.Search) < 2 {
+		filter.Search = ""
 	}
-	if len(search) > 100 {
-		search = search[:100]
+	if len(filter.Search) > 100 {
+		filter.Search = filter.Search[:100]
 	}
-	users, res, err := s.uRepo.GetOnPage(page, limit, banned, role, search)
+	users, res, err := s.uRepo.GetOnPage(page, limit, filter)
 	if err != nil {
 		return nil, 0, err
 	}

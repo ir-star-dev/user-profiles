@@ -83,50 +83,25 @@ func (repo *postRepository) FindById(pId int) (*models.PostWithUserName, error) 
 	return &posts, nil
 }
 
-func (repo *postRepository) FindByUsername(username string) ([]models.PostWithUserName, error) {
-	query := `
-		SELECT 
-			p.*,
-			u.username
-		FROM posts AS p
-		JOIN users AS u 
-		ON p.user_id = u.id
-		WHERE u.username = $1 AND
-		p.approved = true
-		ORDER BY p.created_at DESC
-	`
-	p := []models.PostWithUserName{}
-	err := repo.db.Select(&p, query, username)
-	if err != nil {
-		return nil, err
-	}
-	if len(p) == 0 {
-		return nil, posts.PostNotFound
-	}
-	return p, nil
-}
-
-func (repo *postRepository) GetOnPage(page, limit int, approved *bool, username, search string) ([]models.PostWithUserName, int, error) {
-	offset := (page - 1) * limit
-
+func (repo *postRepository) GetOnPage(page, limit int, filter models.PostFilters) ([]models.PostWithUserName, int, error) {
 	args := []any{}
 	conditions := []string{}
 
 	// search
-	if search != "" {
-		args = append(args, "%"+search+"%")
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
 		conditions = append(conditions, "(p.title ILIKE $"+strconv.Itoa(len(args))+" OR u.username ILIKE $"+strconv.Itoa(len(args))+" )")
 	}
 
 	// approved
-	if approved != nil {
-		args = append(args, *approved)
+	if filter.Approved != nil {
+		args = append(args, *filter.Approved)
 		conditions = append(conditions, "p.approved = $"+strconv.Itoa(len(args)))
 	}
 
 	// username
-	if username != "" {
-		args = append(args, username)
+	if filter.Username != "" {
+		args = append(args, filter.Username)
 		conditions = append(conditions, "u.username = $"+strconv.Itoa(len(args)))
 	}
 
@@ -150,7 +125,19 @@ func (repo *postRepository) GetOnPage(page, limit int, approved *bool, username,
 	}
 
 	// pagination
-	args = append(args, limit, offset)
+	pagin := ""
+	if limit > 0 && page > 0 {
+		offset := (page - 1) * limit
+		args = append(args, limit, offset)
+
+		pagin = ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	}
+
+	// sort
+	order := "DESC"
+	if filter.Sort == "oldest" {
+		order = "ASC"
+	}
 
 	query := `
 		SELECT 
@@ -160,9 +147,7 @@ func (repo *postRepository) GetOnPage(page, limit int, approved *bool, username,
 		JOIN users AS u 
 			ON p.user_id = u.id
 		` + where + `
-		ORDER BY p.created_at DESC
-		LIMIT $` + strconv.Itoa(len(args)-1) + `
-		OFFSET $` + strconv.Itoa(len(args))
+		ORDER BY p.created_at ` + order + pagin
 
 	posts := []models.PostWithUserName{}
 

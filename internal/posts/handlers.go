@@ -1,7 +1,6 @@
 package posts
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,38 +12,47 @@ import (
 	"user-profiles/internal/utils"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/csrf"
 )
 
 type PHandler struct {
 	PService PostService
 	TCache   templates.Templates
+	*templates.BaseHandler
 }
 
 type PHandlerDeps struct {
 	PService PostService
 	TCache   templates.Templates
+	*templates.BaseHandler
 }
 
 func NewPostHandler(router chi.Router, deps PHandlerDeps) *PHandler {
 	return &PHandler{
 		PService: deps.PService,
-		TCache:   deps.TCache,
+		BaseHandler: deps.BaseHandler,
 	}
 }
 
 func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
-	currUserRole, _ := request.GetUserRole(r.Context())
+	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
+	sort := strings.TrimSpace(request.GetFilterValue(r, "sort"))
+
+	base := h.NewBasePageData(r)
 	page := request.GetPageFromReq(r)
 	limit := 9
 	approved := true
-	posts, total, err := h.PService.GetOnPage(page, limit, &approved, "", "")
+	filters := models.PostFilters{
+		Approved: &approved,
+		Search:   search,
+		Sort:     sort,
+	}
+	posts, total, err := h.PService.GetOnPage(page, limit, filters)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
 	hasMore := page*limit < total
-	postCards := make([]models.PostData, 0, len(posts))
+	postCards := make([]models.PostData, 0, total)
 	for _, post := range posts {
 		postCards = append(postCards, models.PostData{
 			Posts: models.PostViewTable{
@@ -52,45 +60,56 @@ func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 	}
-	currUserId, _ := request.GetUserId(r)
-	data := models.PageData{
-		CurrentUserId: currUserId,
-		CurrentUserRole: currUserRole,
-		PostCards:     postCards,
+
+	data := models.HomeData{
+		BasePageData: base,
+		PostCards:       postCards,
 		Loadmore: models.Loadmore{
 			Page:    page,
 			Next:    page + 1,
 			HasMore: hasMore,
 			Total:   total,
 		},
-		CSRFToken: csrf.Token(r),
 	}
+
 	isHTMX := r.Header.Get("HX-Request") == "true"
-	if page > 1 || isHTMX {
-		err = h.TCache.RenderPartial(w, "home.tmpl", "posts-response", data)
+	isLoadMore := isHTMX && page > 1
+	isFilters := isHTMX && (search != "" || sort != "")
+
+	if isLoadMore {
+		err = h.BaseHandler.TCache.RenderPartial(w, "home.tmpl", "posts-loadmore", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
-	h.TCache.Render(w, r, http.StatusOK, "base", "home.tmpl", data)
+	if isFilters {
+		data.Filters = map[string]string{
+			"search": search,
+			"sort":   sort,
+		}
+		data.HasFilters = search != "" || sort != ""
+		err = h.BaseHandler.TCache.RenderPartial(w, "home.tmpl", "posts-response", data)
+		if err != nil {
+			h.BaseHandler.TCache.ServerError(w, r, err)
+		}
+		return
+	}
+	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "home.tmpl", data)
 }
 
 func (h *PHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
-	currUserId, _ := request.GetUserId(r)
-	data := models.PageData{
-		CurrentUserId: currUserId,
-		CSRFToken:     csrf.Token(r),
-	}
+	base := h.NewBasePageData(r)
+
 	slug := r.PathValue("slug")
 	pId, err := utils.GetPostIdFromSlug(slug)
 	if err != nil {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
 	post, err := h.PService.FindById(*pId)
 	if err != nil {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
 	var postCards []models.PostData
@@ -99,31 +118,47 @@ func (h *PHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 			Post: *post,
 		},
 	})
-	data.PostCards = postCards
-	h.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
+	data := models.PostSimpleData{
+		PostCards: postCards,
+		BasePageData: base,
+	}
+	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
 }
 
 func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
-	currUId, _ := request.GetUserId(r)
-	data := models.PageData{
-		CurrentUserId: currUId,
-		CSRFToken:     csrf.Token(r),
-	}
+	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
+	sort := strings.TrimSpace(request.GetFilterValue(r, "sort"))
+	base := h.NewBasePageData(r)
+
 	username := r.PathValue("username")
 	if username == "" {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
-	ps, err := h.PService.FindByUsername(username)
-	if errors.Is(err, PostNotFound) {
-		h.TCache.NotFound(w, r)
-		return
+
+	data := models.UserPostsData{
+		BasePageData: base,
+		Filters: map[string]string{
+			"search":   search,
+			"sort":     sort,
+			"username": username,
+		},
+		HasFilters: search != "" || sort != "" || username != "",
 	}
+
+	approved := true
+	filters := models.PostFilters{
+		Approved: &approved,
+		Username: username,
+		Search:   search,
+		Sort:     sort,
+	}
+	ps, total, err := h.PService.GetOnPage(-1, -1, filters)
 	if err != nil {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
-	postCards := make([]models.PostData, 0, len(ps))
+	postCards := make([]models.PostData, 0, total)
 	for _, post := range ps {
 		postCards = append(postCards, models.PostData{
 			Posts: models.PostViewTable{
@@ -132,25 +167,34 @@ func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	data.PostCards = postCards
-	h.TCache.Render(w, r, http.StatusOK, "base", "user-posts.tmpl", data)
+
+	isHTMX := r.Header.Get("HX-Request") == "true"
+	isFilters := isHTMX && (search != "" || sort != "")
+
+	if isFilters {
+		err = h.BaseHandler.TCache.RenderPartial(w, "user-posts.tmpl", "user-posts-response", data)
+		if err != nil {
+			h.BaseHandler.TCache.ServerError(w, r, err)
+		}
+		return
+	}
+	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "user-posts.tmpl", data)
 }
 
+// Dashboard
 func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	page := request.GetPageFromReq(r)
 	approved := request.GetFilterValue(r, "approved")
 	username := request.GetFilterValue(r, "username")
 	search := strings.TrimSpace(request.GetFilterValue(r, "search"))
 
-	currUserId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   currUserId,
-		CurrentUserRole: currRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.PostsDashboardData{
+		BasePageData: base,
 	}
 	var ap *bool
 	if approved != "" {
@@ -160,9 +204,14 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		}
 		ap = &v
 	}
-	posts, totalPosts, err := h.PService.GetOnPage(page, 10, ap, username, search)
+	filters := models.PostFilters{
+		Approved: ap,
+		Username: username,
+		Search:   search,
+	}
+	posts, totalPosts, err := h.PService.GetOnPage(page, 10, filters)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
 	authors, _ := h.PService.Authors()
@@ -181,14 +230,14 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 				Index: ((page - 1) * 10) + i + 1,
 			},
 			Actions: models.Actions{
-				CanDeletePost:  CanDeletePost(currRole),
-				CanApprovePost: CanApprovePost(currRole),
-				CanEditPost:    CanEditPost(currRole, currUserId, post.UserId),
+				CanDeletePost:  CanDeletePost(base.CurrentUserRole),
+				CanApprovePost: CanApprovePost(base.CurrentUserRole),
+				CanEditPost:    CanEditPost(base.CurrentUserRole, base.CurrentUserId, post.UserId),
 			},
 		})
 	}
 
-	pagination := h.TCache.BuildPagination(page, totalPages, "/panel/posts")
+	pagination := h.BaseHandler.TCache.BuildPagination(page, totalPages, "/panel/posts")
 	data.Pagination = pagination
 	data.PostCards = cards
 	data.Authors = authors
@@ -204,10 +253,10 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	data.Pages = len(pages)
 
 	if r.Header.Get("HX-Request") == "true" {
-		h.TCache.RenderPartial(w, "posts.tmpl", "post-table", data)
+		h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", "post-table", data)
 		return
 	}
-	h.TCache.RenderPanel(w, r, http.StatusOK, "posts.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "posts.tmpl", data)
 }
 
 func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
@@ -216,11 +265,11 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	base := h.NewBasePageData(r)
 	currUId, err := request.GetUserId(r)
-	if err != nil {
+	if base.CurrentUserId == 0 {
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -235,24 +284,23 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	post, err := h.PService.FindById(pId)
 	if err != nil {
-
 		return
 	}
 	data := models.PostData{
 		Posts: models.PostViewTable{
-			Post: *post,
+			Post:  *post,
 			Index: index,
 		},
 		Actions: models.Actions{
-			CanDeletePost:  CanDeletePost(currUserRole),
-			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
-			CanApprovePost: CanApprovePost(currUserRole),
+			CanDeletePost:  CanDeletePost(base.CurrentUserRole),
+			CanEditPost:    CanEditPost(base.CurrentUserRole, currUId, reqUId),
+			CanApprovePost: CanApprovePost(base.CurrentUserRole),
 		},
 	}
 	page := "post-" + v
-	err = h.TCache.RenderPartial(w, "posts.tmpl", page, data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", page, data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
@@ -262,11 +310,10 @@ func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	currUId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -285,23 +332,24 @@ func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
 	}
 	data := models.PostData{
 		Posts: models.PostViewTable{
-			Post: *post,
+			Post:  *post,
 			Index: index,
 		},
 		Actions: models.Actions{
-			CanDeletePost:  CanDeletePost(currUserRole),
-			CanEditPost:    CanEditPost(currUserRole, currUId, reqUId),
-			CanApprovePost: CanApprovePost(currUserRole),
+			CanDeletePost:  CanDeletePost(base.CurrentUserRole),
+			CanEditPost:    CanEditPost(base.CurrentUserRole, base.CurrentUserId, reqUId),
+			CanApprovePost: CanApprovePost(base.CurrentUserRole),
 		},
 	}
 	page := "post-" + v
-	err = h.TCache.RenderPartial(w, "posts.tmpl", page, data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", page, data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *PHandler) DeletePostConfirm(w http.ResponseWriter, r *http.Request) {
+	base := h.NewBasePageData(r)
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
 		return
@@ -316,13 +364,13 @@ func (h *PHandler) DeletePostConfirm(w http.ResponseWriter, r *http.Request) {
 			Post: *post,
 		},
 	})
-	data := models.PageData{
+	data := models.PostDeleteData{
 		PostCards: cards,
-		CSRFToken: csrf.Token(r),
+		BasePageData: base,
 	}
-	err = h.TCache.RenderPartial(w, "posts.tmpl", "confirm-delete-post-modal", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", "confirm-delete-post-modal", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
@@ -333,80 +381,72 @@ func (h *PHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.PService.Delete(pId)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 	w.Header().Set("HX-Trigger", "postDeleted")
 }
 
 func (h *PHandler) CreatePostForm(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.CreatePostFormData{
+		BasePageData: base,
 	}
-	h.TCache.RenderPanel(w, r, http.StatusOK, "create-post.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "create-post.tmpl", data)
 }
 
 func (h *PHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.CreatePostFormData{
+		BasePageData: base,
 	}
 	title := strings.TrimSpace(r.FormValue("title"))
 	excerpt := sanitizer.SanitizeContent(strings.TrimSpace(r.FormValue("excerpt")))
 	content := sanitizer.SanitizeContent(strings.TrimSpace(r.FormValue("content")))
 
-	validationErrs, err := h.PService.Create(title, content, excerpt, uId)
+	validationErrs, err := h.PService.Create(title, content, excerpt, base.CurrentUserId)
 	if err != nil {
 		data.FormValidationErr = validationErrs
-		err := h.TCache.RenderPartial(w, "create-post.tmpl", "form-submit-error", data)
+		err := h.BaseHandler.TCache.RenderPartial(w, "create-post.tmpl", "form-submit-error", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
 	data.PostCreated = models.PostCreated{
 		Message: "Post successfully created and waiting for moderation!",
 	}
-	err = h.TCache.RenderPartial(w, "create-post.tmpl", "form-submit-success", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "create-post.tmpl", "form-submit-success", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }
 
 func (h *PHandler) PreviewPost(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
 	currUserRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.PreviewPostData{
+		BasePageData: base,
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 	post, err := h.PService.PreviewPost(pId)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 	var postCards []models.PostData
@@ -419,29 +459,26 @@ func (h *PHandler) PreviewPost(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	data.PostCards = postCards
-	h.TCache.RenderPanel(w, r, http.StatusOK, "preview-post.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "preview-post.tmpl", data)
 }
 
 func (h *PHandler) EditPostForm(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.EditPostFormData{
+		BasePageData: base,
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
 	post, err := h.PService.PreviewPost(pId)
 	if err != nil {
-		h.TCache.NotFound(w, r)
+		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
 	var postCard []models.PostData
@@ -451,24 +488,21 @@ func (h *PHandler) EditPostForm(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	data.PostCards = postCard
-	h.TCache.RenderPanel(w, r, http.StatusOK, "edit-post.tmpl", data)
+	h.BaseHandler.TCache.RenderPanel(w, r, http.StatusOK, "edit-post.tmpl", data)
 }
 
 func (h *PHandler) EditPost(w http.ResponseWriter, r *http.Request) {
-	uId, err := request.GetUserId(r)
-	if err != nil {
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
-	currUserRole, _ := request.GetUserRole(r.Context())
-	data := models.PageData{
-		CurrentUserId:   uId,
-		CurrentUserRole: currUserRole,
-		CSRFToken:       csrf.Token(r),
+	data := models.EditPostFormData{
+		BasePageData: base,
 	}
 	pId, err := request.GetIdFromReq(r)
 	if err != nil {
-		h.TCache.PanelNotFound(w, r)
+		h.BaseHandler.TCache.PanelNotFound(w, r)
 		return
 	}
 
@@ -480,17 +514,17 @@ func (h *PHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	validationErrs, err := h.PService.Update(title, content, excerpt, createdAt, pId)
 	if err != nil {
 		data.FormValidationErr = validationErrs
-		err := h.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-error", data)
+		err := h.BaseHandler.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-error", data)
 		if err != nil {
-			h.TCache.ServerError(w, r, err)
+			h.BaseHandler.TCache.ServerError(w, r, err)
 		}
 		return
 	}
 	data.PostUpdated = models.PostUpdated{
 		Message: "Post updated and waiting for moderation!",
 	}
-	err = h.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-success", data)
+	err = h.BaseHandler.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-success", data)
 	if err != nil {
-		h.TCache.ServerError(w, r, err)
+		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
 }

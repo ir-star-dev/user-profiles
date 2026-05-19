@@ -1,0 +1,45 @@
+{{define "user-posts-search"}}
+<div class="d-flex flex-row gap-2 mb-3">
+    <input type="hidden" name="username" value="{{.Filters.username}}"/>
+    <div>
+        <select
+            name="sort"
+            class="form-select"
+            style="width: 110px;"
+            hx-get="/posts/user/{{.Filters.username}}"
+            hx-target="#posts-table"
+            hx-trigger="change"
+            hx-push-url="true"
+            hx-include="[name='search'], [name='username'], [name='sort']"
+        >
+            <option value="newest"
+                {{if eq .Filters.sort "newest"}}selected{{end}}>
+                Newest
+            </option>
+
+            <option value="oldest"
+                {{if eq .Filters.sort "oldest"}}selected{{end}}>
+                Oldest
+            </option>
+        </select>
+    </div>
+    <div class="input-group">
+        
+        <input type="text" name="search" class="form-control" placeholder="Search..." value="{{.Filters.search}}"
+            hx-get="/posts/user/{{.Filters.username}}"
+            hx-target="#posts-table"
+            hx-trigger="keyup changed delay:500ms"
+            hx-push-url="true"
+            hx-include="[name='sort'], [name='username']"
+        />
+        
+    </div>
+    <div>
+        {{if or .Filters.search .Filters.sort }}
+            <a href="/posts/user/{{.Filters.username}}" style="max-height: 37px;">
+                <i class="bi bi-arrow-repeat" style="font-size: 25px;"></i>
+            </a>
+        {{end}}
+    </div>
+</div>
+{{end}}
