@@ -12,7 +12,7 @@
     </div>
     <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Status
+            Status{{if eq .Filters.approved "true"}}: Published {{else}}: Pending {{end}}
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end">
@@ -41,7 +41,7 @@
 
     <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Author
+            Author 
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end">
