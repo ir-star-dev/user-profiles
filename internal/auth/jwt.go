@@ -39,7 +39,7 @@ func (j *JWT) Parse(tokenStr string) (jwt.MapClaims, error) {
 		return nil, err
 	}
 	if !t.Valid {
-		return nil, errors.New("Invalid token")
+		return nil, errors.New(InvalidToken)
 	}
 	return claims, nil
 }

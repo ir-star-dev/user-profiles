@@ -51,8 +51,16 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 		}
 		bn = &v
 	}
+	roles, _ := h.UService.GetRoles()
 	data := models.UsersDashboardData{
 		BasePageData: base,
+		Filters: map[string]string{
+			"banned": banned,
+			"role":   role,
+			"search": search,
+		},
+		HasFilters: page > 1 || banned != "" || role != "" || search != "",
+		Roles: roles,
 	}
 	filters := models.UserFilters{
 		Role:   role,
@@ -77,28 +85,19 @@ func (h *UHandler) Users(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 	}
-	
+
 	totalPages := (totalUsers + 10 - 1) / 10
 	pages := []int{}
 	for i := 1; i <= totalPages; i++ {
 		pages = append(pages, i)
 	}
 	pagination := h.BaseHandler.TCache.BuildPagination(page, totalPages, "/panel/users")
-	roles, _ := h.UService.GetRoles()
 
 	data.UserCards = cards
 	data.Pagination = pagination
-	data.Roles = roles
-	data.Filters = map[string]string{
-		"banned": banned,
-		"role":   role,
-		"search": search,
-	}
 	data.TotalUsers = totalUsers
 	data.Page = page
 	data.Pages = len(pages)
-
-	data.HasFilters = page > 1 || banned != "" || role != "" || search != ""
 
 	if r.Header.Get("HX-Request") == "true" {
 		h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", "user-table", data)
@@ -151,45 +150,30 @@ func (h *UHandler) UpdateName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
-	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	base := h.NewBasePageData(r)
-	if base.CurrentUserId == 0 {
-		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+	aData := h.PrepareToRestrictAccess(w, r)
+	if aData == nil {
 		return
 	}
-	reqId, err := request.GetIdFromReq(r)
+	err := h.UService.Ban(aData.ReqUID)
 	if err != nil {
 		return
 	}
-	_, _, err = SelfDeletionDetected(reqId, base.CurrentUserId)
-	if err != nil {
-		return
-	}
-	v := request.GetFilterValue(r, "view")
-	if v == "" {
-		return
-	}
-	data := models.UserData{
-		BasePageData: base,
-	}
-	err = h.UService.Ban(reqId)
-	if err != nil {
-		return
-	}
-	profile, err := h.UService.Get(reqId)
+	profile, err := h.UService.Get(aData.ReqUID)
 	if err != nil {
 		http.Redirect(w, r, "/panel/users", http.StatusSeeOther)
 		return
 	}
-	data.Profiles = models.UserViewTable{
-		User:  *profile,
-		Index: index,
+	data := models.UserData{
+		Profiles: models.UserViewTable{
+			User: *profile,
+			Index: aData.Index,
+		},
+		Actions: models.Actions{
+			CanDeleteUser: CanDeleteUser(aData.Data.CurrentUserRole, aData.Data.CurrentUserId, aData.ReqUID),
+			CanBanUser:    CanBanUser(aData.Data.CurrentUserRole, aData.Data.CurrentUserId, aData.ReqUID),
+		},
 	}
-	data.Actions = models.Actions{
-		CanDeleteUser: CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, reqId),
-		CanBanUser:    CanBanUser(base.CurrentUserRole, base.CurrentUserId, reqId),
-	}
-	page := "user-" + v
+	page := "user-" + aData.View
 	err = h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", page, data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -197,46 +181,30 @@ func (h *UHandler) Ban(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UHandler) Unban(w http.ResponseWriter, r *http.Request) {
-	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	base := h.NewBasePageData(r)
-	if base.CurrentUserId == 0 {
-		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+	aData := h.PrepareToRestrictAccess(w, r)
+	if aData == nil {
 		return
 	}
-	reqId, err := request.GetIdFromReq(r)
+	err := h.UService.Unban(aData.ReqUID)
 	if err != nil {
 		return
 	}
-	_, _, err = SelfDeletionDetected(reqId, base.CurrentUserId)
-	if err != nil {
-		return
-	}
-	v := request.GetFilterValue(r, "view")
-	if v == "" {
-		return
-	}
-	data := models.UserData{
-		BasePageData: base,
-	}
-	err = h.UService.Unban(reqId)
-	if err != nil {
-		return
-	}
-	profile, err := h.UService.Get(reqId)
+	profile, err := h.UService.Get(aData.ReqUID)
 	if err != nil {
 		http.Redirect(w, r, "/panel/users", http.StatusSeeOther)
 		return
 	}
-	data.Profiles = models.UserViewTable{
-		User:  *profile,
-		Index: index,
+	data := models.UserData{
+		Profiles: models.UserViewTable{
+			User: *profile,
+			Index: aData.Index,
+		},
+		Actions: models.Actions{
+			CanDeleteUser: CanDeleteUser(aData.Data.CurrentUserRole, aData.Data.CurrentUserId, aData.ReqUID),
+			CanBanUser:    CanBanUser(aData.Data.CurrentUserRole, aData.Data.CurrentUserId, aData.ReqUID),
+		},
 	}
-	data.Actions = models.Actions{
-		CanDeleteUser: CanDeleteUser(base.CurrentUserRole, base.CurrentUserId, reqId),
-		CanBanUser:    CanBanUser(base.CurrentUserRole, base.CurrentUserId, reqId),
-	}
-
-	page := "user-" + v
+	page := "user-" + aData.View
 	err = h.BaseHandler.TCache.RenderPartial(w, "users.tmpl", page, data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -276,12 +244,16 @@ func (h *UHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HX-Redirect", "/auth/login")
 		return
 	}
+	reqId, err := request.GetIdFromReq(r)
+	if err != nil {
+		return
+	}
+	_, _, err = SelfDeletionDetected(reqId, base.CurrentUserId)
+	if err != nil {
+		return
+	}
 	if base.CurrentUserRole == "admin" {
-		uId, err := request.GetIdFromReq(r)
-		if err != nil {
-			return
-		}
-		err = h.UService.Delete(uId)
+		err = h.UService.Delete(reqId)
 		if err != nil {
 			return
 		}
@@ -336,10 +308,11 @@ func (h *UHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data.UserCredentials = models.UserCredentials{
+	data.Success.UserCredentials = &models.UserCredentials{
 		Email:    email,
 		Password: password,
 	}
+
 	err = h.BaseHandler.TCache.RenderPartial(w, "create-user.tmpl", "form-submit-success", data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -353,4 +326,33 @@ func (h *UHandler) GeneratePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(password))
+}
+
+func (h *UHandler) PrepareToRestrictAccess(w http.ResponseWriter, r *http.Request) *AccessData {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
+	base := h.NewBasePageData(r)
+	if base.CurrentUserId == 0 {
+		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
+		return nil
+	}
+	reqId, err := request.GetIdFromReq(r)
+	if err != nil {
+		return nil
+	}
+	view := request.GetFilterValue(r, "view")
+	if view == "" {
+		return nil
+	}
+	data := models.UserData{
+		BasePageData:    base,
+		CurrentUserId:   base.CurrentUserId,
+		CurrentUserRole: base.CurrentUserRole,
+	}
+	access := AccessData{
+		Index:  index,
+		ReqUID: reqId,
+		Data:   data,
+		View:   view,
+	}
+	return &access
 }

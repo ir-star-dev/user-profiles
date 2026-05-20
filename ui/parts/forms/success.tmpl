@@ -1,22 +1,22 @@
 {{ define "form-submit-success" }}
 
-{{if .UserCredentials.Email}}
+{{with .Success.UserCredentials}}
     <div class="alert alert-success" role="alert">
         <p>User successfully created! </p>
-        Email: {{.UserCredentials.Email}} <br>
-        Password: {{.UserCredentials.Password}}
+        Email: {{.Email}} <br>
+        Password: {{.Password}}
     </div>
 {{end}}
 
-{{if .PostCreated.Message}}
+{{with .Success.PostCreated}}
     <div class="alert alert-success" role="alert">
-        {{.PostCreated.Message}}
+        {{.Message}}
     </div>
 {{end}}
 
-{{if .PostUpdated.Message}}
+{{with .Success.PostUpdated}}
     <div class="alert alert-success" role="alert">
-        {{.PostUpdated.Message}}
+        {{.Message}}
     </div>
 {{end}}
 

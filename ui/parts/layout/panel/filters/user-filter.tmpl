@@ -1,66 +1,59 @@
 {{define "user-filter"}}
-    <div class="mb-3">
+    <div class="d-flex flex-row gap-2 mb-3">
+        {{$f := .Filters}}
         <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{.Filters.search}}"
+            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{$f.search}}"
                 hx-get="{{$.Pagination.Path}}"
                 hx-target="#users-table"
                 hx-trigger="keyup changed delay:500ms"
                 hx-push-url="true"
-                hx-include="[name='search'],[name='role'],[name='banned'],[name='page']"
+                hx-include="[name='role'],[name='banned'],[name='page']"
             />
         </div>
+        <div>
+            <select
+                name="role"
+                class="form-select"
+                style="width: 120px;"
+                hx-get="{{$.Pagination.Path}}"
+                hx-target="#users-table"
+                hx-trigger="change"
+                hx-push-url="true"
+                hx-include="[name='page'],[name='banned'],[name='search']"
+            >   
+                <option value="">Role</option>
+                {{range .Roles}}
+                <option value="{{.Role}}"
+                    {{if eq $f.role .Role}}selected{{end}}>
+                    {{.Role}}
+                </option>
+                {{end}}
+            </select>
+        </div>
+        <div>
+            <select
+                name="banned"
+                class="form-select"
+                style="width: 120px;"
+                hx-get="{{$.Pagination.Path}}"
+                hx-target="#users-table"
+                hx-trigger="change"
+                hx-push-url="true"
+                hx-include="[name='page'],[name='role'],[name='search']"
+            >   
+                <option value="">Status</option>
+                <option value="true"
+                    {{if eq $f.banned "true"}}selected{{end}}>
+                    Banned
+                </option>
+
+                <option value="false"
+                    {{if eq $f.banned "false"}}selected{{end}}>
+                    Active
+                </option>
+            </select>
+        </div>
     </div>
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Role
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "role" ""}}">
-                    All
-                </a>
-            </li>
-            {{range .Roles}}
-                <li>
-                    <a class="dropdown-item"
-                    href="{{withQuery $.Pagination.Path $.Filters "role" .Role}} ">
-                        {{.Role}}
-                    </a>
-                </li>
-            {{end}}
-        </ul>
-    </div>
-
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Status
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "banned" ""}}">
-                    All
-                </a>
-            </li>
-
-                <li>
-                    <a class="dropdown-item"
-                    href="{{withQuery $.Pagination.Path $.Filters "banned" "true"}}">
-                        Banned
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item"
-                    href="{{withQuery $.Pagination.Path $.Filters "banned" "false"}}">
-                        Not Banned
-                    </a>
-                </li>
-        </ul>
-    </div>
-
     {{if .HasFilters}}
         <a href="/panel/users" style="max-height: 37px;">
             <i class="bi bi-arrow-repeat" style="font-size: 25px;"></i>

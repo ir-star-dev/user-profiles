@@ -28,7 +28,7 @@ type PHandlerDeps struct {
 
 func NewPostHandler(router chi.Router, deps PHandlerDeps) *PHandler {
 	return &PHandler{
-		PService: deps.PService,
+		PService:    deps.PService,
 		BaseHandler: deps.BaseHandler,
 	}
 }
@@ -63,7 +63,7 @@ func (h *PHandler) Home(w http.ResponseWriter, r *http.Request) {
 
 	data := models.HomeData{
 		BasePageData: base,
-		PostCards:       postCards,
+		PostCards:    postCards,
 		Loadmore: models.Loadmore{
 			Page:    page,
 			Next:    page + 1,
@@ -118,8 +118,8 @@ func (h *PHandler) ViewPost(w http.ResponseWriter, r *http.Request) {
 			Post: *post,
 		},
 	})
-	data := models.PostSimpleData{
-		PostCards: postCards,
+	data := models.PostSingleData{
+		PostCards:    postCards,
 		BasePageData: base,
 	}
 	h.BaseHandler.TCache.Render(w, r, http.StatusOK, "base", "post.tmpl", data)
@@ -135,7 +135,6 @@ func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 		h.BaseHandler.TCache.NotFound(w, r)
 		return
 	}
-
 	data := models.UserPostsData{
 		BasePageData: base,
 		Filters: map[string]string{
@@ -145,7 +144,6 @@ func (h *PHandler) ViewUserPosts(w http.ResponseWriter, r *http.Request) {
 		},
 		HasFilters: search != "" || sort != "" || username != "",
 	}
-
 	approved := true
 	filters := models.PostFilters{
 		Approved: &approved,
@@ -193,8 +191,16 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
 		return
 	}
+	authors, _ := h.PService.Authors()
 	data := models.PostsDashboardData{
 		BasePageData: base,
+		Filters: map[string]string{
+			"approved": approved,
+			"username": username,
+			"search":   search,
+		},
+		HasFilters: page > 1 || approved != "" || username != "" || search != "",
+		Authors:    authors,
 	}
 	var ap *bool
 	if approved != "" {
@@ -214,7 +220,6 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 		h.BaseHandler.TCache.ServerError(w, r, err)
 		return
 	}
-	authors, _ := h.PService.Authors()
 
 	totalPages := (totalPosts + 10 - 1) / 10
 	pages := []int{}
@@ -240,14 +245,6 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 	pagination := h.BaseHandler.TCache.BuildPagination(page, totalPages, "/panel/posts")
 	data.Pagination = pagination
 	data.PostCards = cards
-	data.Authors = authors
-	data.Filters = map[string]string{
-		"approved": approved,
-		"username": username,
-		"search":   search,
-	}
-	data.HasFilters = page > 1 || approved != "" || username != "" || search != ""
-
 	data.TotalPosts = totalPosts
 	data.Page = page
 	data.Pages = len(pages)
@@ -260,44 +257,30 @@ func (h *PHandler) Posts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
-	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	reqUId, err := request.GetIdFromReq(r)
+	modData := h.PrepareToModeration(w, r)
+	if modData == nil {
+		return
+	}
+	err := h.PService.Publish(modData.PID)
 	if err != nil {
 		return
 	}
-	base := h.NewBasePageData(r)
-	currUId, err := request.GetUserId(r)
-	if base.CurrentUserId == 0 {
-		return
-	}
-	pId, err := request.GetIdFromReq(r)
-	if err != nil {
-		return
-	}
-	v := request.GetFilterValue(r, "view")
-	if v == "" {
-		return
-	}
-	err = h.PService.Publish(pId)
-	if err != nil {
-		return
-	}
-	post, err := h.PService.FindById(pId)
+	post, err := h.PService.FindById(modData.PID)
 	if err != nil {
 		return
 	}
 	data := models.PostData{
 		Posts: models.PostViewTable{
 			Post:  *post,
-			Index: index,
+			Index: modData.Index,
 		},
 		Actions: models.Actions{
-			CanDeletePost:  CanDeletePost(base.CurrentUserRole),
-			CanEditPost:    CanEditPost(base.CurrentUserRole, currUId, reqUId),
-			CanApprovePost: CanApprovePost(base.CurrentUserRole),
+			CanDeletePost:  CanDeletePost(modData.Data.CurrentUserRole),
+			CanEditPost:    CanEditPost(modData.Data.CurrentUserRole, modData.CurrUID, modData.ReqUI),
+			CanApprovePost: CanApprovePost(modData.Data.CurrentUserRole),
 		},
 	}
-	page := "post-" + v
+	page := "post-" + modData.View
 	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", page, data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -305,43 +288,30 @@ func (h *PHandler) Publish(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PHandler) Review(w http.ResponseWriter, r *http.Request) {
-	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
-	reqUId, err := request.GetIdFromReq(r)
+	modData := h.PrepareToModeration(w, r)
+	if modData == nil {
+		return
+	}
+	err := h.PService.Review(modData.PID)
 	if err != nil {
 		return
 	}
-	base := h.NewBasePageData(r)
-	if base.CurrentUserId == 0 {
-		return
-	}
-	pId, err := request.GetIdFromReq(r)
-	if err != nil {
-		return
-	}
-	v := request.GetFilterValue(r, "view")
-	if v == "" {
-		return
-	}
-	err = h.PService.Review(pId)
-	if err != nil {
-		return
-	}
-	post, err := h.PService.FindById(pId)
+	post, err := h.PService.FindById(modData.PID)
 	if err != nil {
 		return
 	}
 	data := models.PostData{
 		Posts: models.PostViewTable{
 			Post:  *post,
-			Index: index,
+			Index: modData.Index,
 		},
 		Actions: models.Actions{
-			CanDeletePost:  CanDeletePost(base.CurrentUserRole),
-			CanEditPost:    CanEditPost(base.CurrentUserRole, base.CurrentUserId, reqUId),
-			CanApprovePost: CanApprovePost(base.CurrentUserRole),
+			CanDeletePost:  CanDeletePost(modData.Data.CurrentUserRole),
+			CanEditPost:    CanEditPost(modData.Data.CurrentUserRole, modData.CurrUID, modData.ReqUI),
+			CanApprovePost: CanApprovePost(modData.Data.CurrentUserRole),
 		},
 	}
-	page := "post-" + v
+	page := "post-" + modData.View
 	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", page, data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -365,7 +335,7 @@ func (h *PHandler) DeletePostConfirm(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	data := models.PostDeleteData{
-		PostCards: cards,
+		PostCards:    cards,
 		BasePageData: base,
 	}
 	err = h.BaseHandler.TCache.RenderPartial(w, "posts.tmpl", "confirm-delete-post-modal", data)
@@ -420,9 +390,10 @@ func (h *PHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data.PostCreated = models.PostCreated{
+	data.Success.PostCreated = &models.PostCreated{
 		Message: "Post successfully created and waiting for moderation!",
 	}
+
 	err = h.BaseHandler.TCache.RenderPartial(w, "create-post.tmpl", "form-submit-success", data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
@@ -520,11 +491,46 @@ func (h *PHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data.PostUpdated = models.PostUpdated{
+	data.Success.PostUpdated = &models.PostUpdated{
 		Message: "Post updated and waiting for moderation!",
 	}
+
 	err = h.BaseHandler.TCache.RenderPartial(w, "edit-post.tmpl", "form-submit-success", data)
 	if err != nil {
 		h.BaseHandler.TCache.ServerError(w, r, err)
 	}
+}
+
+func (h *PHandler) PrepareToModeration(w http.ResponseWriter, r *http.Request) *ModerationData {
+	index, _ := strconv.Atoi(request.GetFilterValue(r, "index"))
+	reqUId, err := request.GetIdFromReq(r)
+	if err != nil {
+		return nil
+	}
+	base := h.NewBasePageData(r)
+	currUId, err := request.GetUserId(r)
+	if base.CurrentUserId == 0 {
+		return nil
+	}
+	pId, err := request.GetIdFromReq(r)
+	if err != nil {
+		return nil
+	}
+	view := request.GetFilterValue(r, "view")
+	if view == "" {
+		return nil
+	}
+	data := models.PostData{
+		BasePageData: base,
+	}
+	modData := ModerationData{
+		Index:   index,
+		ReqUI:   reqUId,
+		CurrUID: currUId,
+		PID:     pId,
+		View:    view,
+		Data:    data,
+	}
+
+	return &modData
 }

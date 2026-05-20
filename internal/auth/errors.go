@@ -1,7 +1,7 @@
 package auth
 
 const (
-	UserExists     = "User already exists"
+	UserExists     = "Email already taken"
 	PassHash       = "Password error"
 	LoginError     = "Wrong email"
 	WrongPassword  = "Wrong password"
@@ -11,6 +11,7 @@ const (
 	LongPass       = "Password length more than 8 characters"
 	EmptyPass      = "Password cannot be blank"
 	EmptyName      = "Name cannot be blank"
-	WrongRole      = "Role can be user"
+	WrongRole      = "Role can be only a user"
 	InvalidForm    = "Invalid form"
+	InvalidToken   = "Invalid token"
 )

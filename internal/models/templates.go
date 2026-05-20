@@ -9,6 +9,13 @@ type BasePageData struct {
 	CurrentUserId   int
 	CurrentUserRole string
 	CSRFToken       string
+	Success         SuccessMessages
+}
+
+type SuccessMessages struct {
+	UserCredentials *UserCredentials
+	PostCreated     *PostCreated
+	PostUpdated     *PostUpdated
 }
 
 // Auth
@@ -28,7 +35,7 @@ type HomeData struct {
 }
 
 // Post
-type PostSimpleData struct {
+type PostSingleData struct {
 	BasePageData
 	PostCards []PostData
 }
@@ -73,7 +80,6 @@ type PostsDashboardData struct {
 type CreatePostFormData struct {
 	BasePageData
 	FormValidationErr []validator.FormValidationErr
-	PostCreated       PostCreated
 }
 
 type PreviewPostData struct {
@@ -89,7 +95,6 @@ type PostDeleteData struct {
 type EditPostFormData struct {
 	BasePageData
 	FormValidationErr []validator.FormValidationErr
-	PostUpdated       PostUpdated
 	PostCards         []PostData
 }
 
@@ -119,7 +124,6 @@ type UserDeleteData struct {
 type CreateUserFormData struct {
 	BasePageData
 	FormValidationErr []validator.FormValidationErr
-	UserCredentials   UserCredentials
 }
 
 // =====================================
@@ -136,6 +140,7 @@ type UserData struct {
 type PostData struct {
 	Posts   PostViewTable
 	Actions Actions
+	BasePageData
 }
 
 type PostViewTable struct {

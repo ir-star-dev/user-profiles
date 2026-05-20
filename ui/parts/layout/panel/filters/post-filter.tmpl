@@ -1,68 +1,59 @@
 {{define "post-filter"}}
-    <div class="mb-3">
+    <div class="d-flex flex-row gap-2 mb-3">
+        {{$f := .Filters}}
         <div class="input-group">
-            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{.Filters.search}}"
+            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{$f.search}}"
                 hx-get="{{$.Pagination.Path}}"
                 hx-target="#posts-table"
                 hx-trigger="keyup changed delay:500ms"
                 hx-push-url="true"
-                hx-include="[name='search'],[name='approved'],[name='username'],[name='page']"
+                hx-include="[name='approved'],[name='username'],[name='page']"
             />
         </div>
-    </div>
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Status{{if eq .Filters.approved "true"}}: Published {{else}}: Pending {{end}}
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "approved" ""}}">
-                    All
-                </a>
-            </li>
-
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "approved" "true"}}">
+        <div>
+            <select
+                name="approved"
+                class="form-select"
+                style="width: 120px;"
+                hx-get="{{$.Pagination.Path}}"
+                hx-target="#posts-table"
+                hx-trigger="change"
+                hx-push-url="true"
+                hx-include="[name='page'],[name='username'],[name='search']"
+            >   
+                <option value="">All</option>
+                <option value="true"
+                    {{if eq $f.approved "true"}}selected{{end}}>
                     Published
-                </a>
-            </li>
+                </option>
 
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "approved" "false"}}">
+                <option value="false"
+                    {{if eq $f.approved "false"}}selected{{end}}>
                     Pending
-                </a>
-            </li>
-        </ul>
+                </option>
+            </select>
+        </div>
+        <div>
+            <select
+                name="username"
+                class="form-select"
+                style="width: 120px;"
+                hx-get="{{$.Pagination.Path}}"
+                hx-target="#posts-table"
+                hx-trigger="change"
+                hx-push-url="true"
+                hx-include="[name='page'],[name='approved'],[name='search']"
+            >   
+                <option value="">Author</option>
+                {{range .Authors}}
+                <option value="{{.Username}}"
+                    {{if eq $f.username .Username}}selected{{end}}>
+                    {{.Username}}
+                </option>
+                {{end}}
+            </select>
+        </div>
     </div>
-
-    <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            Author 
-        </button>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-                <a class="dropdown-item"
-                href="{{withQuery $.Pagination.Path $.Filters "username" ""}}">
-                    All
-                </a>
-            </li>
-
-            {{range .Authors}}
-                <li>
-                    <a class="dropdown-item"
-                    href="{{withQuery $.Pagination.Path $.Filters "username" .Username}}">
-                        {{.Username}}
-                    </a>
-                </li>
-            {{end}}
-        </ul>
-    </div>
-
     {{if .HasFilters}}
         <a href="/panel/posts" style="max-height: 37px;">
             <i class="bi bi-arrow-repeat" style="font-size: 25px;"></i>
